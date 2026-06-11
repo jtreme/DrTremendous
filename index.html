@@ -68,18 +68,26 @@
   .nav-links a:hover { color: var(--gold-deep); border-bottom-color: var(--gold); }
 
   .hero {
-    padding: 40px 56px 36px;
+    padding: 36px 56px 40px;
     border-bottom: 1px solid var(--rule);
     text-align: center;
-    background: var(--cream-deep);
+    background: var(--cream);
     margin: 0 -56px;
   }
-  .hero-logo {
-    width: 100%;
-    max-width: 620px;
-    height: auto;
+  .hero-lockup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    margin-bottom: 16px;
+  }
+  .hero-trex {
+    height: 150px; width: auto;
     display: block;
-    margin: 0 auto;
+  }
+  .hero-wordmark-img {
+    height: 150px; width: auto;
+    display: block;
   }
   .hero-intro {
     text-align: center;
@@ -291,8 +299,10 @@
 
   @media (max-width: 900px) {
     .wrap { padding: 0 28px; }
-    .hero { padding: 28px 28px 28px; margin: 0 -28px; }
-    .hero-logo { max-width: 100%; }
+    .hero { padding: 28px 28px 32px; margin: 0 -28px; }
+    .hero-lockup { flex-direction: column; gap: 12px; }
+    .hero-trex { height: 104px; }
+    .hero-wordmark-img { height: 104px; }
     .hero-intro { padding: 28px 0 4px; }
     .hero-lede { font-size: 17px; }
     .tools-live { grid-template-columns: 1fr; }
@@ -320,7 +330,10 @@
   </nav>
 
   <section class="hero">
-    <img src="logo-lockup.png" alt="Dr. Tremendous — Solutions, made visible." class="hero-logo">
+    <div class="hero-lockup">
+      <img src="trex.png" alt="Dr.Tremendous T-rex mascot" class="hero-trex">
+      <img src="wordmark.png" alt="Dr.Tremendous — Solutions, made visible." class="hero-wordmark-img">
+    </div>
   </section>
 
   <section class="hero-intro">
