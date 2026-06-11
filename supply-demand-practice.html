@@ -132,7 +132,7 @@ function SDGraph({ dS = 0, sS = 0, onDD, onDS, frozen, dMin = -25, dMax = 25, sM
 
   return (
     <svg ref={ref} viewBox={`0 0 ${W} ${H}`}
-      style={{ width: "100%", maxWidth: 440, display: "block", margin: "0 auto", touchAction: "none", userSelect: "none" }}>
+      style={{ width: "100%", maxWidth: 620, display: "block", margin: "0 auto", touchAction: "none", userSelect: "none" }}>
       <rect width={W} height={H} fill={C.bg} rx="8" />
       <defs>
         <clipPath id="plotClip">
@@ -884,7 +884,7 @@ function Footer() {
   return (
     <div style={{ marginTop: 48, paddingTop: 20, textAlign: "center" }}>
       <div style={{ display: "inline-flex", alignItems: "center", gap: 12, opacity: 0.7 }}>
-        <img src={DINO} alt="" style={{ height: 40 }} />
+        <img src={DINO} alt="" style={{ height: 52 }} />
         <div style={{ textAlign: "left", fontFamily: "'Georgia', serif" }}>
           <div>
             <span style={{ fontSize: 15, fontWeight: 700, color: "#1a3c5e", letterSpacing: "-0.5px" }}>Dr.Treme</span>
@@ -910,10 +910,10 @@ function App() {
   // Menu
   if (lv === -1) {
     return (
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px", fontFamily: F }}>
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 16px", fontFamily: F }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: C.accent, fontWeight: 700, marginBottom: 4 }}>ARE 201 · Unit 4</div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.primary, margin: "0 0 4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><img src={DINO} alt="" style={{ height: 36 }} />Supply & Demand Practice</h1>
+          <div style={{ fontSize: 16, textTransform: "uppercase", letterSpacing: 2.5, color: C.accent, fontWeight: 700, marginBottom: 6 }}>ARE 201 · Unit 4</div>
+          <h1 style={{ fontSize: 38, fontWeight: 700, color: C.primary, margin: "0 0 4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}><img src={DINO} alt="" style={{ height: 64 }} />Supply & Demand Practice</h1>
           <p style={{ fontSize: 13, color: C.textLight, margin: 0 }}>5 levels · Interactive graphs · Real-world scenarios</p>
         </div>
         <div style={{ background: "#f0efe8", borderRadius: 10, padding: "14px 18px", marginBottom: 20, fontSize: 13, lineHeight: 1.7, color: C.text }}>
@@ -945,9 +945,9 @@ function App() {
     const ts = scores.reduce((a, x) => a + x.s, 0);
     const tt = scores.reduce((a, x) => a + x.t, 0);
     return (
-      <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px", fontFamily: F, textAlign: "center" }}>
+      <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 16px", fontFamily: F, textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
-          <img src={DINO} alt="" style={{ height: 64 }} />
+          <img src={DINO} alt="" style={{ height: 88 }} />
           <div style={{ fontSize: 22, fontWeight: 700, color: C.primary }}>Practice Complete!</div>
         </div>
         <div style={{ fontSize: 15, color: C.textLight, margin: "8px 0 24px" }}>{ts}/{tt} ({Math.round((ts / tt) * 100)}%)</div>
@@ -968,10 +968,10 @@ function App() {
   const Comp = [Level1, Level2, Level3, Level4, Level5][lv];
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px", fontFamily: F }}>
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 16px", fontFamily: F }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <div>
-          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: C.accent, fontWeight: 700 }}>ARE 201 · Unit 4</div>
+          <div style={{ fontSize: 14, textTransform: "uppercase", letterSpacing: 2, color: C.accent, fontWeight: 700 }}>ARE 201 · Unit 4</div>
           <div style={{ fontSize: 17, fontWeight: 700, color: C.primary }}>{LEVELS[lv]?.l}</div>
         </div>
         <button onClick={() => { setLv(-1); setScores([]); }} style={{
