@@ -68,42 +68,18 @@
   .nav-links a:hover { color: var(--gold-deep); border-bottom-color: var(--gold); }
 
   .hero {
-    padding: 36px 56px 40px;
+    padding: 40px 56px 36px;
     border-bottom: 1px solid var(--rule);
     text-align: center;
-    background: var(--cream);
+    background: var(--cream-deep);
     margin: 0 -56px;
   }
-  .hero-lockup {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 22px;
-    margin-bottom: 16px;
-  }
-  .hero-trex {
-    height: 150px; width: auto;
+  .hero-logo {
+    width: 100%;
+    max-width: 620px;
+    height: auto;
     display: block;
-  }
-  .hero-wordmark-img {
-    height: 150px; width: auto;
-    display: block;
-  }
-  .hero-wordmark {
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
-    font-size: 58px;
-    line-height: 1;
-    letter-spacing: -0.025em;
-  }
-  .hero-wordmark .navy { color: var(--navy); }
-  .hero-wordmark .gold { color: var(--gold); }
-  .hero-tagline {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.32em;
-    text-transform: uppercase;
-    color: var(--gold-deep);
+    margin: 0 auto;
   }
   .hero-intro {
     text-align: center;
@@ -158,7 +134,7 @@
   }
   .section-head h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
 
-  .tools-live { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .tools-live { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
   .tool {
     background: var(--cream-warm);
     padding: 36px 32px 30px;
@@ -315,11 +291,8 @@
 
   @media (max-width: 900px) {
     .wrap { padding: 0 28px; }
-    .hero { padding: 28px 28px 32px; margin: 0 -28px; }
-    .hero-lockup { flex-direction: column; gap: 12px; }
-    .hero-trex { height: 104px; }
-    .hero-wordmark-img { height: 104px; }
-    .hero-tagline { font-size: 9px; letter-spacing: 0.26em; }
+    .hero { padding: 28px 28px 28px; margin: 0 -28px; }
+    .hero-logo { max-width: 100%; }
     .hero-intro { padding: 28px 0 4px; }
     .hero-lede { font-size: 17px; }
     .tools-live { grid-template-columns: 1fr; }
@@ -347,10 +320,7 @@
   </nav>
 
   <section class="hero">
-    <div class="hero-lockup">
-      <img src="trex.png" alt="Dr.Tremendous T-rex mascot" class="hero-trex">
-      <img src="wordmark.png" alt="Dr.Tremendous — Solutions, made visible." class="hero-wordmark-img">
-    </div>
+    <img src="logo-lockup.png" alt="Dr. Tremendous — Solutions, made visible." class="hero-logo">
   </section>
 
   <section class="hero-intro">
@@ -402,6 +372,21 @@
           <div class="tool-launch">Launch</div>
         </div>
       </a>
+
+      <a href="supply-demand-practice.html" class="tool">
+        <div class="tool-top">
+          <div class="tool-tag">Practice · Live</div>
+          <div class="tool-num">03</div>
+        </div>
+        <div class="tool-title">Supply &amp; Demand<br>Practice</div>
+        <div class="tool-desc">
+          Five levels of curve-dragging, from classifying shifts up to simultaneous shocks and real news scenarios. Drag the curves, watch equilibrium move, check your reasoning.
+        </div>
+        <div class="tool-foot">
+          <div class="tool-course">ARE 201 · Unit 4</div>
+          <div class="tool-launch">Launch</div>
+        </div>
+      </a>
     </div>
   </section>
 
@@ -414,13 +399,6 @@
     </div>
 
     <div class="tools-coming">
-      <div class="tool-soon">
-        <div class="tool-tag">Coming Soon</div>
-        <div class="tool-title-sm">Supply &amp; Demand Practice</div>
-        <div class="tool-desc-sm">Five levels of curve-dragging, from classification up to simultaneous shifts and real news scenarios.</div>
-        <div class="tool-course-sm">ARE 201 · Unit 4</div>
-      </div>
-
       <div class="tool-soon">
         <div class="tool-tag">Coming Soon</div>
         <div class="tool-title-sm">Supply &amp; Demand Sound Toy</div>
@@ -463,35 +441,6 @@
         <div class="tool-course-sm">ARE 495 · Week 1</div>
       </div>
     </div>
-  </section>
-
-  <section id="office">
-    <div class="section-head">
-      <div class="left">
-        <div class="eyebrow">Office Hours · Stop by</div>
-        <h2>Find me in the <em>margins</em>.</h2>
-      </div>
-    </div>
-    <p style="font-size: 17px; line-height: 1.7; color: var(--navy-mute); max-width: 680px; margin: 0 0 16px;">
-      Office hours are where most of the real teaching happens — bring a problem set, a half-formed idea, or a question you didn't want to ask in front of the room.
-    </p>
-    <p style="font-size: 15px; line-height: 1.7; color: var(--navy-mute); max-width: 680px; margin: 0;">
-      <strong style="color: var(--navy);">When:</strong> [add your days &amp; times] &nbsp;·&nbsp;
-      <strong style="color: var(--navy);">Where:</strong> [add office / Zoom link] &nbsp;·&nbsp;
-      <strong style="color: var(--navy);">Email:</strong> [add address]
-    </p>
-  </section>
-
-  <section id="notes">
-    <div class="section-head">
-      <div class="left">
-        <div class="eyebrow">Field Notes · From the lab</div>
-        <h2>Notes from the <em>field</em>.</h2>
-      </div>
-    </div>
-    <p style="font-size: 17px; line-height: 1.7; color: var(--navy-mute); max-width: 680px; margin: 0;">
-      Short write-ups on what's working in the classroom, why each tool exists, and what's coming next. [First post coming soon — drop your notes or links here.]
-    </p>
   </section>
 
   <section class="pull-band">

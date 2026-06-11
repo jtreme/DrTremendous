@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supply & Demand Practice — Dr. Tremendous</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #fafaf7; }
+
+  /* Dr. Tremendous brand header */
+  .dt-header {
+    width: 100%;
+    background: #f9f2e2;
+    border-bottom: 1px solid rgba(20, 27, 52, 0.12);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+  .dt-header a.dt-wordmark {
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    transition: opacity 0.2s;
+  }
+  .dt-header a.dt-wordmark:hover { opacity: 0.75; }
+  .dt-header .dt-navy { color: #141b34; }
+  .dt-header .dt-gold { color: #d8a249; }
+</style>
+</head>
+<body>
+
+<div class="dt-header">
+  <a href="https://drtremendous.com" class="dt-wordmark" aria-label="Dr. Tremendous home">
+    <span class="dt-navy">Dr.Treme</span><span class="dt-gold">ndous</span>
+  </a>
+</div>
+
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useCallback, useRef, useEffect } = React;
+
+
+/* ── palette & font ── */
+const C = {
+  bg:"#fafaf7", primary:"#1a3c5e", accent:"#c85d3a",
+  success:"#2d7a4f", successBg:"#e8f5ec",
+  error:"#b83232", errorBg:"#fce8e8",
+  supply:"#2d7a4f", demand:"#2d5a8e",
+  text:"#2c2c2c", textLight:"#6b6b6b",
+  border:"#e5e2db", highlight:"#fef3c7",
+  eq:"#c85d3a", grid:"#ece9e1",
+};
+const F = "'Source Serif 4', Georgia, serif";
+const DINO = "data:image/png;base64,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";
+
+/* ═══════════════════════════════════════════
+   INTERACTIVE S&D GRAPH
+   ═══════════════════════════════════════════ */
+function SDGraph({ dS = 0, sS = 0, onDD, onDS, frozen, dMin = -25, dMax = 25, sMin = -25, sMax = 25, showOrigEq = false, showOrigCurves = false, showEqLabels = false }) {
+  const ref = useRef(null);
+  const drag = useRef(null);
+  const startX = useRef(0);
+  const startVal = useRef(0);
+
+  const W = 380, H = 280, PAD = 50, PADT = 16;
+  const py = (p) => PADT + (H - PAD - PADT) * (1 - p / 120);
+  const qx = (q) => PAD + (W - PAD - 10) * (q / 120);
+
+  // Original equilibrium (no shifts)
+  const origEqP = 60;
+  const origEqQ = 40;
+
+  const eqP = (120 + dS - sS) / 2;
+  const eqQ = eqP - 20 + sS;
+  const eqOk = eqP > 5 && eqP < 115 && eqQ > 5 && eqQ < 115;
+  const hasShifted = Math.abs(dS) > 0.5 || Math.abs(sS) > 0.5;
+
+  // Demand: P = 100 + dS - Q
+  const dP0 = 100 + dS;
+  const dQ0 = 100 + dS;
+
+  // Supply: P = Q + 20 - sS
+  const sP0 = 20 - sS;
+  const sQ120 = 100 + sS;
+
+  const handleDown = (curve) => (e) => {
+    if (frozen) return;
+    if (curve === "d" && !onDD) return;
+    if (curve === "s" && !onDS) return;
+    e.preventDefault();
+    drag.current = curve;
+    startX.current = e.touches ? e.touches[0].clientX : e.clientX;
+    startVal.current = curve === "d" ? dS : sS;
+  };
+
+  useEffect(() => {
+    const move = (e) => {
+      if (!drag.current) return;
+      e.preventDefault();
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const rect = ref.current?.getBoundingClientRect();
+      if (!rect) return;
+      const scale = 120 / (rect.width - PAD - 10);
+      const raw = startVal.current + (cx - startX.current) * scale;
+      if (drag.current === "d" && onDD) {
+        onDD(Math.round(Math.max(dMin, Math.min(dMax, raw))));
+      }
+      if (drag.current === "s" && onDS) {
+        onDS(Math.round(Math.max(sMin, Math.min(sMax, raw))));
+      }
+    };
+    const up = () => { drag.current = null; };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", up);
+    return () => { window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); window.removeEventListener("touchmove", move); window.removeEventListener("touchend", up); };
+  }, [dS, sS, onDD, onDS, dMin, dMax, sMin, sMax]);
+
+  return (
+    <svg ref={ref} viewBox={`0 0 ${W} ${H}`}
+      style={{ width: "100%", maxWidth: 440, display: "block", margin: "0 auto", touchAction: "none", userSelect: "none" }}>
+      <rect width={W} height={H} fill={C.bg} rx="8" />
+      <defs>
+        <clipPath id="plotClip">
+          <rect x={PAD} y={PADT} width={W - PAD - 10} height={H - PAD - PADT} />
+        </clipPath>
+      </defs>
+
+      {/* Grid */}
+      {[20, 40, 60, 80, 100].map(v => (
+        <g key={v}>
+          <line x1={PAD} y1={py(v)} x2={W - 10} y2={py(v)} stroke={C.grid} strokeWidth="0.5" />
+          <line x1={qx(v)} y1={PADT} x2={qx(v)} y2={H - PAD} stroke={C.grid} strokeWidth="0.5" />
+        </g>
+      ))}
+
+      {/* Axes */}
+      <line x1={PAD} y1={PADT} x2={PAD} y2={H - PAD} stroke={C.text} strokeWidth="1.5" />
+      <line x1={PAD} y1={H - PAD} x2={W - 10} y2={H - PAD} stroke={C.text} strokeWidth="1.5" />
+      <text x={16} y={H / 2 - 8} fontSize="12" fill={C.text} fontWeight="700" fontFamily={F}
+        transform={`rotate(-90,16,${H / 2 - 8})`}>Price</text>
+      <text x={W / 2 + 20} y={H - 8} fontSize="12" fill={C.text} fontWeight="700"
+        textAnchor="middle" fontFamily={F}>Quantity</text>
+
+      {/* Clipped curves and equilibrium */}
+      <g clipPath="url(#plotClip)">
+        {/* Original curves - dashed */}
+        {showOrigCurves && hasShifted && (
+          <>
+            <line x1={qx(0)} y1={py(100)} x2={qx(100)} y2={py(0)}
+              stroke={C.demand} strokeWidth="2" strokeDasharray="6 5" opacity="0.45" />
+            <line x1={qx(0)} y1={py(20)} x2={qx(100)} y2={py(120)}
+              stroke={C.supply} strokeWidth="2" strokeDasharray="6 5" opacity="0.45" />
+          </>
+        )}
+
+        {/* Demand curve - solid blue */}
+        <line x1={qx(0)} y1={py(dP0)} x2={qx(dQ0)} y2={py(0)}
+          stroke={C.demand} strokeWidth="3" />
+        {!frozen && onDD && (
+          <line x1={qx(0)} y1={py(dP0)} x2={qx(dQ0)} y2={py(0)}
+            stroke="transparent" strokeWidth="24" style={{ cursor: "ew-resize" }}
+            onMouseDown={handleDown("d")} onTouchStart={handleDown("d")} />
+        )}
+
+        {/* Supply curve - solid green */}
+        <line x1={qx(0)} y1={py(sP0)} x2={qx(sQ120)} y2={py(120)}
+          stroke={C.supply} strokeWidth="3" />
+        {!frozen && onDS && (
+          <line x1={qx(0)} y1={py(sP0)} x2={qx(sQ120)} y2={py(120)}
+            stroke="transparent" strokeWidth="24" style={{ cursor: "ew-resize" }}
+            onMouseDown={handleDown("s")} onTouchStart={handleDown("s")} />
+        )}
+
+        {/* Original equilibrium */}
+        {showOrigEq && hasShifted && (
+          <g>
+            <circle cx={qx(origEqQ)} cy={py(origEqP)} r="6" fill="#fff" stroke="#777" strokeWidth="2" />
+            {showEqLabels && (
+              <text x={qx(origEqQ) - 16} y={py(origEqP) - 10} fontSize="12" fill="#777" fontWeight="700" fontFamily={F}>E₀</text>
+            )}
+          </g>
+        )}
+
+        {/* Current equilibrium dot - filled */}
+        {eqOk && (
+          <g>
+            <circle cx={qx(eqQ)} cy={py(eqP)} r="6" fill={C.eq} stroke="#fff" strokeWidth="2" />
+            {showEqLabels && hasShifted && (
+              <text x={qx(eqQ) + 8} y={py(eqP) - 8} fontSize="12" fill={C.eq} fontWeight="700" fontFamily={F}>E₁</text>
+            )}
+          </g>
+        )}
+      </g>
+
+      {/* Curve labels */}
+      <text x={Math.min(qx(dQ0), W - 20) + 3} y={py(0) + 14} fontSize="14" fill={C.demand} fontWeight="700" fontFamily={F}>D</text>
+      <text x={Math.min(qx(sQ120), W - 20) + 3} y={py(120) - 4} fontSize="14" fill={C.supply} fontWeight="700" fontFamily={F}>S</text>
+
+      {/* P* and Q* labels on axes */}
+      {eqOk && (
+        <>
+          <text x={PAD - 6} y={py(eqP) + 4} fontSize="11" fill={C.eq} fontWeight="700" textAnchor="end" fontFamily={F}>P*</text>
+          <text x={qx(eqQ)} y={H - PAD + 15} fontSize="11" fill={C.eq} fontWeight="700" textAnchor="middle" fontFamily={F}>Q*</text>
+        </>
+      )}
+
+      {/* Drag hint */}
+      {!frozen && (onDD || onDS) && dS === 0 && sS === 0 && (
+        <text x={W / 2 + 20} y={PADT + 14} fontSize="11" fill={C.accent}
+          textAnchor="middle" fontFamily={F} fontStyle="italic">
+          {"← Drag " + (onDD && onDS ? "the curves" : onDD ? "demand (blue)" : "supply (green)") + " →"}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+/* ── Shared UI ── */
+function Prog({ c, t, label }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.textLight, marginBottom: 5, fontFamily: F }}>
+        <span>{label}</span><span>{c}/{t}</span>
+      </div>
+      <div style={{ height: 5, background: C.border, borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${(c / t) * 100}%`, height: "100%", background: C.primary, borderRadius: 3, transition: "width .4s" }} />
+      </div>
+    </div>
+  );
+}
+
+function Fb({ ok, text, onNext }) {
+  return (
+    <div style={{ marginTop: 16, padding: "16px 20px", borderRadius: 10, background: ok ? C.successBg : C.errorBg, border: `1px solid ${ok ? C.success : C.error}` }}>
+      <div style={{ fontWeight: 700, fontSize: 15, color: ok ? C.success : C.error, marginBottom: 4, fontFamily: F }}>
+        {ok ? "✓ Correct!" : "✗ Not quite."}
+      </div>
+      <div style={{ fontSize: 13, color: C.text, lineHeight: 1.6, fontFamily: F }}>{text}</div>
+      <button onClick={onNext} style={btnStyle(C.primary)}>Next →</button>
+    </div>
+  );
+}
+
+function LevelDone({ emoji, label, score, total, onClick }) {
+  return (
+    <div style={{ textAlign: "center", padding: "36px 20px", fontFamily: F }}>
+      <div style={{ fontSize: 48, marginBottom: 10 }}>{emoji}</div>
+      <div style={{ fontSize: 20, fontWeight: 700, color: C.primary }}>{label}</div>
+      <div style={{ fontSize: 15, color: C.textLight, margin: "8px 0 24px" }}>
+        Score: {score}/{total} ({Math.round((score / total) * 100)}%)
+      </div>
+      <button onClick={onClick} style={btnStyle(C.primary)}>Continue →</button>
+    </div>
+  );
+}
+
+function btnStyle(bg) {
+  return { marginTop: 12, padding: "9px 22px", background: bg, color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: F, display: "inline-block" };
+}
+
+function optStyle(selected) {
+  return {
+    display: "block", width: "100%", padding: "10px 14px", marginBottom: 6, fontSize: 13,
+    fontWeight: selected ? 700 : 500, textAlign: "left",
+    border: `2px solid ${selected ? C.primary : C.border}`, borderRadius: 8,
+    background: selected ? "#e0e7ff" : "#fff", color: C.text, cursor: "pointer",
+    fontFamily: F, transition: "all .15s",
+  };
+}
+
+/* ── Question data ── */
+const Q1 = [
+  { t: "A severe drought reduces corn available for sale.", a: "supply", e: "Drought destroys crops — supply shifts." },
+  { t: "A popular health trend causes more people to want organic fruits.", a: "demand", e: "Tastes changed — demand shifts." },
+  { t: "Oil prices spike, raising transportation costs for grain.", a: "supply", e: "Higher input costs — supply shifts." },
+  { t: "Bird flu kills millions of egg-laying chickens.", a: "supply", e: "Fewer chickens = fewer eggs — supply shifts." },
+  { t: "A recession leads to fewer purchases of premium organic products.", a: "demand", e: "Lower income reduces demand." },
+  { t: "Cucumber prices rise, so consumers buy more zucchini.", a: "demand", e: "Substitute price rose — demand shifts." },
+  { t: "New technology reduces solar panel production costs.", a: "supply", e: "Lower costs — supply shifts." },
+  { t: "A law restricts the number of soybean farms.", a: "supply", e: "Fewer sellers — supply shifts." },
+  { t: "Consumers expect tomato prices to rise, so they buy more now.", a: "demand", e: "Consumer expectations — demand shifts." },
+  { t: "Minimum wage increase gives consumers more purchasing power.", a: "demand", e: "Income increase — demand shifts." },
+  { t: "Perfect weather produces a record wheat harvest.", a: "supply", e: "Good weather — supply shifts." },
+  { t: "Coffee prices rise, reducing pastry purchases (complements).", a: "demand", e: "Complement price rose — demand shifts." },
+  { t: "Farmers expect higher corn prices, so they store more now.", a: "supply", e: "Producer expectations reduce current supply." },
+  { t: "Immigration increases the population needing food.", a: "demand", e: "More consumers — demand shifts." },
+  { t: "A screwworm outbreak in Mexico leads the USDA to ban all live cattle imports from Mexico, cutting off over 1 million head per year from the U.S. market.", a: "supply", e: "The import ban removes a major source of cattle from the domestic market. Fewer cattle available means the supply curve shifts left." },
+];
+
+const Q2 = [
+  { t: "Gas prices doubled from war, raising Florida orange shipping costs.", c: "supply", d: "left", e: "Higher input costs (fuel for shipping) make it more expensive to get oranges to market. The supply curve shifts LEFT." },
+  { t: "A viral TikTok makes cottage cheese recipes wildly popular.", c: "demand", d: "right", e: "Tastes and preferences shifted toward cottage cheese. More people want it at every price. The demand curve shifts RIGHT." },
+  { t: "February freeze destroys $160M in Florida tomato crops.", c: "supply", d: "left", e: "The freeze destroyed productive capacity. Fewer tomatoes can be supplied at every price. The supply curve shifts LEFT." },
+  { t: "A recession causes consumers to cut back on restaurant dining.", c: "demand", d: "left", e: "Restaurant meals are a normal good. Lower income reduces demand. The demand curve shifts LEFT." },
+  { t: "Vertical farming technology dramatically reduces lettuce production costs.", c: "supply", d: "right", e: "Lower production costs mean farmers can supply more at every price. The supply curve shifts RIGHT." },
+  { t: "New environmental regulations require hog farms to install expensive waste management systems, significantly increasing production costs.", c: "supply", d: "left", e: "Government regulations that raise production costs make it more expensive to supply at every price. The supply curve shifts LEFT." },
+  { t: "A study finds blueberries significantly reduce heart disease risk.", c: "demand", d: "right", e: "Blueberries are now seen as more of a necessity. Consumers want more at every price. The demand curve shifts RIGHT." },
+  { t: "Fertilizer prices surge due to disruptions in the Strait of Hormuz.", c: "supply", d: "left", e: "Fertilizer is a key input for crop production. Higher input costs shift the supply curve LEFT." },
+  { t: "The price of beef rises sharply, causing more consumers to buy chicken as a cheaper alternative.", c: "demand", d: "right", e: "Beef and chicken are substitutes. When the price of a substitute (beef) rises, demand for chicken increases. The demand curve for chicken shifts RIGHT." },
+  { t: "Incomes rise but consumers buy less ramen noodles, switching to higher-quality pasta instead.", c: "demand", d: "left", e: "Ramen is an inferior good — as income rises, demand decreases. The demand curve shifts LEFT." },
+  { t: "The price of hot dog buns doubles, and consumers respond by buying fewer hot dogs.", c: "demand", d: "left", e: "Hot dogs and buns are complements. When the price of a complement rises, demand for the related good falls. The demand curve for hot dogs shifts LEFT." },
+  { t: "News reports warn that coffee prices will spike next month due to a Brazilian drought. Consumers rush to stock up now.", c: "demand", d: "right", e: "Consumer expectations of higher future prices increase current demand. The demand curve shifts RIGHT." },
+  { t: "Three major egg producers exit the market after sustained losses, reducing the number of sellers.", c: "supply", d: "left", e: "Fewer sellers in the market means less is supplied at every price. The supply curve shifts LEFT." },
+];
+
+const Q3 = [
+  { t: "Bird flu kills 10% of the nation's egg-laying hens.", c: "supply", d: "left", eP: "increase", eQ: "decrease", e: "Supply left → P↑ Q↓. What happened in 2022–23." },
+  { t: "Consumer incomes rise as the economy recovers.", c: "demand", d: "right", eP: "increase", eQ: "increase", e: "Demand right → P↑ Q↑." },
+  { t: "Automation reduces chicken production costs.", c: "supply", d: "right", eP: "decrease", eQ: "increase", e: "Supply right → P↓ Q↑." },
+  { t: "A diet trend convinces millions to stop eating red meat.", c: "demand", d: "left", eP: "decrease", eQ: "decrease", e: "Demand left → P↓ Q↓." },
+  { t: "Western drought shrinks the cattle herd.", c: "supply", d: "left", eP: "increase", eQ: "decrease", e: "Supply left → P↑ Q↓. Current beef market." },
+];
+
+const Q4 = [
+  { t: "The USDA lifts the ban on Mexican cattle imports after the screwworm outbreak is contained, allowing over 1 million head per year back into the U.S. market. At the same time, summer grilling season arrives and more Americans are firing up their barbecues.", expectedD: 1, expectedS: 1, pA: "ambiguous", qA: "increase", ambigVar: "price", definiteVar: "quantity", definiteDir: "increase", e: "Lifting the import ban shifts supply right (more cattle available). Grilling season shifts demand right. Supply right pushes P down, demand right pushes P up — price is AMBIGUOUS. But both shifts push quantity up, so Q definitely ↑." },
+  { t: "Rising fuel costs from the war in Iran have significantly increased the cost of shipping pork to market. Meanwhile, record-high beef prices are causing many consumers to switch to pork as a cheaper alternative.", expectedD: 1, expectedS: -1, pA: "increase", qA: "ambiguous", ambigVar: "quantity", definiteVar: "price", definiteDir: "increase", e: "Higher shipping costs shift pork supply left. Consumers switching from beef shifts pork demand right. Both push price up → P definitely ↑. But supply left reduces Q while demand right increases Q — quantity is AMBIGUOUS." },
+  { t: "A recession has reduced consumer incomes across the country, causing families to cut back on spending. At the same time, a new trade agreement opens the U.S. market to cheaper imported chicken from Brazil.", expectedD: -1, expectedS: 1, pA: "decrease", qA: "ambiguous", ambigVar: "quantity", definiteVar: "price", definiteDir: "decrease", e: "Recession shifts demand left (lower income). Trade deal shifts supply right (cheaper imports). Both push price down → P definitely ↓. But demand left reduces Q while supply right increases Q — quantity is AMBIGUOUS." },
+  { t: "A new health scare links a popular artificial sweetener to cancer, causing consumers to switch back to sugar. At the same time, a record sugar cane harvest in Brazil floods the global market with cheap sugar.", expectedD: 1, expectedS: 1, pA: "ambiguous", qA: "increase", ambigVar: "price", definiteVar: "quantity", definiteDir: "increase", e: "Health scare shifts sugar demand right (more people want sugar). Record harvest shifts sugar supply right. Demand right pushes P up, supply right pushes P down — price is AMBIGUOUS. But both shifts push quantity up, so Q definitely ↑." },
+];
+
+const Q5 = [
+  {
+    hl: "Government Acts to Increase Beef Imports and Lower Prices",
+    src: "WSJ, May 2026",
+    ctx: "The administration is removing trade barriers on beef-exporting nations to bring down record-high prices. The U.S. cattle herd has been shrinking due to persistent drought, driving up feed costs and forcing ranchers to sell off herds. Meanwhile, a screwworm outbreak in Mexico led the USDA to halt live cattle imports from Mexico in November 2024, cutting off over 1 million head per year.",
+    qs: [
+      { q: "How many separate events shifted the supply curve left, causing prices to rise?", o: ["One — just the import restrictions", "Two — drought shrinking the herd shifted supply left, AND screwworm halting Mexican cattle imports shifted supply left again", "Three — drought, screwworm, and increased demand all shifted supply left", "None — prices rose because the demand curve shifted right"], c: 1 },
+      { q: "What is the government trying to do by removing trade barriers on beef?", o: ["Shift the demand curve left to reduce consumption", "Shift the supply curve right by allowing more imported beef into the U.S. market", "Create a price ceiling on beef", "Increase government revenue"], c: 1 },
+      { q: "If the policy successfully increases beef imports, shifting the supply curve right, what happens to equilibrium price and quantity?", o: ["Price falls, quantity increases", "Price falls, quantity decreases", "Price rises, quantity increases", "No change"], c: 0 },
+      { q: "Who is likely to OPPOSE this policy?", o: ["Consumers who buy beef at grocery stores", "Domestic cattle ranchers who now face more competition from imports", "Restaurant owners struggling with high beef costs", "All of the above"], c: 1 },
+    ]
+  },
+  {
+    hl: "Restaurant Prices Could Go Even Higher",
+    src: "Cincinnati Enquirer, May 2026",
+    ctx: "Tomatoes +22% YOY. Three factors: trade restrictions on Mexican tomatoes, a Florida freeze destroying crops, and high diesel fuel costs from the Iran war. Restaurants removing tomatoes. Beef CPI +14.5%.",
+    qs: [
+      { q: "How many separate events shifted the supply curve left, driving the tomato price spike?", o: ["One", "Two", "Three — trade restrictions reduced imports, the freeze destroyed crops, and high fuel raised shipping costs", "Four"], c: 2 },
+      { q: "Removing tomatoes rather than raising prices is:", o: ["Decrease in quantity demanded at higher price", "Decrease in demand", "A price ceiling", "A supply shift"], c: 0 },
+      { q: "'I fear we might lose customers' suggests demand is:", o: ["Perfectly inelastic", "Relatively elastic", "Unit elastic", "Perfectly elastic"], c: 1 },
+      { q: "Beef +14.5% but stays on menus while tomatoes are cut. This suggests:", o: ["Beef supply is more elastic", "Beef demand is more inelastic — core item", "Beef prices will fall", "No profit on beef"], c: 1 },
+    ]
+  },
+  {
+    hl: "Meatpackers Losing Money on Scarce Cattle",
+    src: "Bloomberg, April 2026",
+    ctx: "Cow-calf ranch: +$970. Feedyard: -$45. Meatpacker: -$240 ($3,680 + $385, receives $3,825). Four firms = 85% of purchases.",
+    qs: [
+      { q: "Rancher's $970 profit in a competitive market would eventually:", o: ["Stay forever", "Increase", "Be driven to zero by entry", "Be regulated away"], c: 2 },
+      { q: "Meatpacker losing $240/animal is:", o: ["Earning profit", "Operating at loss but may continue if covering some fixed costs", "At shutdown", "Breaking even"], c: 1 },
+      { q: "18-month production cycle means:", o: ["Demand is inelastic", "Short-run supply is very inelastic", "Beef is inferior", "Equilibrium reached quickly"], c: 1 },
+      { q: "Four firms controlling 85% is:", o: ["Perfect competition", "Monopoly", "Oligopoly with high concentration", "Monopolistic competition"], c: 2 },
+    ]
+  },
+];
+
+const LEVELS = [
+  { l: "Level 1: Which Curve?", d: "Classify supply vs demand" },
+  { l: "Level 2: Shift the Curve", d: "Drag the correct curve on the graph" },
+  { l: "Level 3: Find Equilibrium", d: "Shift + predict P & Q changes" },
+  { l: "Level 4: Double Shifts", d: "Both curves — what's ambiguous?" },
+  { l: "Level 5: Real World", d: "Analyze current news articles" },
+];
+
+/* ═══ LEVEL 1 ═══ */
+function Level1({ onDone }) {
+  const [idx, setIdx] = useState(0);
+  const [sel, setSel] = useState(null);
+  const [sub, setSub] = useState(false);
+  const [sc, setSc] = useState(0);
+  const [qs] = useState(() => [...Q1].sort(() => Math.random() - 0.5).slice(0, 8));
+
+  const q = qs[idx];
+  if (!q) return <LevelDone emoji="🎯" label="Level 1 Complete" score={sc} total={qs.length} onClick={() => onDone(sc, qs.length)} />;
+
+  return (
+    <div>
+      <Prog c={idx + 1} t={qs.length} label="Level 1: Which Curve?" />
+      <div style={{ padding: "18px 22px", background: C.highlight, borderRadius: 10, marginBottom: 14, border: "1px solid #e8deb5", fontFamily: F, fontSize: 15, lineHeight: 1.7 }}>{q.t}</div>
+      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, color: C.primary, fontFamily: F }}>Supply or demand shifter?</div>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {["supply", "demand"].map(v => (
+          <button key={v} onClick={() => !sub && setSel(v)} style={{
+            padding: "12px 24px", fontSize: 14, fontWeight: sel === v ? 700 : 500,
+            border: `2px solid ${sel === v ? C.primary : C.border}`, borderRadius: 8,
+            background: sel === v ? "#e0e7ff" : "#fff", color: C.text,
+            cursor: sub ? "default" : "pointer", fontFamily: F,
+          }}>
+            {v === "supply" ? "📦 Supply" : "🛒 Demand"}
+          </button>
+        ))}
+      </div>
+      {sel && !sub && (
+        <button onClick={() => { if (sel === q.a) setSc(s => s + 1); setSub(true); }} style={btnStyle(C.accent)}>Check</button>
+      )}
+      {sub && <Fb ok={sel === q.a} text={q.e} onNext={() => { setIdx(i => i + 1); setSel(null); setSub(false); }} />}
+    </div>
+  );
+}
+
+/* ═══ LEVEL 2 ═══ */
+function Level2({ onDone }) {
+  const [idx, setIdx] = useState(0);
+  const [picked, setPicked] = useState(null); // which curve student chose
+  const [dS, setDS] = useState(0);
+  const [sS, setSS] = useState(0);
+  const [sub, setSub] = useState(false);
+  const [sc, setSc] = useState(0);
+  const [qs] = useState(() => [...Q2].sort(() => Math.random() - 0.5).slice(0, 6));
+
+  const q = qs[idx];
+  if (!q) return <LevelDone emoji="📈" label="Level 2 Complete" score={sc} total={qs.length} onClick={() => onDone(sc, qs.length)} />;
+
+  const shift = picked === "demand" ? dS : sS;
+  const dir = shift > 0 ? "right" : shift < 0 ? "left" : null;
+  const moved = Math.abs(shift) > 5;
+  const ok = picked === q.c && dir === q.d;
+
+  const reset = () => { setIdx(i => i + 1); setPicked(null); setDS(0); setSS(0); setSub(false); };
+
+  return (
+    <div>
+      <Prog c={idx + 1} t={qs.length} label="Level 2: Shift the Curve" />
+      <div style={{ padding: "18px 22px", background: C.highlight, borderRadius: 10, marginBottom: 14, border: "1px solid #e8deb5", fontFamily: F }}>
+        <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+          {!picked ? "Step 1: Which curve shifts?" : "Step 2: Drag it left or right"}
+        </div>
+        <div style={{ fontSize: 15, lineHeight: 1.7 }}>{q.t}</div>
+      </div>
+      {!picked && (
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+          <button onClick={() => setPicked("supply")} style={optStyle(false)}>📦 Supply curve</button>
+          <button onClick={() => setPicked("demand")} style={optStyle(false)}>🛒 Demand curve</button>
+        </div>
+      )}
+      {picked && (
+        <>
+          <SDGraph dS={dS} sS={sS}
+            onDD={!sub && picked === "demand" ? setDS : null}
+            onDS={!sub && picked === "supply" ? setSS : null}
+            frozen={sub}
+            />
+          {moved && !sub && (
+            <div style={{ textAlign: "center", marginTop: 10 }}>
+              <div style={{ fontSize: 12, color: C.textLight, fontFamily: F, marginBottom: 6 }}>
+                You shifted {picked} {dir}
+              </div>
+              <button onClick={() => { if (ok) setSc(s => s + 1); setSub(true); }} style={btnStyle(C.accent)}>Check</button>
+            </div>
+          )}
+          {sub && <Fb ok={ok} text={!ok && picked !== q.c ? `The correct curve was ${q.c}, not ${picked}. ${q.e}` : q.e} onNext={reset} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ═══ LEVEL 3 ═══ */
+function Level3({ onDone }) {
+  const [idx, setIdx] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [dS, setDS] = useState(0);
+  const [sS, setSS] = useState(0);
+  const [step, setStep] = useState(1); // 1=pick curve, 2=drag, 3=predict PQ
+  const [pA, setPA] = useState(null);
+  const [qA, setQA] = useState(null);
+  const [sub, setSub] = useState(false);
+  const [sc, setSc] = useState(0);
+  const [qs] = useState(() => [...Q3].sort(() => Math.random() - 0.5));
+
+  const q = qs[idx];
+  if (!q) return <LevelDone emoji="⚖️" label="Level 3 Complete" score={sc} total={qs.length} onClick={() => onDone(sc, qs.length)} />;
+
+  const shift = picked === "demand" ? dS : sS;
+  const dir = shift > 0 ? "right" : shift < 0 ? "left" : null;
+  const moved = Math.abs(shift) > 5;
+
+  // Split the Level 3 check into separate pieces so the app does not
+  // give a confusing all-or-nothing "wrong" message.
+  const curveOk = picked === q.c;
+  const dirOk = dir === q.d;
+  const pqOk = pA === q.eP && qA === q.eQ;
+  const allOk = curveOk && dirOk && pqOk;
+
+  const feedbackText = allOk
+    ? q.e
+    : [
+        !curveOk ? `Curve: you picked ${picked}, but the correct curve was ${q.c}.` : null,
+        curveOk && !dirOk ? `Direction: you shifted ${picked} ${dir}, but it should shift ${q.d}.` : null,
+        !pqOk ? `Equilibrium: you chose P ${pA} and Q ${qA}, but the correct result is P ${q.eP} and Q ${q.eQ}.` : null,
+        q.e,
+      ].filter(Boolean).join(" ");
+
+  const reset = () => { setIdx(i => i + 1); setPicked(null); setDS(0); setSS(0); setStep(1); setPA(null); setQA(null); setSub(false); };
+
+  return (
+    <div>
+      <Prog c={idx + 1} t={qs.length} label="Level 3: Find Equilibrium" />
+      <div style={{ padding: "18px 22px", background: C.highlight, borderRadius: 10, marginBottom: 14, border: "1px solid #e8deb5", fontFamily: F }}>
+        <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>
+          {step === 1 ? "Step 1: Which curve shifts?" : step === 2 ? "Step 2: Drag it in the right direction" : "Step 3: What happens to P and Q?"}
+        </div>
+        <div style={{ fontSize: 15, lineHeight: 1.7 }}>{q.t}</div>
+      </div>
+      {step === 1 && (
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+          <button onClick={() => { setPicked("supply"); setStep(2); }} style={optStyle(false)}>📦 Supply curve</button>
+          <button onClick={() => { setPicked("demand"); setStep(2); }} style={optStyle(false)}>🛒 Demand curve</button>
+        </div>
+      )}
+      {step >= 2 && (
+        <>
+          <SDGraph dS={dS} sS={sS}
+            onDD={step === 2 && !sub && picked === "demand" ? setDS : null}
+            onDS={step === 2 && !sub && picked === "supply" ? setSS : null}
+            frozen={step === 3 || sub}
+            />
+          {step === 2 && moved && (
+            <div style={{ textAlign: "center", marginTop: 10 }}>
+              <div style={{ fontSize: 12, color: C.textLight, fontFamily: F, marginBottom: 6 }}>
+                You shifted {picked} {dir}
+              </div>
+              <button onClick={() => setStep(3)} style={btnStyle(C.accent)}>Confirm → Predict P & Q</button>
+            </div>
+          )}
+        </>
+      )}
+      {step === 3 && !sub && (
+        <div style={{ marginTop: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: C.primary, fontFamily: F }}>Price will...</div>
+              {["increase", "decrease"].map(o => (
+                <button key={o} onClick={() => setPA(o)} style={optStyle(pA === o)}>
+                  {o === "increase" ? "↑ Increase" : "↓ Decrease"}
+                </button>
+              ))}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: C.primary, fontFamily: F }}>Quantity will...</div>
+              {["increase", "decrease"].map(o => (
+                <button key={o} onClick={() => setQA(o)} style={optStyle(qA === o)}>
+                  {o === "increase" ? "↑ Increase" : "↓ Decrease"}
+                </button>
+              ))}
+            </div>
+          </div>
+          {pA && qA && (
+            <button onClick={() => { if (allOk) setSc(s => s + 1); setSub(true); }} style={{ ...btnStyle(C.accent), marginTop: 14 }}>Check</button>
+          )}
+        </div>
+      )}
+      {sub && <Fb ok={allOk} text={feedbackText} onNext={reset} />}
+    </div>
+  );
+}
+
+/* ═══ LEVEL 4 ═══ */
+function Level4({ onDone }) {
+  const [idx, setIdx] = useState(0);
+  const [dS, setDS] = useState(0);
+  const [sS, setSS] = useState(0);
+  const [sc, setSc] = useState(0);
+  const [step, setStep] = useState(1);
+  const [dDir, setDDir] = useState(null);
+  const [sDir, setSDir] = useState(null);
+  const [sub, setSub] = useState(false);
+  const [ambigAns, setAmbigAns] = useState(null);
+  const [definiteAns, setDefiniteAns] = useState(null);
+  const [challengesDone, setChallengesDone] = useState(0);
+  const [dirsSub, setDirsSub] = useState(false);
+
+  const MAX_SHIFT = 40;
+
+  const q = Q4[idx];
+  if (!q) return <LevelDone emoji="🔄" label="Level 4 Complete" score={sc} total={Q4.length} onClick={() => onDone(sc, Q4.length)} />;
+
+  const expectedDDir = q.expectedD > 0 ? "right" : q.expectedD < 0 ? "left" : "none";
+  const expectedSDir = q.expectedS > 0 ? "right" : q.expectedS < 0 ? "left" : "none";
+  const dirsOk = dDir === expectedDDir && sDir === expectedSDir;
+
+  const eqP = (120 + dS - sS) / 2;
+  const eqQ = eqP - 20 + sS;
+  const origP = 60;
+  const origQ = 40;
+
+  const ambigVar = q.ambigVar;
+  const definiteVar = q.definiteVar;
+  const definiteDir = q.definiteDir;
+
+  const challengeLabels = ambigVar === "price"
+    ? ["price INCREASES", "price DECREASES", "price STAYS THE SAME"]
+    : ["quantity INCREASES", "quantity DECREASES", "quantity STAYS THE SAME"];
+
+  // Immediate outcome feedback
+  const MOVE_EPS = 2;
+  const OUTCOME_EPS = 1;
+  const requiredCurvesMoved =
+    (expectedDDir === "none" || Math.abs(dS) > MOVE_EPS) &&
+    (expectedSDir === "none" || Math.abs(sS) > MOVE_EPS);
+  const currentVal = ambigVar === "price" ? eqP : eqQ;
+  const originalVal = ambigVar === "price" ? origP : origQ;
+  const currentOutcome = !requiredCurvesMoved
+    ? null
+    : currentVal > originalVal + OUTCOME_EPS
+      ? "increase"
+      : currentVal < originalVal - OUTCOME_EPS
+        ? "decrease"
+        : "same";
+  const targetOutcome = challengesDone === 0 ? "increase" : challengesDone === 1 ? "decrease" : "same";
+  const checkChallenge = () => currentOutcome === targetOutcome;
+
+  const reset = () => {
+    setIdx(i => i + 1); setDS(0); setSS(0); setStep(1);
+    setDDir(null); setSDir(null); setSub(false); setDirsSub(false);
+    setAmbigAns(null); setDefiniteAns(null); setChallengesDone(0);
+  };
+
+  const stepTag =
+    step === 1 ? "Step 1: Which direction does each curve shift?" :
+    step >= 2 && step <= 4 ? `Challenge ${challengesDone + 1}/3: Adjust the curves so ${challengeLabels[challengesDone]}` :
+    step === 5 ? "You just showed three different outcomes. Now answer:" : "";
+
+  return (
+    <div>
+      <Prog c={idx + 1} t={Q4.length} label="Level 4: Simultaneous Shifts" />
+      <div style={{ padding: "18px 22px", background: C.highlight, borderRadius: 10, marginBottom: 14, border: "1px solid #e8deb5", fontFamily: F }}>
+        <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{stepTag}</div>
+        <div style={{ fontSize: 15, lineHeight: 1.7 }}>{q.t}</div>
+      </div>
+
+      {/* Step 1: Pick shift directions */}
+      {step === 1 && (
+        <div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: C.demand, fontFamily: F }}>Demand curve...</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {["left", "none", "right"].map(d => (
+                <button key={d} onClick={() => !dirsSub && setDDir(d === "none" ? "none" : d)} style={optStyle(dDir === (d === "none" ? "none" : d))}>
+                  {d === "left" ? "← Shifts left" : d === "right" ? "Shifts right →" : "Does not shift"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: C.supply, fontFamily: F }}>Supply curve...</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {["left", "none", "right"].map(d => (
+                <button key={d} onClick={() => !dirsSub && setSDir(d === "none" ? "none" : d)} style={optStyle(sDir === (d === "none" ? "none" : d))}>
+                  {d === "left" ? "← Shifts left" : d === "right" ? "Shifts right →" : "Does not shift"}
+                </button>
+              ))}
+            </div>
+          </div>
+          {dDir && sDir && !dirsSub && (
+            <button onClick={() => setDirsSub(true)} style={btnStyle(C.accent)}>Check Shifts</button>
+          )}
+          {dirsSub && (
+            <>
+              {dirsOk ? (
+                <div style={{ padding: "12px 18px", background: C.successBg, borderRadius: 8, border: `1px solid ${C.success}`, marginBottom: 10, fontFamily: F }}>
+                  <span style={{ fontWeight: 700, color: C.success }}>✓ Correct!</span>
+                  <span style={{ color: C.text, fontSize: 13 }}> Now let's explore what happens to equilibrium...</span>
+                </div>
+              ) : (
+                <div style={{ padding: "12px 18px", background: C.errorBg, borderRadius: 8, border: `1px solid ${C.error}`, marginBottom: 10, fontFamily: F }}>
+                  <span style={{ fontWeight: 700, color: C.error }}>✗ Not quite. </span>
+                  <span style={{ color: C.text, fontSize: 13 }}>
+                    {dDir !== expectedDDir && `Demand should ${expectedDDir === "none" ? "not shift" : "shift " + expectedDDir}. `}
+                    {sDir !== expectedSDir && `Supply should ${expectedSDir === "none" ? "not shift" : "shift " + expectedSDir}. `}
+                  </span>
+                </div>
+              )}
+              {dirsOk && (
+                <button onClick={() => { setDS(0); setSS(0); setStep(2); }} style={btnStyle(C.accent)}>Continue → Explore the Graph</button>
+              )}
+              {!dirsOk && (
+                <button onClick={() => { setDirsSub(false); setDDir(null); setSDir(null); }} style={btnStyle(C.primary)}>Try Again</button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Steps 2-4: Graph challenges */}
+      {step >= 2 && step <= 4 && (
+        <>
+          <SDGraph dS={dS} sS={sS}
+            onDD={expectedDDir !== "none" ? setDS : null}
+            onDS={expectedSDir !== "none" ? setSS : null}
+            dMin={expectedDDir === "right" ? 0 : expectedDDir === "left" ? -MAX_SHIFT : 0}
+            dMax={expectedDDir === "right" ? MAX_SHIFT : expectedDDir === "left" ? 0 : 0}
+            sMin={expectedSDir === "right" ? 0 : expectedSDir === "left" ? -MAX_SHIFT : 0}
+            sMax={expectedSDir === "right" ? MAX_SHIFT : expectedSDir === "left" ? 0 : 0}
+            frozen={false}
+            showOrigEq={true}
+            showOrigCurves={true}
+            showEqLabels={true}
+            />
+
+          {/* Prominent challenge goal */}
+          <div style={{ margin: "12px 0", padding: "14px 20px", borderRadius: 8, background: challengesDone === 0 ? "#dbeafe" : challengesDone === 1 ? "#fce7f3" : "#fef3c7", border: `2px solid ${challengesDone === 0 ? C.demand : challengesDone === 1 ? "#9d174d" : "#92400e"}`, fontFamily: F, textAlign: "center" }}>
+            <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, color: challengesDone === 0 ? C.demand : challengesDone === 1 ? "#9d174d" : "#92400e", marginBottom: 4 }}>
+              Challenge {challengesDone + 1} of 3
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: C.text }}>
+              Make {ambigVar} {challengesDone === 0 ? "INCREASE ↑" : challengesDone === 1 ? "DECREASE ↓" : "STAY THE SAME ↔"}
+            </div>
+            <div style={{ fontSize: 12, color: C.textLight, marginTop: 4 }}>
+              Both curves are already shifting in the correct direction. Drag to change which one shifts more.
+            </div>
+          </div>
+
+          {/* Status indicator */}
+          <div style={{ textAlign: "center", fontFamily: F }}>
+            {currentOutcome && (
+              <div style={{ fontSize: 13, color: C.primary, fontWeight: 700, marginBottom: 8 }}>
+                Current result: {ambigVar === "price" ? "Price" : "Quantity"}{" "}
+                {currentOutcome === "increase" ? "increases ↑" : currentOutcome === "decrease" ? "decreases ↓" : "stays the same ↔"}
+              </div>
+            )}
+            {checkChallenge() ? (
+              <div>
+                <div style={{ padding: "12px 18px", background: C.successBg, borderRadius: 8, border: `1px solid ${C.success}`, marginBottom: 10, fontSize: 14 }}>
+                  <span style={{ fontWeight: 700, color: C.success }}>✓ </span>
+                  {ambigVar === "price" ? "Price" : "Quantity"} {challengesDone === 0 ? "increased" : challengesDone === 1 ? "decreased" : "stayed the same"}
+                  {challengesDone < 2 && (
+                    <span style={{ color: C.text }}>
+                      {" — "}
+                      {(() => {
+                        const dBigger = Math.abs(dS) > Math.abs(sS);
+                        const equal = Math.abs(Math.abs(dS) - Math.abs(sS)) < 3;
+                        if (equal) return "the shifts were about equal in size.";
+                        return dBigger
+                          ? "because the demand shift was larger than the supply shift."
+                          : "because the supply shift was larger than the demand shift.";
+                      })()}
+                    </span>
+                  )}
+                  {challengesDone === 2 && (
+                    <span style={{ color: C.text }}> — the shifts were about equal in size, so they canceled out.</span>
+                  )}
+                </div>
+                <button onClick={() => {
+                  const next = challengesDone + 1;
+                  setChallengesDone(next);
+                  setDS(0);
+                  setSS(0);
+                  if (next >= 3) setStep(5);
+                  else setStep(step + 1);
+                }} style={btnStyle(C.accent)}>
+                  {challengesDone < 2 ? "Next Challenge →" : "Continue →"}
+                </button>
+              </div>
+            ) : (
+              !currentOutcome && (
+                <div style={{ fontSize: 13, color: C.accent, fontWeight: 600 }}>
+                  Drag the curves to shift them...
+                </div>
+              )
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Step 5: Answer ambiguity questions */}
+      {step === 5 && !sub && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ padding: "14px 18px", background: "#f0efe8", borderRadius: 8, marginBottom: 14, fontFamily: F, fontSize: 13, lineHeight: 1.6 }}>
+            You just showed that by changing the relative size of the shifts, {ambigVar} can increase, decrease, or stay the same — all from the same two shifts.
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: C.primary, fontFamily: F }}>
+              Which variable is ambiguous (could go either way)?
+            </div>
+            {["price", "quantity"].map(v => (
+              <button key={v} onClick={() => setAmbigAns(v)} style={optStyle(ambigAns === v)}>
+                {v === "price" ? "Price is ambiguous" : "Quantity is ambiguous"}
+              </button>
+            ))}
+          </div>
+          {ambigAns && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: C.primary, fontFamily: F }}>
+                What definitely happens to {definiteVar}?
+              </div>
+              {["increase", "decrease"].map(v => (
+                <button key={v} onClick={() => setDefiniteAns(v)} style={optStyle(definiteAns === v)}>
+                  {definiteVar === "price" ? "Price" : "Quantity"} definitely {v === "increase" ? "increases ↑" : "decreases ↓"}
+                </button>
+              ))}
+            </div>
+          )}
+          {ambigAns && definiteAns && (
+            <button onClick={() => {
+              if (ambigAns === ambigVar && definiteAns === definiteDir) setSc(s => s + 1);
+              setSub(true);
+            }} style={btnStyle(C.accent)}>Check</button>
+          )}
+        </div>
+      )}
+
+      {sub && (
+        <Fb
+          ok={ambigAns === ambigVar && definiteAns === definiteDir}
+          text={q.e}
+          onNext={reset}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ═══ LEVEL 5 ═══ */
+function Level5({ onDone }) {
+  const [si, setSi] = useState(0);
+  const [qi, setQi] = useState(0);
+  const [sel, setSel] = useState(null);
+  const [sub, setSub] = useState(false);
+  const [sc, setSc] = useState(0);
+  const [tot, setTot] = useState(0);
+
+  const s = Q5[si];
+  if (!s) return <LevelDone emoji="🏆" label="All Levels Complete!" score={sc} total={tot} onClick={() => onDone(sc, tot)} />;
+  const q = s.qs[qi];
+
+  return (
+    <div>
+      <Prog c={si + 1} t={Q5.length} label="Level 5: Real World" />
+      <div style={{ padding: "18px 22px", background: C.primary, borderRadius: "10px 10px 0 0", color: "#fff", fontFamily: F }}>
+        <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, opacity: 0.6, marginBottom: 4 }}>{s.src}</div>
+        <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.3 }}>{s.hl}</div>
+      </div>
+      <div style={{ padding: "14px 22px", background: "#f0efe8", borderRadius: "0 0 10px 10px", marginBottom: 16, fontSize: 13, lineHeight: 1.7, color: C.text, fontFamily: F }}>{s.ctx}</div>
+      <div style={{ fontSize: 11, color: C.accent, fontWeight: 700, marginBottom: 4, fontFamily: F }}>Question {qi + 1}/{s.qs.length}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, color: C.primary, lineHeight: 1.5, fontFamily: F }}>{q.q}</div>
+      {q.o.map((o, j) => (
+        <button key={j} onClick={() => !sub && setSel(j)} style={{
+          display: "block", width: "100%", padding: "12px 14px", marginBottom: 6,
+          fontSize: 13, fontWeight: sel === j ? 700 : 500, textAlign: "left", lineHeight: 1.5,
+          border: `2px solid ${sub ? (j === q.c ? C.success : sel === j ? C.error : C.border) : sel === j ? C.primary : C.border}`,
+          borderRadius: 8,
+          background: sub ? (j === q.c ? C.successBg : sel === j ? C.errorBg : "#fff") : sel === j ? "#e0e7ff" : "#fff",
+          color: C.text, cursor: sub ? "default" : "pointer", fontFamily: F,
+        }}>
+          <span style={{ fontWeight: 700, marginRight: 6 }}>{String.fromCharCode(65 + j)}.</span>{o}
+        </button>
+      ))}
+      {sel !== null && !sub && (
+        <button onClick={() => { if (sel === q.c) setSc(x => x + 1); setTot(x => x + 1); setSub(true); }} style={btnStyle(C.accent)}>Check</button>
+      )}
+      {sub && (
+        <div style={{ marginTop: 10, textAlign: "center" }}>
+          <button onClick={() => {
+            if (qi + 1 < s.qs.length) { setQi(x => x + 1); }
+            else { setSi(x => x + 1); setQi(0); }
+            setSel(null); setSub(false);
+          }} style={btnStyle(C.primary)}>
+            {qi + 1 < s.qs.length ? "Next Question →" : "Next Scenario →"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function Footer() {
+  return (
+    <div style={{ marginTop: 48, paddingTop: 20, textAlign: "center" }}>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 12, opacity: 0.7 }}>
+        <img src={DINO} alt="" style={{ height: 40 }} />
+        <div style={{ textAlign: "left", fontFamily: "'Georgia', serif" }}>
+          <div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#1a3c5e", letterSpacing: "-0.5px" }}>Dr.Treme</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#c4944a", letterSpacing: "-0.5px" }}>ndous</span>
+          </div>
+          <div style={{ fontSize: 9, letterSpacing: "1.5px", color: "#888", textTransform: "uppercase", marginTop: 1 }}>Solutions, Made Visible</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ MAIN APP ═══ */
+function App() {
+  const [lv, setLv] = useState(-1);
+  const [scores, setScores] = useState([]);
+
+  const done = useCallback((s, t) => {
+    setScores(prev => [...prev, { s, t }]);
+    setLv(l => l + 1);
+  }, []);
+
+  // Menu
+  if (lv === -1) {
+    return (
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px", fontFamily: F }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 2, color: C.accent, fontWeight: 700, marginBottom: 4 }}>ARE 201 · Unit 4</div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: C.primary, margin: "0 0 4px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><img src={DINO} alt="" style={{ height: 36 }} />Supply & Demand Practice</h1>
+          <p style={{ fontSize: 13, color: C.textLight, margin: 0 }}>5 levels · Interactive graphs · Real-world scenarios</p>
+        </div>
+        <div style={{ background: "#f0efe8", borderRadius: 10, padding: "14px 18px", marginBottom: 20, fontSize: 13, lineHeight: 1.7, color: C.text }}>
+          Each level builds on the last. In Levels 2–4, drag supply and demand curves on an interactive graph and watch the equilibrium move. Level 5 uses real 2026 news articles.
+        </div>
+        {LEVELS.map((level, i) => (
+          <button key={i} onClick={() => { setLv(i); setScores([]); }} style={{
+            display: "flex", alignItems: "center", width: "100%", padding: "14px 18px", marginBottom: 7,
+            background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, cursor: "pointer", textAlign: "left",
+          }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: "50%", background: C.primary, color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontWeight: 700, fontSize: 14, marginRight: 12, flexShrink: 0,
+            }}>{i + 1}</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.primary }}>{level.l}</div>
+              <div style={{ fontSize: 11, color: C.textLight }}>{level.d}</div>
+            </div>
+          </button>
+        ))}
+        <Footer />
+        </div>
+    );
+  }
+
+  // Summary
+  if (lv >= 5) {
+    const ts = scores.reduce((a, x) => a + x.s, 0);
+    const tt = scores.reduce((a, x) => a + x.t, 0);
+    return (
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px", fontFamily: F, textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
+          <img src={DINO} alt="" style={{ height: 64 }} />
+          <div style={{ fontSize: 22, fontWeight: 700, color: C.primary }}>Practice Complete!</div>
+        </div>
+        <div style={{ fontSize: 15, color: C.textLight, margin: "8px 0 24px" }}>{ts}/{tt} ({Math.round((ts / tt) * 100)}%)</div>
+        <div style={{ maxWidth: 360, margin: "0 auto", textAlign: "left" }}>
+          {scores.map((s, i) => (
+            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: `1px solid ${C.border}`, fontSize: 13 }}>
+              <span>{LEVELS[i]?.l}</span>
+              <span style={{ fontWeight: 700, color: s.s / s.t >= 0.7 ? C.success : C.error }}>{s.s}/{s.t}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => { setLv(-1); setScores([]); }} style={{ marginTop: 24, ...btnStyle(C.primary) }}>Start Over</button>
+        <Footer />
+      </div>
+    );
+  }
+
+  const Comp = [Level1, Level2, Level3, Level4, Level5][lv];
+
+  return (
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: "24px 16px", fontFamily: F }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <div>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 1.5, color: C.accent, fontWeight: 700 }}>ARE 201 · Unit 4</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: C.primary }}>{LEVELS[lv]?.l}</div>
+        </div>
+        <button onClick={() => { setLv(-1); setScores([]); }} style={{
+          padding: "5px 12px", background: "none", border: `1px solid ${C.border}`,
+          borderRadius: 6, fontSize: 11, color: C.textLight, cursor: "pointer", fontFamily: F,
+        }}>← Menu</button>
+      </div>
+      <Comp onDone={done} />
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+
+</body>
+</html>
