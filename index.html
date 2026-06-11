@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dr.Tremendous — Solutions, made visible.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f9f2e2;
+    --cream-deep: #efe4ca;
+    --cream-warm: #f3e9d2;
+    --navy: #141b34;
+    --navy-soft: #2a3354;
+    --navy-mute: #4a5274;
+    --gold: #d8a249;
+    --gold-deep: #b88532;
+    --gold-soft: #e8be7b;
+    --gray: #6b6f7a;
+    --rule: rgba(20, 27, 52, 0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream);
+    color: var(--navy);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 56px; }
+
+  nav {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .nav-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .nav-logo {
+    display: flex; align-items: baseline; gap: 0;
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    text-decoration: none !important;
+    line-height: 1;
+    border: none;
+  }
+  .nav-logo:visited, .nav-logo:hover, .nav-logo:active { text-decoration: none; }
+  .nav-logo .navy { color: var(--navy); }
+  .nav-logo .gold { color: var(--gold); }
+  .nav-links a {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600;
+    color: var(--navy-soft); text-decoration: none;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 6px 0;
+    border-bottom: 1.5px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold-deep); border-bottom-color: var(--gold); }
+
+  .hero {
+    padding: 36px 56px 40px;
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
+    background: var(--cream-deep);
+    margin: 0 -56px;
+  }
+  .hero-lockup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    margin-bottom: 16px;
+  }
+  .hero-trex {
+    width: 110px; height: auto;
+    display: block;
+  }
+  .hero-wordmark-img {
+    height: 92px; width: auto;
+    display: block;
+  }
+  .hero-wordmark {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 58px;
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  .hero-wordmark .navy { color: var(--navy); }
+  .hero-wordmark .gold { color: var(--gold); }
+  .hero-tagline {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--gold-deep);
+  }
+  .hero-intro {
+    text-align: center;
+    padding: 36px 0 8px;
+  }
+  .hero-lede {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 21px;
+    line-height: 1.4;
+    color: var(--navy);
+    max-width: 680px;
+    margin: 0 auto 28px;
+    letter-spacing: -0.005em;
+  }
+  .hero-lede .gold-word { color: var(--gold); font-style: italic; }
+  .hero-cta { display: flex; gap: 16px; align-items: center; justify-content: center; }
+  .btn-primary {
+    background: var(--navy); color: var(--cream);
+    border: none; padding: 14px 28px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    border-radius: 2px; cursor: pointer;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--gold-deep); }
+  .btn-secondary {
+    color: var(--navy-soft); text-decoration: none;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 14px 4px;
+    border-bottom: 1.5px solid var(--navy-soft);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn-secondary:hover { color: var(--gold-deep); border-color: var(--gold); }
+
+  .section-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 72px 0 40px;
+  }
+  .section-head .left { max-width: 600px; }
+  .section-head .eyebrow {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold-deep); margin-bottom: 14px;
+  }
+  .section-head h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: 44px;
+    color: var(--navy); letter-spacing: -0.015em; line-height: 1.05;
+  }
+  .section-head h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
+
+  .tools-live { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .tool {
+    background: var(--cream-warm);
+    padding: 36px 32px 30px;
+    display: flex; flex-direction: column;
+    text-decoration: none; color: inherit;
+    border: 1px solid var(--rule);
+    border-radius: 4px; position: relative;
+    min-height: 320px;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .tool:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(20, 27, 52, 0.08);
+    border-color: var(--gold);
+  }
+  .tool-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .tool-tag {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold-deep);
+    background: rgba(216, 162, 73, 0.12);
+    padding: 6px 10px; border-radius: 2px;
+  }
+  .tool-num {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 18px;
+    color: var(--navy-mute); opacity: 0.55;
+  }
+  .tool-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: 28px;
+    line-height: 1.1; color: var(--navy);
+    margin-bottom: 14px; letter-spacing: -0.015em;
+  }
+  .tool-desc {
+    font-size: 15px; line-height: 1.6;
+    color: var(--navy-mute); margin-bottom: 22px; flex: 1;
+  }
+  .tool-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 18px; border-top: 1px solid var(--rule);
+  }
+  .tool-course {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--navy-mute);
+  }
+  .tool-launch {
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--navy);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tool-launch::after { content: '→'; color: var(--gold); transition: transform 0.2s; }
+  .tool:hover .tool-launch::after { transform: translateX(5px); }
+
+  .tools-coming {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+  .tool-soon {
+    background: transparent;
+    border: 1px dashed rgba(20, 27, 52, 0.22);
+    border-radius: 4px;
+    padding: 24px 22px 20px;
+    display: flex; flex-direction: column;
+    min-height: 200px; position: relative;
+    opacity: 0.92;
+    transition: opacity 0.2s, border-color 0.2s;
+  }
+  .tool-soon:hover { opacity: 1; border-color: var(--gold); }
+  .tool-soon .tool-tag {
+    background: transparent;
+    border: 1px solid var(--gold-deep);
+    color: var(--gold-deep);
+    align-self: flex-start; margin-bottom: 16px;
+  }
+  .tool-soon .tool-title-sm {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: 20px;
+    line-height: 1.15; color: var(--navy);
+    margin-bottom: 10px; letter-spacing: -0.01em;
+  }
+  .tool-soon .tool-desc-sm {
+    font-size: 13.5px; line-height: 1.55;
+    color: var(--navy-mute); flex: 1; margin-bottom: 16px;
+  }
+  .tool-soon .tool-course-sm {
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--navy-mute);
+    padding-top: 14px; border-top: 1px solid var(--rule);
+  }
+
+  .pull-band {
+    margin: 96px -56px 0;
+    padding: 80px 56px;
+    background: var(--navy-soft);
+    text-align: center;
+  }
+  .pull-band blockquote {
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-weight: 400;
+    font-size: 32px; line-height: 1.35;
+    color: var(--cream); max-width: 780px;
+    margin: 0 auto; letter-spacing: -0.01em;
+  }
+  .pull-band blockquote::before { content: '"'; color: var(--gold); margin-right: 4px; }
+  .pull-band blockquote::after { content: '"'; color: var(--gold); margin-left: 4px; }
+  .pull-band .attr {
+    margin-top: 24px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  footer {
+    margin-top: 0; padding: 56px 0 72px;
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 48px; align-items: start;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; font-size: 22px;
+    line-height: 1; margin-bottom: 12px;
+    text-decoration: none;
+  }
+  .footer-logo .navy { color: var(--navy); }
+  .footer-logo .gold { color: var(--gold); }
+  .footer-tag {
+    font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--gray);
+  }
+  .footer-col h4 {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--navy); margin-bottom: 16px;
+  }
+  .footer-col a {
+    display: block; color: var(--navy-mute);
+    text-decoration: none; font-size: 14px;
+    margin-bottom: 8px; transition: color 0.2s;
+  }
+  .footer-col a:hover { color: var(--gold-deep); }
+  .footer-colophon {
+    grid-column: 1 / -1;
+    margin-top: 40px; padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-size: 12px; color: var(--gray);
+    font-style: italic; font-family: 'Playfair Display', serif;
+  }
+
+  @media (max-width: 900px) {
+    .wrap { padding: 0 28px; }
+    .hero { padding: 28px 28px 32px; margin: 0 -28px; }
+    .hero-lockup { flex-direction: column; gap: 12px; }
+    .hero-trex { width: 78px; }
+    .hero-wordmark-img { height: 64px; }
+    .hero-tagline { font-size: 9px; letter-spacing: 0.26em; }
+    .hero-intro { padding: 28px 0 4px; }
+    .hero-lede { font-size: 17px; }
+    .tools-live { grid-template-columns: 1fr; }
+    .tools-coming { grid-template-columns: 1fr; }
+    .section-head { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .section-head h2 { font-size: 32px; }
+    .pull-band { margin: 64px -28px 0; padding: 56px 28px; }
+    .pull-band blockquote { font-size: 22px; }
+    footer { grid-template-columns: 1fr; gap: 32px; }
+    .nav-links { max-width: 100%; padding: 0 4px; }
+    .nav-links a { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <nav>
+    <div class="nav-links">
+      <a href="#collection">The Collection</a>
+      <a href="#office">Office Hours</a>
+      <a href="#notes">Field Notes</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-lockup">
+      <img src="trex.png" alt="Dr.Tremendous T-rex mascot" class="hero-trex">
+      <img src="wordmark.webp" alt="Dr.Tremendous — Solutions, made visible." class="hero-wordmark-img">
+    </div>
+    <div class="hero-tagline">Solutions, made visible.</div>
+  </section>
+
+  <section class="hero-intro">
+    <p class="hero-lede">
+      Interactive tutors, sound toys, calculators, and simulations<br>
+      built for the way undergraduates <span class="gold-word">actually</span> learn.
+    </p>
+    <div class="hero-cta">
+      <a href="#collection" class="btn-primary">Browse the Collection</a>
+      <a href="#office" class="btn-secondary">About the Lab</a>
+    </div>
+  </section>
+
+  <section id="collection">
+    <div class="section-head">
+      <div class="left">
+        <div class="eyebrow">The Collection · Live now</div>
+        <h2>Open the <em>door</em>.</h2>
+      </div>
+    </div>
+
+    <div class="tools-live">
+      <a href="https://drtremendous-analytics-tutor.netlify.app/" target="_blank" rel="noopener" class="tool">
+        <div class="tool-top">
+          <div class="tool-tag">Tutor · Live</div>
+          <div class="tool-num">01</div>
+        </div>
+        <div class="tool-title">Dr. Tremendous<br>Analytics Tutor</div>
+        <div class="tool-desc">
+          A patient, slightly deadpan tutor that walks students through analytics one Socratic question at a time.
+        </div>
+        <div class="tool-foot">
+          <div class="tool-course">ARE Analytics</div>
+          <div class="tool-launch">Launch</div>
+        </div>
+      </a>
+
+      <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
+        <div class="tool-top">
+          <div class="tool-tag">Advising · Live</div>
+          <div class="tool-num">02</div>
+        </div>
+        <div class="tool-title">Paw Plan</div>
+        <div class="tool-desc">
+          A four-year degree planner for ARE &amp; ABM students. Drag courses across semesters, auto-check prerequisites, save your plan, and bring it to advising. Mobile-friendly.
+        </div>
+        <div class="tool-foot">
+          <div class="tool-course">ARE / ABM Advising</div>
+          <div class="tool-launch">Launch</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section id="coming">
+    <div class="section-head">
+      <div class="left">
+        <div class="eyebrow">In the works · Fall 2026</div>
+        <h2>Next out of the <em>lab</em>.</h2>
+      </div>
+    </div>
+
+    <div class="tools-coming">
+      <div class="tool-soon">
+        <div class="tool-tag">Coming Soon</div>
+        <div class="tool-title-sm">Supply &amp; Demand Practice</div>
+        <div class="tool-desc-sm">Five levels of curve-dragging, from classification up to simultaneous shifts and real news scenarios.</div>
+        <div class="tool-course-sm">ARE 201 · Unit 4</div>
+      </div>
+
+      <div class="tool-soon">
+        <div class="tool-tag">Coming Soon</div>
+        <div class="tool-title-sm">Supply &amp; Demand Sound Toy</div>
+        <div class="tool-desc-sm">Drag price above or below equilibrium and hear shortage and surplus as sound, not just lines on a graph.</div>
+        <div class="tool-course-sm">ARE 201</div>
+      </div>
+
+      <div class="tool-soon">
+        <div class="tool-tag">Coming Soon</div>
+        <div class="tool-title-sm">Aisle Economics</div>
+        <div class="tool-desc-sm">A walkable grocery store that turns prices, substitutes, and shocks into something you can see on a shelf.</div>
+        <div class="tool-course-sm">ARE 201 · Intro Micro</div>
+      </div>
+
+      <div class="tool-soon">
+        <div class="tool-tag">Coming Soon</div>
+        <div class="tool-title-sm">The Margin &amp; Bookmark</div>
+        <div class="tool-desc-sm">A bookstore simulation for opportunity cost, scarcity, and the small decisions behind every shelf.</div>
+        <div class="tool-course-sm">ARE 201</div>
+      </div>
+
+      <div class="tool-soon">
+        <div class="tool-tag">Coming Soon</div>
+        <div class="tool-title-sm">Dartboard Standard Error</div>
+        <div class="tool-desc-sm">A dartboard that throws real OLS regressions. Watch standard errors shrink with sample size, in real time.</div>
+        <div class="tool-course-sm">ARE Analytics / 455</div>
+      </div>
+
+      <div class="tool-soon">
+        <div class="tool-tag">Coming Soon</div>
+        <div class="tool-title-sm">OLS Sorting Machine</div>
+        <div class="tool-desc-sm">Multicollinearity as a sorting failure: watch two correlated variables fight for credit and lose to noise.</div>
+        <div class="tool-course-sm">ARE Analytics / 455</div>
+      </div>
+
+      <div class="tool-soon">
+        <div class="tool-tag">Coming Soon</div>
+        <div class="tool-title-sm">Market Shock Module</div>
+        <div class="tool-desc-sm">A self-contained week on the Hormuz / fertilizer shock — articles, charts, and the elasticity logic behind the price spike.</div>
+        <div class="tool-course-sm">ARE 495 · Week 1</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="pull-band">
+    <blockquote>
+      Don't give up. Don't <span style="color: var(--gold); font-style: normal; font-weight: 700;">ever</span> give up.
+    </blockquote>
+    <div class="attr">— Jimmy V</div>
+  </section>
+
+  <footer>
+    <div>
+      <div class="footer-logo">
+        <span class="navy">Dr.Treme</span><span class="gold">ndous</span>
+      </div>
+      <div class="footer-tag">Solutions, made visible.</div>
+    </div>
+    <div class="footer-col">
+      <h4>Browse</h4>
+      <a href="#collection">Live Tools</a>
+      <a href="#coming">In the Works</a>
+    </div>
+    <div class="footer-col">
+      <h4>About</h4>
+      <a href="#office">Office Hours</a>
+      <a href="#notes">Field Notes</a>
+    </div>
+    <div class="footer-colophon">
+      Built by Julianne Treme.
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
