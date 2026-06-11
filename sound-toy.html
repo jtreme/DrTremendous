@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sound of a Market — supply &amp; demand</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #07070c; color: #f0eef8;
+    font-family: -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  #glcanvas { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; display: block; }
+  #ui { position: relative; z-index: 2; height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 16px 24px 6px; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.02em; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+  .state { font-size: 18px; font-weight: 700; padding: 7px 22px; border-radius: 999px;
+    letter-spacing: 0.06em; text-transform: uppercase; text-shadow: none;
+    transition: background 0.3s, color 0.3s; box-shadow: 0 2px 12px rgba(0,0,0,0.35); }
+  .state.eq { background: #2bbf6e; color: #042c1a; }
+  .state.short { background: #bdf2ff; color: #073a47; }
+  .state.surp { background: #ffe08a; color: #4a3306; }
+  #main { flex: 1; display: flex; gap: 0; min-height: 0; }
+  #graphwrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 4px 12px 10px; min-width: 0; }
+  svg { width: 100%; height: 100%; touch-action: none; display: block; }
+  .axis { stroke: rgba(255,255,255,0.3); stroke-width: 2; }
+  .axislab { fill: #ffffff; font-size: 22px; font-weight: 700; }
+  .curve { stroke-width: 4; fill: none; }
+  .curvecase { stroke: rgba(10,10,16,0.7); stroke-width: 8; fill: none; }
+  .curvelab { font-size: 18px; font-weight: 600; }
+  .priceline { stroke: #fff; stroke-width: 3; stroke-dasharray: 8 6; cursor: ns-resize; }
+  .pricehandle { cursor: ns-resize; }
+  .gapline { stroke-width: 9; opacity: 0.6; stroke-linecap: round; }
+  .qlabel { font-size: 17px; font-weight: 600; }
+  .gapletter { font-size: 19px; font-weight: 700; text-anchor: middle; }
+  #cards { width: 250px; flex-shrink: 0; padding: 10px 16px 14px 0; overflow: hidden; display: flex; flex-direction: column; gap: 7px; }
+  .card { border-radius: 10px; padding: 10px 13px; font-size: 13px; line-height: 1.4;
+    border-left: 3px solid; animation: pop 0.35s ease;
+    background: rgba(18,16,28,0.86); box-shadow: 0 2px 10px rgba(0,0,0,0.4); }
+  @keyframes pop { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  .card.consumer { border-color: #e8884a; color: #ffd2b8; }
+  .card.producer { border-color: #5b9bdd; color: #c2dbff; }
+  .card .who { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.75; margin-bottom: 2px; }
+  footer { padding: 8px 24px 18px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .ctrl { display: flex; align-items: center; gap: 8px; }
+  .ctrl label { font-size: 11px; color: rgba(255,255,255,0.55); }
+  .readout-card {
+    background: #ffffff; border-radius: 10px; padding: 9px 16px;
+    display: flex; flex-direction: column; gap: 1px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.45); min-width: 0;
+  }
+  .ro-headline { font-size: 16px; font-weight: 700; color: #15151f; letter-spacing: 0.01em; line-height: 1.2; }
+  .ro-detail { font-size: 12px; color: #5a5868; line-height: 1.3; }
+  #start { position: fixed; inset: 0; z-index: 50; background: rgba(7,7,12,0.95);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 24px; }
+  #start h2 { font-size: 24px; font-weight: 600; color: #f4f3f8; }
+  #start p { font-size: 14px; color: #d4d2dc; max-width: 400px; line-height: 1.6; }
+  #start button { margin-top: 6px; background: #1d7a52; color: #ffffff; border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 999px; padding: 12px 32px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  #start button:hover { background: #25996a; }
+
+  @media (max-width: 760px) {
+    #main { flex-direction: column; }
+    #graphwrap { padding: 2px 6px 4px; flex: 1 1 auto; min-height: 0; }
+    #cards {
+      width: 100%; flex-shrink: 0; flex-direction: row; flex-wrap: nowrap;
+      overflow-x: auto; overflow-y: hidden; padding: 4px 10px 6px;
+      gap: 6px; max-height: 88px;
+    }
+    #cards .card {
+      flex: 0 0 auto; max-width: 200px; min-width: 150px;
+      font-size: 12px; padding: 7px 10px;
+    }
+    header { padding: 8px 14px 2px; }
+    h1 { font-size: 14px; }
+    .state { font-size: 15px; padding: 5px 16px; }
+    footer { padding: 5px 14px 10px; gap: 12px; }
+    .ro-headline { font-size: 15px; }
+    .ro-detail { font-size: 11px; }
+    /* bigger graph elements so they read on a small screen */
+    .axislab { font-size: 26px; }
+    .curvelab { font-size: 22px; }
+    .qlabel { font-size: 21px; }
+    .gapletter { font-size: 24px; }
+    .curve { stroke-width: 5; }
+    .priceline { stroke-width: 4; }
+    .gapline { stroke-width: 11; }
+  }
+</style>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+<div id="ui">
+  <header>
+    <div style="display:flex; align-items:baseline; gap:16px; flex-wrap:wrap;">
+      <a href="https://drtremendous.netlify.app/" style="font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:18px; letter-spacing:-0.01em; text-decoration:none; text-shadow:0 1px 6px rgba(0,0,0,0.6); white-space:nowrap;">
+        <span style="color:#f0eef8;">Dr.Treme</span><span style="color:#d8a249;">ndous</span>
+      </a>
+      <h1 style="opacity:0.85;">The Sound of a Market</h1>
+    </div>
+    <div class="state eq" id="stateBadge">equilibrium</div>
+  </header>
+  <div id="main">
+    <div id="graphwrap">
+      <svg id="graph" viewBox="0 0 560 460" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+    <div id="cards"></div>
+  </div>
+  <footer>
+    <div class="readout-card" id="readoutCard">
+      <span class="ro-headline" id="roHeadline">Drag the price line</span>
+      <span class="ro-detail" id="roDetail">up and down to find the equilibrium</span>
+    </div>
+    <div class="ctrl"><label>volume</label><input type="range" id="vol" min="0" max="100" value="55"></div>
+  </footer>
+</div>
+<div id="start">
+  <h2>The Sound of a Market</h2>
+  <p>Drag the white price line on the graph. Watch the space between Qs and Qd: D's show excess demand (a shortage), S's show excess supply (a surplus). You'll hear it too — shortage climbs, anxious and rising; surplus sinks, heavy and sagging. Find the equilibrium and the market resolves into a calm chord.</p>
+  <button id="startBtn">Turn on sound</button>
+  <p style="font-size:12px;opacity:0.6;">Headphones recommended.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script>
+(function () {
+  // ── Graph geometry ──
+  var VB = 560, VH = 460;
+  var X0 = 56, X1 = 540, Y0 = 410, Y1 = 24;  // plot box (Y inverted) — fills more of viewBox
+  var Pmin = 0, Pmax = 10;   // price axis
+  var Qmin = 0, Qmax = 10;   // quantity axis
+
+  // Demand: P = 10 - Q  (Qd = 10 - P)
+  // Supply: P = Q         (Qs = P)
+  // Equilibrium at P=5, Q=5
+  var EQ_P = 5;
+  function Qd(p) { return Math.max(0, 10 - p); }
+  function Qs(p) { return Math.max(0, p); }
+
+  function px(q) { return X0 + (q - Qmin) / (Qmax - Qmin) * (X1 - X0); }
+  function py(p) { return Y0 + (p - Pmin) / (Pmax - Pmin) * (Y1 - Y0); }
+  function pyToPrice(y) { return Pmin + (y - Y0) / (Y1 - Y0) * (Pmax - Pmin); }
+
+  var svg = document.getElementById("graph");
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function mk(tag, attrs) {
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+
+  // Static axes + curves
+  svg.appendChild(mk("line", { class: "axis", x1: X0, y1: Y1, x2: X0, y2: Y0 }));
+  svg.appendChild(mk("line", { class: "axis", x1: X0, y1: Y0, x2: X1, y2: Y0 }));
+  var yl = mk("text", { class: "axislab", x: 20, y: (Y0 + Y1) / 2, transform: "rotate(-90 20 " + ((Y0 + Y1) / 2) + ")", "text-anchor": "middle" });
+  yl.textContent = "Price"; svg.appendChild(yl);
+  var xl = mk("text", { class: "axislab", x: (X0 + X1) / 2, y: Y0 + 34, "text-anchor": "middle" });
+  xl.textContent = "Quantity"; svg.appendChild(xl);
+
+  // Tick labels: 0, 5, 10 on each axis
+  [0, 5, 10].forEach(function(v) {
+    var tp = mk("text", { x: X0 - 6, y: py(v) + 5, "text-anchor": "end",
+      fill: "rgba(255,255,255,0.35)", "font-size": "13", "font-weight": "500" });
+    tp.textContent = v; svg.appendChild(tp);
+    var tq = mk("text", { x: px(v), y: Y0 + 16, "text-anchor": "middle",
+      fill: "rgba(255,255,255,0.35)", "font-size": "13", "font-weight": "500" });
+    tq.textContent = v; svg.appendChild(tq);
+  });
+
+  // Demand curve (P=10-Q): from (Q=0,P=10) to (Q=10,P=0) — dark casing + bright curve
+  svg.appendChild(mk("line", { class: "curvecase", x1: px(0), y1: py(10), x2: px(10), y2: py(0) }));
+  svg.appendChild(mk("line", { class: "curve", stroke: "#ff5a2c", x1: px(0), y1: py(10), x2: px(10), y2: py(0) }));
+  var dlab = mk("text", { class: "curvelab", fill: "#ffffff", stroke: "rgba(10,10,16,0.9)", "stroke-width": "0.8", "paint-order": "stroke", x: px(9.7), y: py(3.4), "text-anchor": "end" }); dlab.textContent = "Demand"; svg.appendChild(dlab);
+  // Supply curve (P=Q): from (Q=0,P=0) to (Q=10,P=10) — dark casing + curve
+  svg.appendChild(mk("line", { class: "curvecase", x1: px(0), y1: py(0), x2: px(10), y2: py(10) }));
+  svg.appendChild(mk("line", { class: "curve", stroke: "#5b9bdd", x1: px(0), y1: py(0), x2: px(10), y2: py(10) }));
+  var slab = mk("text", { class: "curvelab", fill: "#ffffff", stroke: "rgba(10,10,16,0.9)", "stroke-width": "0.8", "paint-order": "stroke", x: px(9.7), y: py(7.2), "text-anchor": "end" }); slab.textContent = "Supply"; svg.appendChild(slab);
+
+  // Equilibrium dot
+  svg.appendChild(mk("circle", { cx: px(5), cy: py(5), r: 5, fill: "rgba(159,240,187,0.9)" }));
+
+  // Dynamic: gap line (between Qs and Qd at current price), price line, handle, q labels
+  var gapLine = mk("line", { class: "gapline", stroke: "#fff" }); svg.appendChild(gapLine);
+  var gapLetters = mk("g", {}); svg.appendChild(gapLetters);
+  var priceLine = mk("line", { class: "priceline", x1: X0, x2: X1 }); svg.appendChild(priceLine);
+  var handle = mk("circle", { class: "pricehandle", r: 12, fill: "#fff", cx: X1 }); svg.appendChild(handle);
+  var qsLabel = mk("text", { class: "qlabel", fill: "#aec4ff", "text-anchor": "middle" }); svg.appendChild(qsLabel);
+  var qdLabel = mk("text", { class: "qlabel", fill: "#ffc89a", "text-anchor": "middle" }); svg.appendChild(qdLabel);
+
+  // ── State ──
+  var price = 5;
+  var started = false;
+
+  // ── Audio ──
+  var master, reverb, padA, shortSynth, surpSynth, shortLoop, surpLoop, pulseRate = 0.5;
+  function initAudio() {
+    master = new Tone.Gain(0.55).toDestination();
+    reverb = new Tone.Reverb({ decay: 5, wet: 0.4 }).connect(master);
+    // Equilibrium pad — calm sustained chord
+    padA = new Tone.PolySynth(Tone.Synth, { oscillator: { type: "sine" },
+      envelope: { attack: 2, decay: 1, sustain: 0.8, release: 3 } }).connect(reverb);
+    padA.volume.value = -16;
+    // Shortage voice — bright, anxious, rises
+    shortSynth = new Tone.Synth({ oscillator: { type: "sawtooth" },
+      envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.2 } }).connect(reverb);
+    shortSynth.volume.value = -14;
+    // Surplus voice — low, heavy, sagging
+    surpSynth = new Tone.Synth({ oscillator: { type: "square" },
+      envelope: { attack: 0.04, decay: 0.4, sustain: 0.2, release: 0.5 } }).connect(reverb);
+    surpSynth.volume.value = -18;
+  }
+
+  function midiToFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+
+  // Equilibrium chord retrigger
+  var lastPad = 0;
+  function playPad() {
+    var now = Tone.now();
+    if (now - lastPad < 3.2) return;
+    lastPad = now;
+    // C major triad
+    try { padA.triggerAttackRelease([261.6, 329.6, 392.0], "1n"); } catch (e) {}
+  }
+
+  // Pulsing disequilibrium tones — rate + pitch scale with gap size
+  var pulseAcc = 0;
+  function audioTick(dt, regime, gap) {
+    if (!started) return;
+    var g = Math.min(1, gap / 8); // normalize gap 0..1 (max practical gap ~8)
+    if (regime === "eq") { playPad(); pulseAcc = 0; return; }
+    // pulse interval shrinks as gap grows (faster = more urgent)
+    var interval = 0.6 - g * 0.42; // 0.6s calm .. 0.18s frantic
+    pulseAcc += dt;
+    if (pulseAcc >= interval) {
+      pulseAcc = 0;
+      var now = Tone.now();
+      if (regime === "short") {
+        // shortage: pitch climbs with severity, bright
+        var m = 64 + Math.round(g * 14);  // E4 up
+        try { shortSynth.triggerAttackRelease(midiToFreq(m), "16n", now); } catch (e) {}
+      } else {
+        // surplus: pitch sinks with severity, heavy/low
+        var m2 = 48 - Math.round(g * 10);  // C3 down
+        try { surpSynth.triggerAttackRelease(midiToFreq(m2), "8n", now); } catch (e) {}
+      }
+    }
+  }
+
+  // ── Cards ──
+  var SHORT_CARDS = [
+    ["Buyer", "Sold out again? I've checked three stores."],
+    ["Buyer", "There's a waitlist now. A waitlist!"],
+    ["Buyer", "I'd pay more if I could even find one."],
+    ["Buyer", "Shelves are empty by 9am."],
+    ["Buyer", "Scalpers are reselling these at double."],
+    ["Buyer", "Why can't anyone keep these in stock?"]
+  ];
+  var SURP_CARDS = [
+    ["Seller", "Warehouse is full. Nobody's buying."],
+    ["Seller", "We're marking everything down this week."],
+    ["Seller", "Cutting production next quarter."],
+    ["Seller", "Inventory's just sitting there."],
+    ["Seller", "Had to rent a second storage unit."],
+    ["Seller", "These are about to expire unsold."]
+  ];
+  var cardsEl = document.getElementById("cards");
+  var lastCard = 0;
+  var eqSince = 0;
+  function maybeCard(regime, gap, now) {
+    if (regime === "eq") {
+      // market clears — stop adding, and clear lingering complaints after a brief grace
+      if (cardsEl.children.length > 0) {
+        if (!eqSince) eqSince = now;
+        else if (now - eqSince > 600) clearCards();
+      }
+      return;
+    }
+    eqSince = 0;
+    var g = Math.min(1, gap / 8);
+    var interval = 1600 - g * 1100; // ms; more frequent as gap grows
+    if (now - lastCard < interval) return;
+    lastCard = now;
+    var pool = regime === "short" ? SHORT_CARDS : SURP_CARDS;
+    var pick = pool[Math.floor(Math.random() * pool.length)];
+    var div = document.createElement("div");
+    div.className = "card " + (regime === "short" ? "consumer" : "producer");
+    div.innerHTML = '<div class="who">' + pick[0] + '</div>' + pick[1];
+    cardsEl.insertBefore(div, cardsEl.firstChild);
+    while (cardsEl.children.length > 6) cardsEl.removeChild(cardsEl.lastChild);
+  }
+  function clearCards() { cardsEl.innerHTML = ""; }
+
+  // ── WebGL fever shader (full background) ──
+  var gl, prog, uTime, uHeat, uMode, uRes, glOK = true;
+  function initGL() {
+    var cv = document.getElementById("glcanvas");
+    gl = cv.getContext("webgl");
+    if (!gl) { glOK = false; return; }
+    var vs = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+    var fs = [
+      "precision highp float;",
+      "uniform float uTime;uniform float uHeat;uniform float uMode;uniform vec2 uRes;",
+      // mode: 0 eq (green calm), +1 shortage (hot), -1 surplus (cold)
+      "float n(vec2 x){return fract(sin(dot(x,vec2(12.9898,78.233)))*43758.5453);}",
+      "float fbm(vec2 x){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(floor(x));x*=2.;a*=.5;}return v;}",
+      "void main(){",
+      " vec2 uv=gl_FragCoord.xy/uRes.xy;",
+      " float t=uTime*(.15+uHeat*.9);",
+      " vec2 q=uv*3.0;",
+      " float f=fbm(q+vec2(t*.5,t*.3))+0.5*fbm(q*2.+vec2(-t,t*.7));",
+      " f=mix(0.5,f,0.4+uHeat*0.6);",
+      " vec3 cold=vec3(0.05,0.10,0.28);vec3 cold2=vec3(0.10,0.30,0.55);",
+      " vec3 calm=vec3(0.04,0.10,0.09);vec3 calm2=vec3(0.10,0.34,0.22);",
+      " vec3 hot=vec3(0.35,0.06,0.02);vec3 hot2=vec3(0.95,0.45,0.10);",
+      " vec3 a,b;",
+      " if(uMode>0.5){a=calm;b=hot;a=mix(calm,hot,1.);b=mix(calm2,hot2,1.);}",
+      " else if(uMode<-0.5){a=cold;b=cold2;}",
+      " else {a=calm;b=calm2;}",
+      " float mixv=clamp(f,0.,1.);",
+      " vec3 col=mix(a,b,mixv*(0.3+uHeat*0.7));",
+      " col*= (0.6+0.4*uHeat);",
+      " gl_FragColor=vec4(col,1.);",
+      "}"
+    ].join("\n");
+    function sh(type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; }
+    prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog); gl.useProgram(prog);
+    var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+    var loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    uTime = gl.getUniformLocation(prog, "uTime");
+    uHeat = gl.getUniformLocation(prog, "uHeat");
+    uMode = gl.getUniformLocation(prog, "uMode");
+    uRes = gl.getUniformLocation(prog, "uRes");
+    resizeGL();
+  }
+  function resizeGL() {
+    if (!glOK) return;
+    var cv = document.getElementById("glcanvas");
+    cv.width = window.innerWidth; cv.height = window.innerHeight;
+    gl.viewport(0, 0, cv.width, cv.height);
+  }
+  window.addEventListener("resize", resizeGL);
+
+  // smooth heat/mode for shader
+  var heatS = 0, modeS = 0;
+
+  // ── Update visuals from price ──
+  function update() {
+    var qs = Qs(price), qd = Qd(price);
+    var gap = Math.abs(qd - qs);
+    var regime;
+    if (gap < 0.5) regime = "eq";
+    else if (qd > qs) regime = "short";   // shortage: demand exceeds supply (price low)
+    else regime = "surp";                 // surplus: supply exceeds demand (price high)
+
+    var y = py(price);
+    priceLine.setAttribute("y1", y); priceLine.setAttribute("y2", y);
+    handle.setAttribute("cy", y);
+
+    // gap line drawn at this price between Qs and Qd
+    gapLine.setAttribute("x1", px(qs)); gapLine.setAttribute("y1", y);
+    gapLine.setAttribute("x2", px(qd)); gapLine.setAttribute("y2", y);
+    gapLine.setAttribute("stroke", regime === "short" ? "#ff5a2c" : regime === "surp" ? "#5b9bdd" : "#9ff0bb");
+
+    // Repeated D (excess demand) or S (excess supply) letters along the gap
+    while (gapLetters.firstChild) gapLetters.removeChild(gapLetters.firstChild);
+    var displayGap = Math.round(gap);
+    if (regime !== "eq" && displayGap > 0) {
+      var leftX = Math.min(px(qs), px(qd));
+      var rightX = Math.max(px(qs), px(qd));
+      var gapW = rightX - leftX;
+      var letterCount = displayGap;
+      var ch = regime === "short" ? "D" : "S";
+      var col = regime === "short" ? "#ffcc77" : "#7ec8ff";
+      var ly = y - 14;  // sit just above the price line
+      for (var li = 0; li < letterCount; li++) {
+        // even spacing, inset from the endpoints so letters don't collide with Qs/Qd markers
+        var frac = letterCount === 1 ? 0.5 : (li + 0.5) / letterCount;
+        var lx = leftX + frac * gapW;
+        var tEl = mk("text", { class: "gapletter", x: lx, y: ly, fill: col,
+          stroke: "rgba(10,10,16,0.85)", "stroke-width": "0.6", "paint-order": "stroke" });
+        tEl.textContent = ch;
+        gapLetters.appendChild(tEl);
+      }
+    }
+
+    var below = (y + 30 <= Y0 - 6);
+    var qLabelY = below ? y + 30 : y - 20;
+    // Qs hugs the supply curve (open side is below-right of its point)
+    var qsX = Math.min(px(qs) + 8, X1 - 4);
+    qsLabel.setAttribute("x", qsX);
+    qsLabel.setAttribute("y", qLabelY);
+    qsLabel.setAttribute("text-anchor", "start");
+    qsLabel.textContent = "Qs " + Math.round(qs);
+    // Qd hugs the demand curve (open side is below-left of its point)
+    var qdX = Math.max(px(qd) - 8, X0 + 4);
+    qdLabel.setAttribute("x", qdX);
+    qdLabel.setAttribute("y", qLabelY);
+    qdLabel.setAttribute("text-anchor", "end");
+    qdLabel.textContent = "Qd " + Math.round(qd);
+
+    var fmtP = function (v) { return (Math.round(v * 2) / 2).toString(); };
+    var badge = document.getElementById("stateBadge");
+    var roH = document.getElementById("roHeadline");
+    var roD = document.getElementById("roDetail");
+    if (regime === "eq") {
+      badge.className = "state eq"; badge.textContent = "equilibrium";
+      roH.textContent = "Market clears at P = " + fmtP(price);
+      roD.textContent = "Qs = Qd = " + Math.round(qs) + " units · no shortage, no surplus";
+    } else if (regime === "short") {
+      badge.className = "state short"; badge.textContent = "shortage";
+      roH.textContent = "Shortage of " + Math.round(gap) + " units";
+      roD.textContent = "at P = " + fmtP(price) + " · buyers want " + Math.round(qd) + ", sellers offer " + Math.round(qs);
+    } else {
+      badge.className = "state surp"; badge.textContent = "surplus";
+      roH.textContent = "Surplus of " + Math.round(gap) + " units";
+      roD.textContent = "at P = " + fmtP(price) + " · sellers offer " + Math.round(qs) + ", buyers want " + Math.round(qd);
+    }
+    return { regime: regime, gap: gap };
+  }
+
+  // ── Drag handling ──
+  var dragging = false;
+  function clientToPrice(clientY) {
+    var rect = svg.getBoundingClientRect();
+    var svgY = (clientY - rect.top) / rect.height * VH;
+    var p = pyToPrice(svgY);
+    p = Math.max(0, Math.min(10, p));
+    return Math.round(p * 2) / 2;
+  }
+  function startDrag(e) { dragging = true; e.preventDefault(); moveDrag(e); }
+  function moveDrag(e) {
+    if (!dragging) return;
+    var cy = (e.touches ? e.touches[0].clientY : e.clientY);
+    price = clientToPrice(cy);
+  }
+  function endDrag() { dragging = false; }
+  svg.addEventListener("pointerdown", startDrag);
+  window.addEventListener("pointermove", moveDrag);
+  window.addEventListener("pointerup", endDrag);
+
+  // ── Main loop ──
+  var lastT = performance.now();
+  function loop(now) {
+    var dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+    var r = update();
+    var g = Math.min(1, r.gap / 8);
+
+    // target shader heat/mode
+    var targetHeat = r.regime === "eq" ? 0.12 : 0.25 + g * 0.75;
+    var targetMode = r.regime === "short" ? 1 : r.regime === "surp" ? -1 : 0;
+    heatS += (targetHeat - heatS) * 0.06;
+    modeS += (targetMode - modeS) * 0.08;
+
+    if (glOK) {
+      gl.uniform1f(uTime, now / 1000);
+      gl.uniform1f(uHeat, heatS);
+      gl.uniform1f(uMode, modeS);
+      gl.uniform2f(uRes, gl.canvas.width, gl.canvas.height);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
+    if (started && master) master.gain.rampTo(parseInt(document.getElementById("vol").value) / 100, 0.1);
+    audioTick(dt, r.regime, r.gap);
+    maybeCard(r.regime, r.gap, now);
+
+    requestAnimationFrame(loop);
+  }
+
+  // ── Start ──
+  document.getElementById("startBtn").addEventListener("click", async function () {
+    await Tone.start();
+    initAudio();
+    started = true;
+    document.getElementById("start").style.display = "none";
+  });
+
+  // init
+  initGL();
+  price = 5;
+  update();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
