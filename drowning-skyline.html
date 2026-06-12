@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Drowning Skyline — Firm Selection & Productivity</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #141b34;
+    --gold: #d8a249;
+    --cream: #f7f3ea;
+    --cream-dark: #ede8dc;
+    --navy-light: #1f2a4a;
+    --gold-light: #e8b96a;
+    --text: #2a2010;
+    --text-muted: #6b5f48;
+  }
+
+  body {
+    background: var(--navy);
+    font-family: system-ui, -apple-system, sans-serif;
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  #fallback {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--navy);
+    color: var(--cream);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  /* ── HUD card ── */
+  #hud {
+    position: fixed;
+    top: 1.2rem;
+    left: 1.2rem;
+    width: 280px;
+    background: rgba(247,243,234,0.82);
+    border: 1px solid var(--cream-dark);
+    border-radius: 6px;
+    padding: 0.9rem 1rem 0.8rem;
+    box-shadow: 0 4px 24px rgba(20,27,52,0.45);
+    backdrop-filter: blur(6px);
+  }
+
+  #hud-headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--navy);
+    margin-bottom: 0.65rem;
+    min-height: 2.2em;
+  }
+
+  .hud-stats {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--cream-dark);
+    padding-top: 0.55rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .hud-stat {
+    flex: 1;
+    text-align: center;
+  }
+
+  .hud-stat + .hud-stat {
+    border-left: 1px solid var(--cream-dark);
+  }
+
+  .hud-stat-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1;
+    display: block;
+  }
+
+  .hud-stat-val.gold { color: #9a6e1a; }
+
+  .hud-stat-label {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 0.18rem;
+    line-height: 1.2;
+  }
+
+  /* histogram */
+  #histogram-wrap {
+    margin-top: 0.4rem;
+    position: relative;
+  }
+
+  #histogram-svg {
+    display: block;
+    width: 100%;
+    height: 44px;
+    overflow: visible;
+  }
+
+  #hist-caption {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 0.25rem;
+    line-height: 1.3;
+  }
+
+  /* ── Controls panel ── */
+  #controls {
+    position: fixed;
+    bottom: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(247,243,234,0.72);
+    border: 1px solid var(--cream-dark);
+    border-radius: 8px;
+    padding: 1rem 1.4rem 0.9rem;
+    box-shadow: 0 4px 24px rgba(20,27,52,0.45);
+    backdrop-filter: blur(6px);
+    display: flex;
+    gap: 1.6rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: calc(100vw - 2.4rem);
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 140px;
+  }
+
+  .ctrl-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--navy);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .ctrl-val {
+    font-family: system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    color: #9a6e1a;
+  }
+
+  .ctrl-tooltip {
+    font-size: 0.58rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: -0.1rem;
+    line-height: 1.25;
+    max-width: 160px;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 5px;
+    border-radius: 3px;
+    /* --fill is set per-slider in JS; gold up to the thumb, dark navy after */
+    background: linear-gradient(to right,
+      var(--gold) 0%,
+      var(--gold) var(--fill, 30%),
+      rgba(20,27,52,0.35) var(--fill, 30%),
+      rgba(20,27,52,0.35) 100%);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--navy);
+    border: 2px solid var(--gold);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(20,27,52,0.5);
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--navy);
+    border: 2px solid var(--gold);
+    cursor: pointer;
+  }
+
+  input[type=range]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(216,162,73,0.35);
+  }
+
+  .btn-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    flex-direction: column;
+  }
+
+  button {
+    font-family: system-ui, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.38rem 0.85rem;
+    border-radius: 4px;
+    border: 1.5px solid var(--navy);
+    background: var(--navy);
+    color: var(--cream);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+
+  button:hover {
+    background: var(--navy-light);
+  }
+
+  button.secondary {
+    background: transparent;
+    color: var(--navy);
+  }
+
+  button.secondary:hover {
+    background: var(--cream-dark);
+  }
+
+  .quality-row {
+    display: flex;
+    gap: 0.35rem;
+    align-items: center;
+  }
+
+  .quality-label {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .q-btn {
+    font-size: 0.62rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    border: 1.5px solid var(--cream-dark);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .q-btn.active {
+    background: var(--navy);
+    color: var(--cream);
+    border-color: var(--navy);
+  }
+
+  .econ-row { display: flex; gap: 1.4rem; align-items: flex-end; }
+  .ctrl-sub { font-size: 0.57rem; color: var(--text-muted); line-height: 1.3; margin-top: 0.05rem; }
+  #controls { padding: 0.7rem 1.1rem 0.65rem; }
+  /* round Reset button docked at the end of the card */
+  #btn-reset {
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    font-size: 1.1rem; line-height: 1;
+    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 0.1rem;
+  }
+  /* gear storm row + redraw button */
+  .gear-storm { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .gear-storm-name { font-size: 0.64rem; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .gear-storm input[type=range] { width: 90px; }
+  .gear-btn {
+    display: block; width: 100%;
+    font-size: 0.66rem; font-weight: 600;
+    padding: 0.4rem 0.6rem; border-radius: 4px;
+    border: 1.5px solid var(--navy); background: var(--navy); color: var(--cream);
+    cursor: pointer;
+  }
+  .gear-btn:hover { background: var(--navy-light); }
+
+  /* ── Settings gear (quality) ── */
+  #gear-toggle {
+    position: fixed;
+    bottom: 1.2rem;
+    left: 1.2rem;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(216,162,73,0.35);
+    background: rgba(20,27,52,0.5);
+    color: rgba(216,162,73,0.75);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 12px rgba(20,27,52,0.4);
+    transition: background 0.18s, color 0.18s, transform 0.4s;
+    z-index: 10;
+  }
+  #gear-toggle:hover {
+    background: rgba(20,27,52,0.8);
+    color: var(--gold);
+    transform: rotate(45deg);
+  }
+
+  /* ── Dr. Tremendous wordmark link (bottom-right, ghost, matches gear) ── */
+  #home-link {
+    position: fixed;
+    bottom: 1.2rem;
+    right: 1.2rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: rgba(216,162,73,0.6);
+    text-decoration: none;
+    padding: 0.35rem 0.7rem;
+    border-radius: 5px;
+    border: 1px solid rgba(216,162,73,0.25);
+    background: rgba(20,27,52,0.4);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 10px rgba(20,27,52,0.35);
+    transition: color 0.18s, background 0.18s, border-color 0.18s;
+    z-index: 10;
+  }
+  #home-link:hover {
+    color: var(--gold);
+    background: rgba(20,27,52,0.7);
+    border-color: rgba(216,162,73,0.5);
+  }
+  #home-link span { font-weight: 700; }
+  #gear-panel {
+    display: none;
+    position: fixed;
+    bottom: 3.4rem;
+    left: 1.2rem;
+    width: 210px;
+    background: rgba(247,243,234,0.97);
+    border: 1px solid var(--cream-dark);
+    border-radius: 6px;
+    padding: 0.75rem 0.85rem;
+    box-shadow: 0 4px 20px rgba(20,27,52,0.45);
+    backdrop-filter: blur(6px);
+    z-index: 11;
+  }
+  #gear-panel.open { display: block; }
+  .gear-label {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 0.64rem; font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+  }
+  .gear-hint {
+    display: block;
+    font-size: 0.58rem; color: var(--text-muted);
+    font-style: italic; margin-top: 0.4rem; max-width: 130px; line-height: 1.3;
+  }
+
+  /* ── Immersive toggle ── */
+  /* ── Top-right button cluster ── */
+  #button-stack {
+    position: fixed;
+    top: 1.2rem;
+    right: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    align-items: stretch;
+    z-index: 12;
+  }
+  #button-stack button {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.46rem 0.9rem;
+    border-radius: 5px;
+    border: 1px solid rgba(216,162,73,0.5);
+    background: rgba(20,27,52,0.55);
+    color: var(--gold-light);
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 2px 14px rgba(20,27,52,0.4);
+    transition: background 0.18s, border-color 0.18s, opacity 0.25s;
+    text-align: center;
+    white-space: nowrap;
+  }
+  #button-stack button:hover {
+    background: rgba(20,27,52,0.82);
+    border-color: var(--gold);
+  }
+  /* the "what am I looking at" toggle holds an arrow on the right */
+  #ped-toggle {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  #ped-arrow { transition: transform 0.2s; font-style: normal; font-size: 0.7em; }
+  #ped-arrow.open { transform: rotate(180deg); }
+
+  /* when immersed, fade panels + the other two buttons, but KEEP the
+     immersive toggle visible so the user can always get back out */
+  body.immersed #hud,
+  body.immersed #lesson,
+  body.immersed #lesson-launch,
+  body.immersed #ped-toggle,
+  body.immersed #pedagogy,
+  body.immersed #gear-toggle,
+  body.immersed #gear-panel,
+  body.immersed #home-link {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s;
+  }
+  /* collapse the hidden stack buttons so the toggle doesn't hover over empty space */
+  body.immersed #lesson-launch,
+  body.immersed #ped-toggle {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-width: 0;
+    margin: 0;
+    overflow: hidden;
+  }
+  #lesson-launch, #ped-toggle { max-height: 3rem; transition: opacity 0.35s, max-height 0.3s, padding 0.3s; }
+  body.immersed #button-stack {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  body.immersed #immersive-toggle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  #hud, #lesson, #lesson-launch, #ped-toggle, #pedagogy, #home-link { transition: opacity 0.35s; }
+
+  #lesson-close {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.55rem;
+    width: 20px; height: 20px;
+    line-height: 1;
+    font-size: 1.1rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+  }
+  #lesson-close:hover { color: var(--navy); }
+
+  /* ── Guided lesson card: opens below the stack ── */
+  #lesson {
+    position: fixed;
+    top: 8.2rem;          /* below the 3-button stack */
+    right: 1.2rem;
+    width: 268px;
+    background: rgba(247,243,234,0.96);
+    border: 1px solid var(--cream-dark);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px;
+    padding: 0.8rem 0.95rem;
+    box-shadow: 0 4px 24px rgba(20,27,52,0.45);
+    backdrop-filter: blur(6px);
+    z-index: 11;
+  }
+  #lesson h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.7rem; font-weight: 700; color: #9a6e1a;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
+  }
+  #lesson p { font-size: 0.68rem; line-height: 1.5; color: var(--text); margin-bottom: 0.55rem; }
+  .lesson-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .lesson-btn {
+    font-size: 0.64rem; padding: 0.3rem 0.65rem;
+    border: 1.5px solid var(--navy); border-radius: 4px;
+    background: transparent; color: var(--navy); cursor: pointer;
+    font-weight: 600;
+  }
+  .lesson-btn:hover { background: var(--navy); color: var(--cream); }
+  .lesson-note { font-size: 0.62rem; color: var(--text-muted); font-style: italic; }
+
+  /* ── Pedagogy body: opens below the stack (button is in the stack) ── */
+  #pedagogy {
+    position: fixed;
+    top: 8.2rem;
+    right: 1.2rem;
+    width: 268px;
+    background: #f7f3ea;
+    border: 1px solid var(--cream-dark);
+    border-radius: 6px;
+    box-shadow: 0 4px 24px rgba(20,27,52,0.45);
+    overflow: hidden;
+    z-index: 11;
+    display: none;        /* shown only when expanded */
+  }
+  #pedagogy.open { display: block; }
+
+  #ped-body {
+    padding: 0.8rem 0.9rem;
+    font-size: 0.65rem;
+    line-height: 1.55;
+    color: var(--text);
+  }
+  #ped-body p + p { margin-top: 0.5rem; }
+  #ped-body em { color: #9a6e1a; font-style: normal; font-weight: 600; }
+
+  /* ── Mobile: keep the bottom card short & wide ── */
+  @media (max-width: 600px) {
+    #controls {
+      left: 0.6rem; right: 0.6rem;
+      transform: none;
+      width: auto; max-width: none;
+      padding: 0.6rem 0.8rem;
+    }
+    .econ-row { gap: 0.9rem; align-items: flex-end; }
+    .ctrl-group { min-width: 0; }
+    .ctrl-sub { display: none; }            /* captions live in lesson + gear on phones */
+    .ctrl-label { font-size: 0.68rem; }
+    /* HUD only shows when not immersed; keep it narrow at the top-left */
+    #hud { width: auto; max-width: 62vw; left: 0.6rem; right: auto; top: 0.6rem; }
+    /* button stack stays top-right, slightly tighter */
+    #button-stack { top: 0.6rem; right: 0.6rem; gap: 0.35rem; }
+    #button-stack button { font-size: 0.62rem; padding: 0.38rem 0.7rem; }
+    /* expanded cards drop below the stack and span the width */
+    #lesson, #pedagogy { width: auto; left: 0.6rem; right: 0.6rem; top: 9.6rem; }
+    #gear-toggle { bottom: 0.7rem; left: 0.7rem; }
+    #gear-panel { left: 0.7rem; right: 0.7rem; width: auto; bottom: 3.0rem; }
+    #home-link { bottom: 0.7rem; right: 0.7rem; font-size: 0.56rem; padding: 0.3rem 0.55rem; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div id="fallback">
+  <div style="font-size:2rem;">🏛️</div>
+  <div>WebGL2 is not available in this browser.</div>
+  <div style="font-size:0.9rem; color: #aaa; max-width: 400px;">
+    Try Chrome or Firefox. Some Safari versions require enabling WebGL in Develop settings.
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div style="font-family:'Playfair Display',serif;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#9a6e1a;margin-bottom:0.4rem;">Readout</div>
+  <div id="hud-headline">Adjust "Cost of survival" to see selection at work.</div>
+  <div class="hud-stats">
+    <div class="hud-stat">
+      <span class="hud-stat-val" id="stat-exited">0%</span>
+      <span class="hud-stat-label">firms<br>exited</span>
+    </div>
+    <div class="hud-stat">
+      <span class="hud-stat-val gold" id="stat-surv-mean">—</span>
+      <span class="hud-stat-label">mean φ<br>survivors</span>
+    </div>
+    <div class="hud-stat">
+      <span class="hud-stat-val" id="stat-all-mean">—</span>
+      <span class="hud-stat-label">mean φ<br>all firms</span>
+    </div>
+  </div>
+  <div style="font-size:0.6rem;color:var(--text-muted);margin-bottom:0.3rem;">φ = firm productivity (tower height). Heights never change.</div>
+  <div id="histogram-wrap">
+    <svg id="histogram-svg" viewBox="0 0 258 44" preserveAspectRatio="none"></svg>
+    <div id="hist-caption">Survivors were always the tall towers &mdash; raising the water hid the short ones, it didn&rsquo;t improve anyone.</div>
+  </div>
+</div>
+
+<!-- Controls: just the two economic sliders + Reset -->
+<div id="controls">
+  <div class="econ-row">
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        Cost of survival
+        <span class="ctrl-val" id="val-water">30%</span>
+      </div>
+      <input type="range" id="sl-water" min="0" max="100" value="30" step="1">
+      <div class="ctrl-sub">The survival cutoff: firms below the waterline exit.</div>
+    </div>
+
+    <div class="ctrl-group">
+      <div class="ctrl-label">
+        Firm heterogeneity (σ)
+        <span class="ctrl-val" id="val-sigma">0.60</span>
+      </div>
+      <input type="range" id="sl-sigma" min="1" max="20" value="6" step="1">
+      <div class="ctrl-sub">How unequal firms are: low = everyone similar, high = a few giants among many small firms.</div>
+    </div>
+
+    <button class="secondary" id="btn-reset" title="Reset all controls">&#8635;</button>
+  </div>
+</div>
+
+<!-- Settings gear: storm, redraw, and quality live here -->
+<button id="gear-toggle" title="Settings" aria-label="Settings">&#9881;</button>
+<!-- Dr. Tremendous wordmark — links back to the portfolio site -->
+<a id="home-link" href="https://drtremendous.netlify.app/">Dr.Treme<span>ndous</span></a>
+<div id="gear-panel">
+  <span class="gear-label">Atmosphere</span>
+  <div class="gear-storm">
+    <span class="gear-storm-name">Storm intensity</span>
+    <input type="range" id="sl-wave" min="0" max="100" value="50" step="1">
+    <span class="ctrl-val" id="val-wave">50%</span>
+  </div>
+  <span class="gear-hint" style="margin-bottom:0.7rem;">Visual only — does not change which firms survive.</span>
+
+  <span class="gear-label">Firms</span>
+  <button id="btn-redraw" class="gear-btn">Redraw firms (new sample)</button>
+
+  <span class="gear-label" style="margin-top:0.7rem;">Render quality</span>
+  <div class="quality-row">
+    <button class="q-btn" id="q-low">Low</button>
+    <button class="q-btn active" id="q-high">High</button>
+  </div>
+  <span class="gear-hint">Lower this if the scene feels slow.</span>
+</div>
+
+<!-- Top-right button cluster -->
+<div id="button-stack">
+  <button id="immersive-toggle" title="Hide panels for a clean view">&#9728; Just the view</button>
+  <button id="lesson-launch">Start guided lesson</button>
+  <button id="ped-toggle">What am I looking at? <span id="ped-arrow">&#9662;</span></button>
+</div>
+
+<!-- Guided lesson card (hidden until launched) -->
+<div id="lesson" style="display:none;">
+  <button id="lesson-close" aria-label="Close lesson">&times;</button>
+  <h3>Round 1 · Predict</h3>
+  <p id="lesson-q">If survival costs rise, what happens to <strong>average productivity among surviving firms</strong>?</p>
+  <div class="lesson-btns" id="lesson-btns">
+    <button class="lesson-btn" data-ans="rises">Rises</button>
+    <button class="lesson-btn" data-ans="falls">Falls</button>
+    <button class="lesson-btn" data-ans="same">Unchanged</button>
+  </div>
+</div>
+
+<!-- Pedagogy body (button lives in the stack above) -->
+<div id="pedagogy">
+  <div id="ped-body">
+    <p>Each <em>tower</em> is a firm. Its height represents <em>productivity (φ)</em> — drawn once from a lognormal distribution and never changed. The <em>waterline</em> is the zero-profit survival cutoff: firms whose productivity falls below it cannot cover their fixed costs and <em>exit</em>.</p>
+    <p>As "Cost of survival" rises, the cutoff rises with it and shorter towers go under. Notice that <em>no tower grows</em> — but the average height above water increases. This is <em>selection</em>, not improvement.</p>
+    <p>This survivorship effect is the engine of <em>Hopenhayn (1992)</em> and <em>Melitz (2003)</em>: tighter competition raises aggregate productivity by culling low-φ firms, even though no individual firm improves.</p>
+    <p style="color:#9a6e1a; font-style:italic;">"If you only measure the buildings above water, you'll conclude the flood made firms better. It didn't — it made the <em>sample</em> better."</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  CONSTANTS (documented)
+//  HEIGHT_SCALE: world-unit multiplier on φ. φ is lognormal with
+//  median exp(0)=1; HEIGHT_SCALE=4.2 puts median tower at 4.2u,
+//  typical range [1, 14]. Default water (slider 30%) exits ~12% of firms.
+//  WATER_MIN / WATER_MAX: slider 0→1 maps water level in world units.
+//  Cutoff φ* = (W - WATER_MIN) / HEIGHT_SCALE
+// ═══════════════════════════════════════════════════════════════
+const HEIGHT_SCALE = 4.2;
+const WATER_MIN    = -0.4;   // water fully receded (slider=0)
+const WATER_MAX    =  7.5;   // water near sky (slider=1)
+const N_FIRMS      = 400;
+const TEX_SIZE     = 32;     // 32×32 = 1024 cells; hash into N_FIRMS
+
+// ── seedable PRNG (mulberry32) ──
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// Box–Muller
+function boxMuller(rand) {
+  const u1 = rand(), u2 = rand();
+  return Math.sqrt(-2 * Math.log(u1 + 1e-12)) * Math.cos(2 * Math.PI * u2);
+}
+
+// ── State ──
+let seed   = Date.now() | 0;
+let sigma  = 0.60;
+let phiArr = new Float32Array(N_FIRMS);   // productivity draws
+let texData= new Float32Array(TEX_SIZE * TEX_SIZE); // shader texture (heights in world units)
+
+// Water tween
+let waterTarget = 0.30;   // slider fraction [0,1]
+let waterCurrent= 0.30;
+let isDraggingWater = false;
+
+// Wave & quality
+let waveAmp  = 0.50;
+let quality  = 1;         // 0=low,1=high
+
+// Animation
+let startTime = null;
+
+// ── Generate firm array & texture ──
+function generateFirms() {
+  const rand = mulberry32(seed);
+  for (let i = 0; i < N_FIRMS; i++) {
+    const z = boxMuller(rand);
+    phiArr[i] = Math.exp(sigma * z);   // lognormal, μ=0
+  }
+  // Fill texture: cell (cx,cz) → hash to firm index
+  for (let row = 0; row < TEX_SIZE; row++) {
+    for (let col = 0; col < TEX_SIZE; col++) {
+      // simple hash
+      let h = (row * 73856093) ^ (col * 19349663);
+      h = ((h >>> 0) * 2654435761) >>> 0;
+      const idx = h % N_FIRMS;
+      texData[row * TEX_SIZE + col] = phiArr[idx] * HEIGHT_SCALE;
+    }
+  }
+  uploadTexture();
+  updateHUD();
+  drawHistogram();
+}
+
+// ── Compute HUD stats ──
+function computeStats(waterFrac) {
+  const wLevel = WATER_MIN + waterFrac * (WATER_MAX - WATER_MIN);
+  let nSurv = 0, sumSurv = 0, sumAll = 0;
+  for (let i = 0; i < N_FIRMS; i++) {
+    const h = phiArr[i] * HEIGHT_SCALE;
+    sumAll += phiArr[i];
+    if (h > wLevel) { nSurv++; sumSurv += phiArr[i]; }
+  }
+  const meanAll  = sumAll  / N_FIRMS;
+  const meanSurv = nSurv > 0 ? sumSurv / nSurv : 0;
+  const pctExit  = ((N_FIRMS - nSurv) / N_FIRMS) * 100;
+  return { pctExit, meanSurv, meanAll, wLevel, nSurv };
+}
+
+let allMeanBaseline = null;
+
+function updateHUD() {
+  const s = computeStats(waterCurrent);
+  if (allMeanBaseline === null) allMeanBaseline = s.meanAll;
+
+  document.getElementById('stat-exited').textContent = s.pctExit.toFixed(0) + '%';
+  document.getElementById('stat-surv-mean').textContent = s.nSurv > 0 ? s.meanSurv.toFixed(2) : '—';
+  document.getElementById('stat-all-mean').textContent  = s.meanAll.toFixed(2);
+
+  // headline
+  const pctExit = s.pctExit.toFixed(0);
+  const survGain = allMeanBaseline > 0 ? ((s.meanSurv / allMeanBaseline - 1) * 100) : 0;
+  let headline;
+  if (s.pctExit < 1) {
+    headline = 'Adjust "Cost of survival" to see selection at work.';
+  } else if (s.nSurv === 0) {
+    headline = 'All firms have exited — the cutoff exceeds every firm\'s productivity.';
+  } else if (s.pctExit > 95) {
+    headline = 'Almost all firms have exited. Only the highest-productivity firms remain.';
+  } else {
+    headline = `${pctExit}% of firms exited — survivor productivity is ${survGain >= 0 ? '+' : ''}${survGain.toFixed(0)}% above the industry mean.`;
+  }
+  document.getElementById('hud-headline').textContent = headline;
+
+  drawHistogram(s.wLevel);
+}
+
+// ── Histogram (inline SVG) ──
+function drawHistogram(wLevel) {
+  const svg = document.getElementById('histogram-svg');
+  const W = 258, H = 44;
+  const N_BINS = 28;
+  const bins = new Array(N_BINS).fill(0);
+
+  // log-space bins from 0.05 to 12
+  const logMin = Math.log(0.05), logMax = Math.log(12);
+  for (let i = 0; i < N_FIRMS; i++) {
+    const lv = Math.log(phiArr[i]);
+    const b = Math.floor((lv - logMin) / (logMax - logMin) * N_BINS);
+    if (b >= 0 && b < N_BINS) bins[b]++;
+  }
+  const maxBin = Math.max(...bins, 1);
+  const bw = W / N_BINS;
+
+  // cutoff x
+  let cutoffX = null;
+  if (wLevel !== undefined) {
+    const phiCut = wLevel / HEIGHT_SCALE;
+    if (phiCut > 0) {
+      const lc = Math.log(phiCut);
+      const fx = (lc - logMin) / (logMax - logMin);
+      cutoffX = fx * W;
+    }
+  }
+
+  let svgContent = '';
+  for (let b = 0; b < N_BINS; b++) {
+    const barH = (bins[b] / maxBin) * (H - 2);
+    const x = b * bw;
+    const y = H - barH;
+    const binCenterPhi = Math.exp(logMin + (b + 0.5) / N_BINS * (logMax - logMin));
+    const underwater = cutoffX !== null && (x + bw / 2) < cutoffX;
+    const col = underwater ? '#141b34' : '#c8b99a';
+    svgContent += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 0.8).toFixed(1)}" height="${barH.toFixed(1)}" fill="${col}" rx="0.5"/>`;
+  }
+
+  // cutoff line
+  if (cutoffX !== null && cutoffX > 0 && cutoffX < W) {
+    svgContent += `<line x1="${cutoffX.toFixed(1)}" y1="0" x2="${cutoffX.toFixed(1)}" y2="${H}" stroke="#d8a249" stroke-width="1.5"/>`;
+  }
+
+  // end labels
+  svgContent += `<text x="1" y="${H-1}" font-size="7" fill="#888" font-family="system-ui">low φ</text>`;
+  svgContent += `<text x="${W-22}" y="${H-1}" font-size="7" fill="#888" font-family="system-ui">high φ</text>`;
+
+  svg.innerHTML = svgContent;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WEBGL SETUP
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('canvas');
+const gl = canvas.getContext('webgl2', { antialias: false, powerPreference: 'default' });
+
+if (!gl) {
+  document.getElementById('canvas').style.display = 'none';
+  document.getElementById('fallback').style.display = 'flex';
+}
+
+// ── Vertex shader (fullscreen quad) ──
+const vsSource = `#version 300 es
+precision highp float;
+const vec2 pos[4] = vec2[](
+  vec2(-1,-1), vec2(1,-1), vec2(-1,1), vec2(1,1)
+);
+void main() {
+  gl_Position = vec4(pos[gl_VertexID], 0, 1);
+}`;
+
+// ── Fragment shader ──
+const fsSource = `#version 300 es
+precision highp float;
+
+uniform vec2  uResolution;
+uniform float uTime;
+uniform float uWaterLevel;  // world-units
+uniform float uWaveAmp;     // 0..1
+uniform int   uQuality;     // 0=low,1=high
+uniform sampler2D uHeightTex; // 32x32, R32F, heights in world units
+
+out vec4 fragColor;
+
+// ── Constants ──
+const float CELL  = 6.0;   // world units per city block
+const float PI    = 3.14159265;
+const vec3 SKY_COL  = vec3(0.04,0.055,0.13);
+const vec3 NAVY     = vec3(0.078,0.106,0.204);
+const vec3 GOLD     = vec3(0.847,0.635,0.286);
+const vec3 CREAM    = vec3(0.969,0.953,0.918);
+const float FOG_DENSITY = 0.050;
+const int   TEX_SIZE = 32;
+
+// ── Hash & noise ──
+float hash11(float p) {
+  p = fract(p * 0.1031);
+  p *= p + 33.33;
+  p *= p + p;
+  return fract(p);
+}
+
+float hash21(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.13);
+  p3 += dot(p3, p3.yzx + 3.333);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+float vnoise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash21(i),          hash21(i+vec2(1,0)), u.x),
+             mix(hash21(i+vec2(0,1)), hash21(i+vec2(1,1)), u.x), u.y);
+}
+
+float fbm(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 4; i++) {
+    v += a * vnoise(p);
+    p *= 2.1; a *= 0.5;
+  }
+  return v;
+}
+
+// ── Lookup tower height from texture ──
+float towerHeight(ivec2 cell) {
+  // camera canal: keep the orbit ring clear of towers
+  vec2 cc = (vec2(cell) + 0.5) * 6.0;
+  float ringDist = length(cc);
+  if (ringDist > 9.5 && ringDist < 17.5) return 0.0;
+  // wrap into TEX_SIZE
+  ivec2 tc = ivec2(
+    ((cell.x % TEX_SIZE) + TEX_SIZE) % TEX_SIZE,
+    ((cell.y % TEX_SIZE) + TEX_SIZE) % TEX_SIZE
+  );
+  return texelFetch(uHeightTex, tc, 0).r;
+}
+
+// ── Tower width jitter ──
+float towerWidth(ivec2 cell) {
+  float h = hash21(vec2(cell));
+  return 0.70 + 0.20 * h; // [0.70, 0.90]
+}
+
+// ── Gothic tower SDF (local coords, centered at origin) ──
+// h = height, w = half-width, returns SDF
+float sdBox(vec3 p, vec3 b) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float sdOctahedron(vec3 p, float s) {
+  p = abs(p);
+  return (p.x + p.y + p.z - s) * 0.57735;
+}
+
+float sdSpire(vec3 p, float base, float h, float w) {
+  float yr = clamp((p.y - base) / h, 0.0, 1.0);
+  float taper = w * (1.0 - yr);
+  float dxy = max(abs(p.x), abs(p.z)) - taper;
+  float dy = max(base - p.y, p.y - (base + h));
+  return max(dxy, dy) * 0.7;  // conservative for marching
+}
+
+float sdTower(vec3 p, float height, float halfW) {
+  // gothic proportions: tall body, stepped setbacks, prominent spire
+  float d = 1e10;
+  float bh = height * 0.52;       // base block
+  float mh = height * 0.20;       // mid setback
+  float uh = height * 0.08;       // upper setback
+  float spireH = height * 0.34;   // spire overlaps upper slightly
+
+  d = min(d, sdBox(p - vec3(0, bh*0.5, 0), vec3(halfW, bh*0.5, halfW)));
+  float mw = halfW * 0.72;
+  d = min(d, sdBox(p - vec3(0, bh + mh*0.5, 0), vec3(mw, mh*0.5, mw)));
+  float uw = halfW * 0.5;
+  d = min(d, sdBox(p - vec3(0, bh + mh + uh*0.5, 0), vec3(uw, uh*0.5, uw)));
+  // main spire: tapers from upper-setback width to a point at full height
+  d = min(d, sdSpire(p, bh + mh + uh, spireH, uw * 0.9));
+  // four corner pinnacles on the base block's roof
+  float pw = halfW * 0.16;
+  float ph = mh * 0.9;
+  vec2 cp = vec2(halfW - pw * 1.4);
+  d = min(d, sdSpire(vec3(abs(p.x) - cp.x, p.y, abs(p.z) - cp.y), bh, ph, pw));
+  return d;
+}
+
+// ── City SDF: domain-repeating towers ──
+// returns (dist, towerHeight at hit, cellID)
+float sdCity(vec3 p, out float hitHeight) {
+  vec2 pc = p.xz;
+  // which cell?
+  vec2 cellF = floor(pc / CELL);
+  float minDist = 1e10;
+  hitHeight = 0.0;
+
+  // check 3x3 neighborhood for correctness
+  for (int dx = -1; dx <= 1; dx++) {
+    for (int dz = -1; dz <= 1; dz++) {
+      ivec2 cell = ivec2(cellF) + ivec2(dx, dz);
+      vec2 cellCenter = (vec2(cell) + 0.5) * CELL;
+      float h  = towerHeight(cell);
+      if (h < 0.3) continue;
+      float hw = towerWidth(cell) * CELL * 0.125; // half-width
+      vec3  lp = p - vec3(cellCenter.x, 0, cellCenter.y);
+      float d  = sdTower(lp, h, hw);
+      if (d < minDist) {
+        minDist = d;
+        hitHeight = h;
+      }
+    }
+  }
+  return minDist;
+}
+
+// ── Water surface: analytic ray-plane + noise displacement ──
+// Returns distance to water surface, or -1 if no hit
+float waterIntersect(vec3 ro, vec3 rd, float wl, out vec3 wNorm) {
+  // displaced plane: y = wl + disp
+  // approximate: solve for flat plane, then offset
+  if (abs(rd.y) < 1e-4) return -1.0;
+  // flat plane at y = wl
+  float t = (wl - ro.y) / rd.y;
+  if (t < 0.0) return -1.0;
+  vec3 hit = ro + rd * t;
+
+  float amp = uWaveAmp * 0.7 + 0.06;
+  float disp = amp * fbm(hit.xz * 0.45 + vec2(uTime * 0.35, uTime * 0.22));
+  // refine once
+  t = (wl + disp - ro.y) / rd.y;
+  if (t < 0.0) return -1.0;
+  hit = ro + rd * t;
+  disp = amp * fbm(hit.xz * 0.45 + vec2(uTime * 0.35, uTime * 0.22));
+  t = (wl + disp - ro.y) / rd.y;
+  if (t < 0.0) return -1.0;
+
+  // normal from noise gradient
+  float eps2 = 0.1;
+  float dx_ = amp * fbm((hit.xz + vec2(eps2, 0)) * 0.45 + vec2(uTime*0.35, uTime*0.22))
+             - amp * fbm((hit.xz - vec2(eps2, 0)) * 0.45 + vec2(uTime*0.35, uTime*0.22));
+  float dz_ = amp * fbm((hit.xz + vec2(0, eps2)) * 0.45 + vec2(uTime*0.35, uTime*0.22))
+             - amp * fbm((hit.xz - vec2(0, eps2)) * 0.45 + vec2(uTime*0.35, uTime*0.22));
+  wNorm = normalize(vec3(-dx_ / (2.0*eps2), 1.0, -dz_ / (2.0*eps2)));
+  return t;
+}
+
+// ── Normal from SDF (finite differences, eps scaled with dist) ──
+vec3 calcNormal(vec3 p, float eps) {
+  float h0;
+  float d0 = sdCity(p, h0);
+  float hx; float hy; float hz;
+  vec2 e = vec2(eps, 0);
+  return normalize(vec3(
+    sdCity(p + e.xyy, hx) - sdCity(p - e.xyy, hx),
+    sdCity(p + e.yxy, hy) - sdCity(p - e.yxy, hy),
+    sdCity(p + e.yyx, hz) - sdCity(p - e.yyx, hz)
+  ));
+}
+
+// forward declaration (shadeWater reflects the sky)
+vec3 skyColor(vec3 rd);
+
+// ── Lighting ──
+// small helper: cheap specular for the wet sheen
+float spec_safe(vec3 n, vec3 l, vec3 rd) {
+  vec3 h = normalize(l - rd);
+  return pow(max(dot(n, h), 0.0), 24.0);
+}
+
+vec3 shadeTower(vec3 p, vec3 n, vec3 rd, float towerH, bool underwater, float wl) {
+  vec3 lightDir = normalize(vec3(0.78, 0.16, -0.55)); // gold sun very low on horizon
+  float diff = max(dot(n, lightDir), 0.0);
+  float rim  = pow(max(1.0 - dot(-rd, n), 0.0), 2.6);
+  float skyAmb = max(n.y, 0.0) * 0.5 + 0.5;
+
+  // weathered gothic stone — slightly warm in the lit band, cool navy in shadow
+  vec3 stoneCool = vec3(0.028, 0.038, 0.082);
+  vec3 stoneWarm = vec3(0.075, 0.062, 0.060);
+  vec3 base = mix(stoneCool, stoneWarm, diff);
+  // faint vertical streaking so faces aren't flat
+  float streak = 0.85 + 0.15 * vnoise(p.xz * 8.0 + p.y * 1.5);
+  base *= streak;
+  // subtle per-tower hue shift: some lean cool, some lean warm
+  float hueR = hash21(floor(p.xz / 6.0) + 3.7);
+  base *= mix(vec3(0.94, 1.0, 1.10), vec3(1.10, 1.0, 0.90), hueR);
+
+  vec3 col = base * skyAmb;
+  col += GOLD * pow(diff, 1.5) * 0.62;                       // gold key, contrasty
+  col += vec3(1.0,0.78,0.42) * rim * (0.35 + diff * 0.65) * 1.05; // warm rim
+  col += vec3(0.06,0.09,0.18) * (1.0 - diff) * 0.45;         // navy sky fill on shadow side
+
+  // soft vertical ambient occlusion: bases sit in their own shadow
+  float ao = smoothstep(0.0, towerH * 0.45, p.y - wl);
+  col *= 0.45 + 0.55 * ao;
+
+  // spire catches the most light, with a soft halo
+  float spireGlow = smoothstep(towerH * 0.62, towerH, p.y);
+  col += GOLD * spireGlow * (0.35 + diff * 0.9) * 0.95;
+  col += vec3(1.0,0.8,0.45) * pow(spireGlow, 3.0) * 0.4;     // tip bloom
+
+  // lit windows: grid on vertical faces, hash decides which glow
+  if (abs(n.y) < 0.5 && p.y > wl + 0.15 && p.y < towerH * 0.82) {
+    vec2 fuv = (abs(n.x) > abs(n.z)) ? p.zy : p.xy;
+    vec2 grid = fuv * vec2(3.0, 1.9);
+    vec2 cellId = floor(grid);
+    vec2 gp = fract(grid);
+    float litRand = hash21(cellId + 7.31);
+    float lit = step(0.66, litRand);
+    // flicker each lit window slightly so they feel like candlelight
+    lit *= 0.8 + 0.2 * sin(uTime * 2.0 + litRand * 30.0);
+    // pointed-arch gothic window: narrows toward the top
+    float wHalf = 0.19 * mix(0.30, 1.0, smoothstep(0.78, 0.42, gp.y));
+    float win = smoothstep(wHalf + 0.045, wHalf, abs(gp.x - 0.52))
+              * smoothstep(0.16, 0.22, gp.y) * smoothstep(0.86, 0.78, gp.y);
+    col += vec3(1.0, 0.66, 0.28) * win * lit * 1.8;          // warm candlelight
+  }
+  // darken near the waterline: wet stone reflecting darker
+  float wet = smoothstep(wl + 1.4, wl, p.y);
+  col *= 1.0 - wet * 0.5;
+  col += GOLD * wet * spec_safe(n, lightDir, rd) * 0.3;       // wet sheen at the waterline
+  if (underwater) col *= 0.30;
+  // low mist hugging the waterline: towers emerge from haze
+  float mist = exp(-max(p.y - wl, 0.0) * 0.55);
+  mist *= 0.8 + 0.2 * vnoise(p.xz * 0.5 + uTime * 0.1);
+  col = mix(col, vec3(0.085, 0.10, 0.16), mist * 0.38);
+  return col;
+}
+
+vec3 shadeWater(vec3 p, vec3 n, vec3 rd, float wl) {
+  vec3 lightDir = normalize(vec3(0.78, 0.16, -0.55));
+  // deep navy-black water with a faint warm undertone
+  vec3 deep = vec3(0.006, 0.012, 0.034);
+  // fresnel reflection of the sky
+  float fres = pow(1.0 - max(dot(n, -rd), 0.0), 5.0);
+  fres = 0.04 + 0.96 * fres;
+  vec3 refl = reflect(rd, n);
+  refl.y = abs(refl.y);
+  vec3 skyRefl = skyColor(refl);
+  vec3 col = mix(deep, skyRefl * vec3(0.6, 0.66, 0.8), fres * 0.7);
+
+  // layered sun glints: a sharp specular plus a softer broad one
+  vec3 halfV = normalize(lightDir - rd);
+  float specSharp = pow(max(dot(n, halfV), 0.0), 140.0);
+  specSharp *= 0.6 + 0.8 * vnoise(p.xz * 9.0 + uTime * 1.5);   // glittering facets
+  float specSoft  = pow(max(dot(n, halfV), 0.0), 24.0);
+  col += GOLD * specSharp * 4.0;
+  col += vec3(1.0,0.8,0.45) * specSoft * 0.5;
+
+  // broad shimmering sun path on the water toward the horizon
+  float sunPath = pow(max(dot(normalize(rd.xz), normalize(lightDir.xz)), 0.0), 5.0);
+  float pathShimmer = 0.6 + 0.4 * vnoise(p.xz * 1.5 + uTime * 0.5);
+  col += vec3(1.0,0.78,0.4) * sunPath * 0.12 * pathShimmer;
+
+  // whitecaps on steep wave faces
+  float chop = smoothstep(0.93, 0.78, n.y) * uWaveAmp;
+  chop *= 0.5 + 0.5 * vnoise(p.xz * 2.0 + uTime * 0.8);
+  col += vec3(0.9,0.93,1.0) * chop * 0.28;
+
+  // foam ring where water meets a tower
+  float hh;
+  float dCity = sdCity(vec3(p.x, wl, p.z), hh);
+  float foam = smoothstep(0.6, 0.05, dCity);
+  foam *= 0.5 + 0.5 * vnoise(p.xz * 3.0 + uTime * 0.6);
+  col += vec3(0.95,0.96,1.0) * foam * 0.38;
+  // warm reflected glow of lit windows shimmering beneath the towers
+  float wglow = smoothstep(3.5, 0.3, dCity);
+  wglow *= 0.45 + 0.55 * vnoise(vec2(p.x * 4.0, p.z * 0.8) + vec2(0.0, uTime * 0.9));
+  col += vec3(1.0, 0.60, 0.24) * wglow * 0.20;
+  return col;
+}
+
+// ── Fog ──
+vec3 applyFog(vec3 col, float dist, vec3 rd) {
+  float fog = exp(-dist * FOG_DENSITY);
+  // fog dissolves into the actual sky at the horizon (gold-tinted toward the sun)
+  vec3 fogCol = skyColor(vec3(rd.x, abs(rd.y) * 0.25 + 0.02, rd.z)) * 0.55;
+  return mix(fogCol, col, fog);
+}
+
+// ── Sky ──
+vec3 skyColor(vec3 rd) {
+  float h = max(rd.y, 0.0);
+  // dark storm zenith → deep indigo horizon, richer gradient
+  vec3 zenith  = vec3(0.030, 0.045, 0.105);
+  vec3 horizon = vec3(0.012, 0.016, 0.044);
+  vec3 col = mix(zenith, horizon, pow(h, 0.5));
+  // burning gold band at the horizon, concentrated toward the sun azimuth
+  vec3 sunDir = normalize(vec3(0.78, 0.16, -0.55));
+  float sunAz = max(dot(normalize(vec3(rd.x, 0.0, rd.z)), normalize(vec3(sunDir.x, 0.0, sunDir.z))), 0.0);
+  float hband = exp(-h * 8.0);
+  // two-tone horizon: deep amber low, paler gold just above
+  vec3 amber = vec3(1.0, 0.55, 0.22);
+  vec3 paleGold = vec3(1.0, 0.82, 0.5);
+  col += amber    * hband * (0.05 + 0.42 * pow(sunAz, 3.0));
+  col += paleGold * exp(-h * 4.0) * 0.10 * pow(sunAz, 2.0);
+  // sun glare disc with a soft warm halo
+  float sunDot = max(dot(rd, sunDir), 0.0);
+  col += vec3(1.0,0.85,0.5) * pow(sunDot, 80.0) * 1.4;
+  col += amber * pow(sunDot, 10.0) * 0.14;
+  col += amber * pow(sunDot, 3.0) * 0.05;   // broad atmospheric scatter
+  // heavy storm clouds, underlit gold near the horizon
+  float cld = fbm(rd.xz / max(rd.y, 0.08) * 0.45 + vec2(uTime * 0.015, 0.0));
+  float cld2 = fbm(rd.xz / max(rd.y, 0.08) * 0.9 + vec2(uTime * 0.025, 1.7));
+  cld = cld * 0.7 + cld2 * 0.3;
+  float cmask = smoothstep(0.32, 0.78, cld) * smoothstep(0.0, 0.28, h);
+  vec3 cloudDark = vec3(0.014, 0.018, 0.044);
+  vec3 cloudLit  = mix(cloudDark, amber * 0.6, hband * sunAz);
+  col = mix(col, cloudLit, cmask * 0.9);
+  return col;
+}
+
+// ── Blue-noise dither LUT (2×2 bayer) for fog banding ──
+float bayer2(vec2 fc) {
+  ivec2 p = ivec2(mod(fc, 2.0));
+  const int b[4] = int[](0,2,3,1);
+  return float(b[p.x + p.y * 2]) / 4.0;
+}
+
+
+// ── Lightning: stochastic double-strike flashes, frequency scales with storm ──
+float lightning(float t, float storm) {
+  float win = floor(t * 0.55);            // ~1.8s windows
+  float h = hash11(win * 17.13);
+  if (h > storm * 0.55 + 0.05) return 0.0; // most windows: no strike
+  float ph = fract(t * 0.55);
+  float env = exp(-ph * 14.0);
+  float flicker = 0.65 + 0.35 * sin(t * 67.0 + h * 40.0);
+  return env * flicker;
+}
+
+// ── Rain streaks (screen-space), density scales with storm ──
+float rain(vec2 uv, float t, float storm) {
+  uv.x += uv.y * 0.22;                     // slant
+  vec2 cell = vec2(uv.x * 90.0, uv.y * 3.5 + t * 4.5);
+  vec2 id = floor(cell);
+  float h = hash21(id);
+  vec2 f = fract(cell);
+  float drop = smoothstep(0.10, 0.0, abs(f.x - 0.5))
+             * smoothstep(0.45, 0.05, abs(f.y - fract(h * 9.0)));
+  return drop * step(h, 0.10 + storm * 0.22);
+}
+
+// ── Main ──
+void main() {
+  vec2 fc = gl_FragCoord.xy;
+  vec2 uv = (fc - 0.5 * uResolution) / uResolution.y;
+
+  // ── Camera ── low, near the waterline, looking slightly up: heroic drowned-city angle
+  float camAngle = uTime * 0.06;                        // ~2x faster orbit, reads as motion on small screens
+  float camR = 13.5 + sin(uTime * 0.12) * 2.2;          // breathe in/out for visible parallax
+  float camY = max(uWaterLevel + 1.4, 2.2);
+  vec3 ro = vec3(cos(camAngle) * camR, camY, sin(camAngle) * camR);
+  // constant gentle swell (independent of storm) so it always feels alive, plus extra in storms
+  ro.y  += sin(uTime * 0.9) * (0.12 + 0.10 * uWaveAmp);
+  ro.xz += vec2(sin(uTime * 0.55), cos(uTime * 0.68)) * (0.14 + 0.12 * uWaveAmp);
+  vec3 target = vec3(0, camY + 2.2, 0);
+  target.x += sin(uTime * 0.18) * 0.6;                  // slow look-around so the horizon shifts
+  vec3 fwd = normalize(target - ro);
+  vec3 right = normalize(cross(fwd, vec3(0,1,0)));
+  vec3 up    = cross(right, fwd);
+  vec3 rd = normalize(fwd + uv.x * right * 1.3 + uv.y * up * 1.3);
+
+  // ── Max steps based on quality ──
+  int maxSteps = uQuality == 0 ? 64 : 128;
+  float maxDist = uQuality == 0 ? 80.0 : 140.0;
+
+  float wl = uWaterLevel;
+
+  // ── Check water first (analytic) ──
+  vec3 wNorm;
+  float wt = -1.0;
+  // only intersect if ray goes downward toward water or we're above water
+  if (rd.y < 0.05) {
+    wt = waterIntersect(ro, rd, wl, wNorm);
+  }
+
+  // ── Raymarch towers ──
+  float t = 0.02;
+  bool hitTower = false;
+  float towerHit = 0.0;
+  bool towerUnderwater = false;
+  vec3 hitP;
+  vec3 hitN;
+  int mat = 0; // 0=sky,1=tower,2=water
+
+  for (int i = 0; i < 256; i++) {
+    if (i >= maxSteps) break;
+    if (t > maxDist) break;
+
+    vec3 p = ro + rd * t;
+    // early-out above city max height
+    if (p.y > 24.0 && rd.y > 0.0) break;
+
+    // stop before water if we already know water is closer
+    if (wt > 0.0 && t > wt) break;
+
+    float hh;
+    float d = sdCity(p, hh);
+
+    if (d < 0.004 * (1.0 + t * 0.1)) {
+      hitTower = true;
+      towerHit = hh;
+      towerUnderwater = (p.y < wl);
+      hitP = p;
+      // eps scaled with distance
+      float eps = max(0.004, 0.002 * t);
+      hitN = calcNormal(p, eps);
+      mat = 1;
+      break;
+    }
+    t += max(d * 0.7, 0.01);
+  }
+
+  // decide what's closer: tower or water?
+  float tTower = hitTower ? t : 1e10;
+  float tWater = wt > 0.0 ? wt : 1e10;
+
+  vec3 col;
+  float hitDist;
+
+  if (tTower < tWater && hitTower) {
+    // tower
+    col = shadeTower(hitP, hitN, rd, towerHit, towerUnderwater, wl);
+    hitDist = tTower;
+    col = applyFog(col, hitDist, rd);
+  } else if (tWater < 1e9) {
+    // water
+    vec3 wp = ro + rd * tWater;
+    col = shadeWater(wp, wNorm, rd, wl);
+    hitDist = tWater;
+    col = applyFog(col, hitDist, rd);
+  } else {
+    // sky
+    col = skyColor(rd);
+    hitDist = 1e10;
+  }
+
+  // ── Lightning flash: floods sky, kisses the scene ──
+  float fl = lightning(uTime, uWaveAmp);
+  bool isSky = hitDist > 1e9;
+  col += vec3(0.70, 0.78, 1.0) * fl * (isSky ? 1.1 : 0.30);
+
+  // ── Rain ──
+  float rn = rain(fc / uResolution, uTime, uWaveAmp);
+  col = mix(col, vec3(0.65, 0.72, 0.88), rn * 0.22 * uWaveAmp);
+
+  // ── Tone map & grade ──
+  // cheap bloom: lift the warm highlights so spires, windows, and glints glow
+  // (skipped on Low quality to keep weak machines smooth)
+  float lum = dot(col, vec3(0.299, 0.587, 0.114));
+  if (uQuality == 1) {
+    float bloom = smoothstep(0.6, 1.4, lum);
+    col += col * bloom * 0.5;
+  }
+
+  col *= 1.02;                                   // exposure
+  // warm color grade: gently push shadows cool-blue, highlights warm-gold
+  vec3 shadowTint = vec3(0.92, 0.96, 1.06);
+  vec3 highTint   = vec3(1.06, 1.0, 0.90);
+  col *= mix(shadowTint, highTint, smoothstep(0.0, 0.6, lum));
+
+  // ACES-ish filmic curve: deep blacks, glowing golds
+  col = (col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14);
+  // vignette — slightly stronger, warmer at the edges
+  vec2 vuv = fc / uResolution - 0.5;
+  float vig = 1.0 - dot(vuv, vuv) * 0.62;
+  col *= vig;
+  col = pow(clamp(col, 0.0, 1.0), vec3(0.4545));
+
+  // dither to kill banding
+  col += (bayer2(fc) - 0.5) / 255.0;
+  // whisper of animated film grain
+  col += (hash21(fc + fract(uTime) * 61.7) - 0.5) * 0.014;
+
+  fragColor = vec4(col, 1.0);
+}
+`;
+
+// ── Compile shaders ──
+function compileShader(gl, type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error('Shader error:', gl.getShaderInfoLog(s));
+    return null;
+  }
+  return s;
+}
+
+function createProgram(gl, vs, fs) {
+  const p = gl.createProgram();
+  gl.attachShader(p, vs);
+  gl.attachShader(p, fs);
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    console.error('Link error:', gl.getProgramInfoLog(p));
+    return null;
+  }
+  return p;
+}
+
+let program, uniforms, heightTex;
+
+function initGL() {
+  if (!gl) return;
+
+  const vs = compileShader(gl, gl.VERTEX_SHADER, vsSource);
+  const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSource);
+  if (!vs || !fs) return;
+
+  program = createProgram(gl, vs, fs);
+  if (!program) return;
+
+  // gather uniforms
+  uniforms = {
+    res:    gl.getUniformLocation(program, 'uResolution'),
+    time:   gl.getUniformLocation(program, 'uTime'),
+    water:  gl.getUniformLocation(program, 'uWaterLevel'),
+    wave:   gl.getUniformLocation(program, 'uWaveAmp'),
+    qual:   gl.getUniformLocation(program, 'uQuality'),
+    htex:   gl.getUniformLocation(program, 'uHeightTex'),
+  };
+
+  // height texture: R32F, 32×32
+  heightTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, heightTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, TEX_SIZE, TEX_SIZE, 0, gl.RED, gl.FLOAT, texData);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+}
+
+function uploadTexture() {
+  if (!heightTex || !gl) return;
+  gl.bindTexture(gl.TEXTURE_2D, heightTex);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, TEX_SIZE, TEX_SIZE, gl.RED, gl.FLOAT, texData);
+}
+
+// ── Camera pause flag ──
+let cameraPaused = false;
+let pauseTime = 0;
+let accumulatedTime = 0;
+
+// ── Render loop ──
+function render(ts) {
+  if (!gl || !program) { requestAnimationFrame(render); return; }
+
+  if (startTime === null) startTime = ts;
+  const elapsed = (ts - startTime) / 1000;
+
+  // tween water: TIME-based exponential ease (~2.5s regardless of frame rate)
+  const now = ts;
+  const dt = Math.min((now - (render.lastTs || now)) / 1000, 0.5);
+  render.lastTs = now;
+  if (Math.abs(waterCurrent - waterTarget) > 0.0005) {
+    waterCurrent += (waterTarget - waterCurrent) * (1 - Math.exp(-dt * 1.8));
+    updateHUD();
+  }
+
+  // camera time (pause when dragging)
+  const camTime = cameraPaused ? accumulatedTime : elapsed;
+  if (!cameraPaused) accumulatedTime = elapsed;
+
+  const W = canvas.width, H = canvas.height;
+  gl.viewport(0, 0, W, H);
+  gl.useProgram(program);
+
+  const wLevel = WATER_MIN + waterCurrent * (WATER_MAX - WATER_MIN);
+  gl.uniform2f(uniforms.res, W, H);
+  gl.uniform1f(uniforms.time, cameraPaused ? accumulatedTime : elapsed);
+  gl.uniform1f(uniforms.water, wLevel);
+  gl.uniform1f(uniforms.wave, waveAmp);
+  gl.uniform1i(uniforms.qual, quality);
+  gl.uniform1i(uniforms.htex, 0);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, heightTex);
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  requestAnimationFrame(render);
+}
+
+// ── Canvas resize ──
+function resize() {
+  canvas.width  = Math.floor(window.innerWidth  * (quality === 0 ? 0.6 : 1.0));
+  canvas.height = Math.floor(window.innerHeight * (quality === 0 ? 0.6 : 1.0));
+  canvas.style.width  = window.innerWidth  + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+}
+
+// ── Controls wiring ──
+const slWater = document.getElementById('sl-water');
+const slWave  = document.getElementById('sl-wave');
+const slSigma = document.getElementById('sl-sigma');
+
+slWater.addEventListener('mousedown', () => { cameraPaused = true; });
+slWater.addEventListener('touchstart', () => { cameraPaused = true; });
+slWater.addEventListener('mouseup',   () => { cameraPaused = false; });
+slWater.addEventListener('touchend',  () => { cameraPaused = false; });
+
+slWater.addEventListener('input', () => {
+  waterTarget = slWater.value / 100;
+  document.getElementById('val-water').textContent = slWater.value + '%';
+  setFill(slWater);
+  lessonOnWaterMove();
+});
+
+slWave.addEventListener('input', () => {
+  waveAmp = slWave.value / 100;
+  document.getElementById('val-wave').textContent = slWave.value + '%';
+  setFill(slWave);
+  lessonOnStormMove();
+});
+
+slSigma.addEventListener('input', () => {
+  sigma = slSigma.value / 10;
+  document.getElementById('val-sigma').textContent = sigma.toFixed(2);
+  setFill(slSigma);
+  allMeanBaseline = null;
+  generateFirms();
+});
+
+// paint the gold track fill up to the thumb position
+function setFill(sl) {
+  const min = +sl.min, max = +sl.max;
+  const pct = ((sl.value - min) / (max - min)) * 100;
+  sl.style.setProperty('--fill', pct + '%');
+}
+[slWater, slWave, slSigma].forEach(setFill);  // initialize on load
+
+document.getElementById('btn-redraw').addEventListener('click', () => {
+  seed = Date.now() | 0;
+  allMeanBaseline = null;
+  generateFirms();
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+  slWater.value = 30; waterTarget = 0.30;
+  document.getElementById('val-water').textContent = '30%';
+  slWave.value  = 50; waveAmp = 0.50;
+  document.getElementById('val-wave').textContent = '50%';
+  slSigma.value = 6;  sigma = 0.60;
+  document.getElementById('val-sigma').textContent = '0.60';
+  [slWater, slWave, slSigma].forEach(setFill);
+  allMeanBaseline = null;
+  generateFirms();
+});
+
+// Quality buttons
+document.getElementById('q-low').addEventListener('click', () => {
+  quality = 0;
+  document.getElementById('q-low').classList.add('active');
+  document.getElementById('q-high').classList.remove('active');
+  resize();
+});
+document.getElementById('q-high').addEventListener('click', () => {
+  quality = 1;
+  document.getElementById('q-high').classList.add('active');
+  document.getElementById('q-low').classList.remove('active');
+  resize();
+});
+
+// Pedagogy toggle
+document.getElementById('ped-toggle').addEventListener('click', () => {
+  const arrow = document.getElementById('ped-arrow');
+  const wrap  = document.getElementById('pedagogy');
+  const open  = wrap.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+  // pedagogy and lesson share the same slot — opening one closes the other
+  if (open && lessonEl.style.display === 'block') {
+    lessonEl.style.display = 'none';
+    launchBtn.style.display = 'block';
+  }
+});
+
+// ── Settings gear: show/hide quality panel ──
+const gearBtn = document.getElementById('gear-toggle');
+const gearPanel = document.getElementById('gear-panel');
+gearBtn.addEventListener('click', () => {
+  gearPanel.classList.toggle('open');
+});
+// close the gear panel when clicking elsewhere
+document.addEventListener('click', (e) => {
+  if (!gearPanel.contains(e.target) && e.target !== gearBtn) {
+    gearPanel.classList.remove('open');
+  }
+});
+
+// ── Immersive view: hide readout + lesson, keep slider bar ──
+const immersiveBtn = document.getElementById('immersive-toggle');
+immersiveBtn.addEventListener('click', () => {
+  const on = document.body.classList.toggle('immersed');
+  immersiveBtn.innerHTML = on ? '&#9776; Show panels' : '&#9728; Just the view';
+  immersiveBtn.title = on ? 'Bring the readout and lesson back' : 'Hide panels for a clean view';
+});
+
+// ── Mode toggle: Explore (default) ↔ Lesson ──
+const lessonEl = document.getElementById('lesson');
+const launchBtn = document.getElementById('lesson-launch');
+
+function resetLessonCard() {
+  lessonStep = 1; predicted = null; r2Predicted = null;
+  document.querySelector('#lesson h3').textContent = 'Round 1 · Predict';
+  document.getElementById('lesson-q').innerHTML =
+    'If survival costs rise, what happens to <strong>average productivity among surviving firms</strong>?';
+  document.getElementById('lesson-btns').innerHTML =
+    '<button class="lesson-btn" data-ans="rises">Rises</button>' +
+    '<button class="lesson-btn" data-ans="falls">Falls</button>' +
+    '<button class="lesson-btn" data-ans="same">Unchanged</button>';
+}
+
+launchBtn.addEventListener('click', () => {
+  resetLessonCard();
+  lessonEl.style.display = 'block';
+  launchBtn.style.display = 'none';
+  // close pedagogy if it was open (shares the same slot)
+  const ped = document.getElementById('pedagogy');
+  ped.classList.remove('open');
+  document.getElementById('ped-arrow').classList.remove('open');
+});
+
+document.getElementById('lesson-close').addEventListener('click', () => {
+  lessonEl.style.display = 'none';
+  launchBtn.style.display = 'block';
+});
+
+// ── Guided lesson state machine ──
+let lessonStep = 1;
+let predicted = null;
+
+const ANSWER_LABEL = { rises: 'Rises', falls: 'Falls', same: 'Unchanged' };
+
+document.getElementById('lesson-btns').addEventListener('click', (e) => {
+  const ans = e.target.dataset && e.target.dataset.ans;
+  if (!ans || lessonStep !== 1) return;
+  // (delegated: survives innerHTML rewrites from resetLessonCard)
+  predicted = ans;
+  lessonStep = 2;
+  document.querySelector('#lesson h3').textContent = 'Round 1 · Test it';
+  document.getElementById('lesson-q').innerHTML =
+    'You predicted: <strong>' + ANSWER_LABEL[ans] + '</strong>. Now raise <strong>Cost of survival</strong> and watch the readout panel (top-left).';
+  document.getElementById('lesson-btns').innerHTML = '<span class="lesson-note">Waiting for you to move the slider…</span>';
+});
+
+function lessonOnWaterMove() {
+  if (lessonStep !== 2) return;
+  if (Math.abs(waterTarget - 0.30) < 0.08) return;
+  lessonStep = 3;
+  setTimeout(() => {
+    const wasRight = predicted === 'rises';
+    document.querySelector('#lesson h3').textContent = 'Round 1 · Explain';
+    document.getElementById('lesson-q').innerHTML =
+      (wasRight ? '<strong>Your prediction was right</strong> — survivor mean φ rose. ' :
+                  '<strong>Look at the readout</strong> — survivor mean φ rose. ') +
+      'Did surviving firms <em>become</em> more productive, or did less-productive firms exit?';
+    document.getElementById('lesson-btns').innerHTML =
+      '<button class="lesson-btn" id="lesson-reveal">Show answer</button>';
+    document.getElementById('lesson-reveal').addEventListener('click', () => {
+      // ── End of Round 1: the selection punchline, then hand off to Round 2 ──
+      document.querySelector('#lesson h3').textContent = 'Round 1 · Selection';
+      document.getElementById('lesson-q').innerHTML =
+        'No firm changed — heights are fixed. Low-φ firms exited, so the <em>sample</em> improved. This is <strong>selection, not improvement</strong>.';
+      document.getElementById('lesson-btns').innerHTML =
+        '<button class="lesson-btn" id="lesson-r2">Next: try the storm →</button>';
+      document.getElementById('lesson-r2').addEventListener('click', startRound2);
+    });
+  }, 2600);  // let the flood finish first
+}
+
+// ── Round 2: volatility vs. a sustained cutoff ──
+function startRound2() {
+  lessonStep = 4;
+  document.querySelector('#lesson h3').textContent = 'Round 2 · Predict';
+  document.getElementById('lesson-q').innerHTML =
+    'The storm is dramatic — but is it economics? <strong>Raise Storm intensity to 100%</strong> (bottom panel). Will the <strong>exit rate</strong> change?';
+  document.getElementById('lesson-btns').innerHTML =
+    '<button class="lesson-btn" data-r2="yes">It will change</button>' +
+    '<button class="lesson-btn" data-r2="no">No change</button>';
+  document.querySelectorAll('[data-r2]').forEach(b =>
+    b.addEventListener('click', (e) => {
+      r2Predicted = e.target.dataset.r2;
+      lessonStep = 5;
+      document.querySelector('#lesson h3').textContent = 'Round 2 · Test it';
+      document.getElementById('lesson-q').innerHTML =
+        'You predicted: <strong>' + (r2Predicted === 'yes' ? 'It will change' : 'No change') +
+        '</strong>. Now push <strong>Storm intensity</strong> all the way up and watch the exit rate.';
+      document.getElementById('lesson-btns').innerHTML =
+        '<span class="lesson-note">Waiting for you to raise the storm…</span>';
+    })
+  );
+}
+
+let r2Predicted = null;
+let r2ExitBaseline = null;
+
+function lessonOnStormMove() {
+  if (lessonStep !== 5) return;
+  if (waveAmp < 0.9) return;  // wait until they really crank it
+  lessonStep = 6;
+  const wasRight = r2Predicted === 'no';
+  document.querySelector('#lesson h3').textContent = 'Round 2 · Explain';
+  document.getElementById('lesson-q').innerHTML =
+    (wasRight ? '<strong>Right — nothing moved.</strong> ' : '<strong>Check the exit rate — it didn&rsquo;t budge.</strong> ') +
+    'Storm intensity is transitory noise. It batters the surface but never moves the waterline. ' +
+    '<strong>Volatility is not the same as a sustained increase in the survival cutoff.</strong>';
+  document.getElementById('lesson-btns').innerHTML =
+    '<button class="lesson-btn" id="lesson-transfer">Last step: why it matters →</button>';
+  document.getElementById('lesson-transfer').addEventListener('click', () => {
+    document.querySelector('#lesson h3').textContent = 'Transfer';
+    document.getElementById('lesson-q').innerHTML =
+      'Two lessons, one screen: a <em>sustained</em> rise in costs culls firms and lifts measured productivity through selection; <em>transitory</em> volatility does neither.<br><br>' +
+      '<strong>Transfer question:</strong> Why might an industry look more productive after trade liberalization, deregulation, or a permanent cost shock — but not after a bad year?';
+    document.getElementById('lesson-btns').innerHTML =
+      '<button class="lesson-btn" id="lesson-done">Show answer</button>';
+    document.getElementById('lesson-done').addEventListener('click', () => {
+      document.getElementById('lesson-q').innerHTML =
+        'Permanent changes raise the survival cutoff: low-productivity firms <em>exit</em> and aggregate productivity rises through reallocation — Melitz (2003) — not because any firm improved (measuring only survivors overstates the gain: <strong>survivorship bias</strong>). A single bad year is volatility around the mean; it doesn&rsquo;t move the cutoff, so it doesn&rsquo;t drive structural exit.';
+      document.getElementById('lesson-btns').innerHTML = '<span class="lesson-note">Lesson complete. Explore freely — try firm heterogeneity (σ) next.</span>';
+    });
+  });
+}
+
+// ── Init & go ──
+window.addEventListener('resize', resize);
+resize();
+generateFirms();
+initGL();
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
