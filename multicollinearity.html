@@ -32,6 +32,7 @@
   .left { padding: 1.75rem 2.25rem; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 1.25rem; overflow-y: auto; }
   .right { padding: 1.75rem 2rem; display: flex; flex-direction: column; gap: 1rem; background: #f3f2ef; overflow-y: auto; }
 
+  .step-badge { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#2a3354; color:#fff; font-size:.62rem; font-weight:700; font-family:'JetBrains Mono'; margin-right:.45rem; vertical-align:middle; flex-shrink:0; }
   .sec-label { font-family: 'JetBrains Mono'; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: #374151; margin-bottom: .4rem; }
 
   /* Slider */
@@ -134,11 +135,11 @@
 
     <!-- Step sequence — compressed -->
     <div style="padding:.5rem .875rem;background:#eef0f6;border:1px solid #c5cbdd;border-radius:10px;font-size:.78rem;color:#141b34;line-height:1.5">
-      <span style="font-family:'JetBrains Mono';font-weight:700;color:#2a3354">Try:</span> drag r toward 1 → watch SE grow · draw new samples → watch β̂ swing · drop X3 → watch SE(X2) collapse
+      <span style="font-family:'JetBrains Mono';font-weight:700;color:#2a3354">Try:</span> drag <strong>①</strong> r toward 1 → watch the machine <strong>②</strong> struggle and SE grow in the table <strong>③</strong> → draw samples <strong>④</strong> and watch β̂ swing while the intervals <strong>⑤</strong> jump
     </div>
 
     <div>
-      <div class="sec-label">Correlation between X2 and X3</div>
+      <div class="sec-label"><span class="step-badge">1</span>Correlation between X2 and X3</div>
       <div class="slider-row">
         <span>r (X2, X3)</span>
         <span class="r-readout" id="rReadout">r = 0.00</span>
@@ -155,42 +156,13 @@
       </div>
     </div>
 
-    <!-- Resample: watch estimates bounce -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.875rem 1rem;display:flex;flex-direction:column;gap:.625rem">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:.5rem">
-        <div class="sec-label" style="margin:0">Draw a new sample</div>
-        <span style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint)" id="drawCount">0 draws</span>
-      </div>
-      <div style="font-size:.78rem;color:var(--muted);line-height:1.55">
-        Same true model, fresh noise each time. <strong style="color:var(--ink)">How far the dots spread is what a standard error describes</strong> — wide spread means a large SE.
-      </div>
-      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
-        <button id="drawBtn" onclick="drawSample()" style="padding:.5rem 1.1rem;border-radius:8px;border:none;background:var(--ink);color:#fff;font-family:'Inter';font-weight:600;font-size:.82rem;cursor:pointer;transition:all .15s">Draw new sample</button>
-        <button id="autoDrawBtn" onclick="toggleAutoDraw()" style="padding:.5rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Inter';font-size:.82rem;cursor:pointer;color:var(--ink)">Auto-draw</button>
-        <button onclick="clearDraws()" style="padding:.5rem .875rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Inter';font-size:.8rem;cursor:pointer;color:var(--muted)">Clear</button>
-      </div>
-      <!-- live estimate readout -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;font-family:'JetBrains Mono';font-size:.8rem">
-        <div style="background:#fff7f4;border:1px solid #f3d4c6;border-radius:8px;padding:.45rem .7rem">
-          <span style="color:var(--x2)">β̂₂</span> = <span id="drawB2" style="font-weight:700;color:var(--ink)">—</span>
-        </div>
-        <div style="background:#f6f1fe;border:1px solid #ddd0f5;border-radius:8px;padding:.45rem .7rem">
-          <span style="color:var(--x3)">β̂₃</span> = <span id="drawB3" style="font-weight:700;color:var(--ink)">—</span>
-        </div>
-        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.45rem .7rem">
-          <span style="color:#166534">R²</span> = <span id="drawR2" style="font-weight:700;color:#166534">—</span>
-        </div>
-      </div>
-      <!-- scatter of estimates -->
-      <canvas id="scatterCanvas" height="150" style="background:#fff;border-radius:8px;border:1px solid var(--border);width:100%"></canvas>
-      <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint);line-height:1.55" id="scatterCaption">
-        Each dot is one sample's (β̂₂, β̂₃). The true value is the cross at (0.70, 0.70).
-      </div>
+    <div class="insight green" id="insight">
+      r = 0.00 — no correlation. Each variable's effect can be estimated with little interference from the others. Coefficients are precise with respect to multicollinearity.
     </div>
 
     <!-- Stat table -->
     <div>
-      <div class="sec-label">Regression output</div>
+      <div class="sec-label"><span class="step-badge">3</span>Regression output</div>
       <div style="font-size:.72rem;color:var(--muted);font-style:italic;margin:-.25rem 0 .4rem;line-height:1.45">Stylized: β̂ are held fixed to isolate the SE and t-stat effect. Use the resample panel to see the coefficients themselves move.</div>
       <div class="stat-table">
         <div class="stat-table-hdr">
@@ -224,6 +196,39 @@
       </div>
     </div>
 
+    <!-- Resample: watch estimates bounce -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.875rem 1rem;display:flex;flex-direction:column;gap:.625rem">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:.5rem">
+        <div class="sec-label" style="margin:0"><span class="step-badge">4</span>Draw a new sample</div>
+        <span style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint)" id="drawCount">0 draws</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);line-height:1.55">
+        Same true model, fresh noise each time. <strong style="color:var(--ink)">How far the dots spread is what a standard error describes</strong> — wide spread means a large SE.
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <button id="drawBtn" onclick="drawSample()" style="padding:.5rem 1.1rem;border-radius:8px;border:none;background:var(--ink);color:#fff;font-family:'Inter';font-weight:600;font-size:.82rem;cursor:pointer;transition:all .15s">Draw new sample</button>
+        <button id="autoDrawBtn" onclick="toggleAutoDraw()" style="padding:.5rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Inter';font-size:.82rem;cursor:pointer;color:var(--ink)">Auto-draw</button>
+        <button onclick="clearDraws()" style="padding:.5rem .875rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Inter';font-size:.8rem;cursor:pointer;color:var(--muted)">Clear</button>
+      </div>
+      <!-- live estimate readout -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;font-family:'JetBrains Mono';font-size:.8rem">
+        <div style="background:#fff7f4;border:1px solid #f3d4c6;border-radius:8px;padding:.45rem .7rem">
+          <span style="color:var(--x2)">β̂₂</span> = <span id="drawB2" style="font-weight:700;color:var(--ink)">—</span>
+        </div>
+        <div style="background:#f6f1fe;border:1px solid #ddd0f5;border-radius:8px;padding:.45rem .7rem">
+          <span style="color:var(--x3)">β̂₃</span> = <span id="drawB3" style="font-weight:700;color:var(--ink)">—</span>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.45rem .7rem">
+          <span style="color:#166534">R²</span> = <span id="drawR2" style="font-weight:700;color:#166534">—</span>
+        </div>
+      </div>
+      <!-- scatter of estimates -->
+      <canvas id="scatterCanvas" height="150" style="background:#fff;border-radius:8px;border:1px solid var(--border);width:100%"></canvas>
+      <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint);line-height:1.55" id="scatterCaption">
+        Each dot is one sample's (β̂₂, β̂₃). The true value is the cross at (0.70, 0.70).
+      </div>
+    </div>
+
     <!-- R²: fit holds up under multicollinearity -->
     <div class="r2-box">
       <div class="r2-val" id="r2val">—</div>
@@ -233,22 +238,55 @@
     </div>
 
     <!-- VIF -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem">
-        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem">VIF (X2 &amp; X3)</div>
-        <div style="font-family:'Playfair Display';font-size:1.5rem" id="vifVal">1.00</div>
-        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint);margin-top:.2rem">VIF measures how much the machine is struggling. Common rule of thumb: &gt;10 = serious problem.</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6rem 1rem;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:baseline;gap:.5rem">
+        <span style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--muted);text-transform:uppercase;letter-spacing:.06em">VIF</span>
+        <span style="font-family:'Playfair Display';font-size:1.35rem" id="vifVal">1.00</span>
       </div>
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem">
-        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem">SE inflation (X2 &amp; X3)</div>
-        <div style="font-family:'Playfair Display';font-size:1.5rem" id="seInflation">×1.00</div>
-        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint);margin-top:.2rem">vs r = 0 baseline</div>
+      <div style="display:flex;align-items:baseline;gap:.5rem">
+        <span style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--muted);text-transform:uppercase;letter-spacing:.06em">SE inflation</span>
+        <span style="font-family:'Playfair Display';font-size:1.35rem" id="seInflation">×1.00</span>
       </div>
+      <div style="font-size:.66rem;font-family:'JetBrains Mono';color:var(--hint);line-height:1.4;flex:1;min-width:180px">SE inflates by √VIF. Common rule of thumb: VIF &gt; 10 = serious problem.</div>
     </div>
 
-    <div class="insight green" id="insight">
-      r = 0.00 — no correlation. Each variable's effect can be estimated with little interference from the others. Coefficients are precise with respect to multicollinearity.
+
+
+  </div>
+
+  <!-- RIGHT: visualizations -->
+  <div class="right">
+
+    <div style="font-size:.72rem;font-family:'JetBrains Mono';color:#374151;text-transform:uppercase;letter-spacing:.1em;font-weight:600"><span class="step-badge">2</span>OLS sorting machine</div>
+    <div style="font-size:.82rem;color:#6b7280;font-family:'Inter';line-height:1.5;margin-top:-.25rem">
+      The bins are <strong style="color:#374151">competing to explain the same signal</strong>. When neither can win cleanly, both estimates suffer.
     </div>
+
+    <canvas id="machineCanvas" height="490" style="background:white;border-radius:10px;border:1px solid var(--border)"></canvas>
+    <details style="font-size:.72rem;font-family:'JetBrains Mono';color:#374151;line-height:1.6;padding:.25rem .25rem 0">
+      <summary style="cursor:pointer;color:#6b7280;list-style:none">Fine print (for the rigorous) ›</summary>
+      <div style="margin-top:.4rem">
+        * X2 and X3 have the same expected SE here because the setup is symmetric: both have true coefficient 0.70 and only their pairwise correlation drives the inflation.<br>
+        * The stat table uses an illustrative baseline SE of 0.18. The resample panel runs a real regression (n = 60, noise SD = 1.6), so its scatter spread at r = 0 is about 0.21. The two layers tell the same story; their baseline numbers differ slightly by design.<br>
+        * The ball-sorting is a metaphor. OLS doesn't assign variance piece-by-piece. Correlated regressors make <em>both</em> estimates simultaneously sensitive to noise. The "Draw a new sample" panel shows the true mechanism.<br>
+        * In multiple regression, multicollinearity depends on how each variable relates to <em>all</em> others, not just one pair. This widget shows pairwise correlation for illustration.
+      </div>
+    </details>
+
+    <div class="ci-section">
+      <div class="ci-lbl"><span class="step-badge">5</span>95% confidence intervals. The bold bar is the expected 95% range for estimates, centered on the true β. The thin grey bar above it is your latest sample's interval, centered on its β̂. Draw repeatedly and watch the grey bar jump while the bold one only widens.</div>
+      <canvas id="ciCanvas" height="120"></canvas>
+    </div>
+
+    <details class="concept-box" style="padding:.75rem 1.25rem">
+      <summary style="cursor:pointer;font-weight:600;color:#141b34;font-size:.88rem;list-style:none">Why are there two bins if there's only one signal? ›</summary>
+      <div style="margin-top:.625rem">
+        Because the theory says there are two different effects. OLS builds a bin for each. But when X2 and X3 almost always move together, the data give very little guidance on how much belongs in each bin, so both estimates become unreliable.<br><br>
+        <strong style="color:#141b34">Example:</strong> X2 = study hours, X3 = attendance. If students who study more almost always attend more, did grades improve because of studying, or because of attending? You need two bins conceptually. But the data give you mostly one combined signal.<br><br>
+        <strong style="color:#141b34">When r is high:</strong> many different splits between the two bins explain the data almost equally well. That flat ridge of near-ties is the consequence of multicollinearity, and it's why the estimates swing so much from sample to sample.<br><br>
+        <strong style="color:#141b34;font-size:.95rem">"The ball didn't go to the wrong bin. The data just can't pin down which bin it belongs in."</strong>
+      </div>
+    </details>
 
     <!-- What causes multicollinearity -->
     <div class="se-causes">
@@ -330,42 +368,6 @@
           </div>
         </div>
 
-      </div>
-    </details>
-
-  </div>
-
-  <!-- RIGHT: visualizations -->
-  <div class="right">
-
-    <div style="font-size:.72rem;font-family:'JetBrains Mono';color:#374151;text-transform:uppercase;letter-spacing:.1em;font-weight:600">OLS sorting machine</div>
-    <div style="font-size:.82rem;color:#6b7280;font-family:'Inter';line-height:1.5;margin-top:-.25rem">
-      The bins are <strong style="color:#374151">competing to explain the same signal</strong>. When neither can win cleanly, both estimates suffer.
-    </div>
-
-    <canvas id="machineCanvas" height="490" style="background:white;border-radius:10px;border:1px solid var(--border)"></canvas>
-    <details style="font-size:.72rem;font-family:'JetBrains Mono';color:#374151;line-height:1.6;padding:.25rem .25rem 0">
-      <summary style="cursor:pointer;color:#6b7280;list-style:none">Fine print (for the rigorous) ›</summary>
-      <div style="margin-top:.4rem">
-        * X2 and X3 have the same expected SE here because the setup is symmetric: both have true coefficient 0.70 and only their pairwise correlation drives the inflation.<br>
-        * The stat table uses an illustrative baseline SE of 0.18. The resample panel runs a real regression (n = 60, noise SD = 1.6), so its scatter spread at r = 0 is about 0.21. The two layers tell the same story; their baseline numbers differ slightly by design.<br>
-        * The ball-sorting is a metaphor. OLS doesn't assign variance piece-by-piece. Correlated regressors make <em>both</em> estimates simultaneously sensitive to noise. The "Draw a new sample" panel shows the true mechanism.<br>
-        * In multiple regression, multicollinearity depends on how each variable relates to <em>all</em> others, not just one pair. This widget shows pairwise correlation for illustration.
-      </div>
-    </details>
-
-    <div class="ci-section">
-      <div class="ci-lbl">95% confidence intervals. The bold bar is the expected 95% range for estimates, centered on the true β. The thin grey bar above it is your latest sample's interval, centered on its β̂. Draw repeatedly and watch the grey bar jump while the bold one only widens.</div>
-      <canvas id="ciCanvas" height="120"></canvas>
-    </div>
-
-    <details class="concept-box" style="padding:.75rem 1.25rem">
-      <summary style="cursor:pointer;font-weight:600;color:#141b34;font-size:.88rem;list-style:none">Why are there two bins if there's only one signal? ›</summary>
-      <div style="margin-top:.625rem">
-        Because the theory says there are two different effects. OLS builds a bin for each. But when X2 and X3 almost always move together, the data give very little guidance on how much belongs in each bin, so both estimates become unreliable.<br><br>
-        <strong style="color:#141b34">Example:</strong> X2 = study hours, X3 = attendance. If students who study more almost always attend more, did grades improve because of studying, or because of attending? You need two bins conceptually. But the data give you mostly one combined signal.<br><br>
-        <strong style="color:#141b34">When r is high:</strong> many different splits between the two bins explain the data almost equally well. That flat ridge of near-ties is the consequence of multicollinearity, and it's why the estimates swing so much from sample to sample.<br><br>
-        <strong style="color:#141b34;font-size:.95rem">"The ball didn't go to the wrong bin. The data just can't pin down which bin it belongs in."</strong>
       </div>
     </details>
 
@@ -532,7 +534,7 @@ function drawMachine(r) {
   mCtx.fillStyle = '#374151'; mCtx.font = '500 12px Inter'; mCtx.textAlign = 'center';
   mCtx.fillText('OLS sorting machine', PIV_X, MY + 18);
   mCtx.fillStyle = '#9ca3af'; mCtx.font = '10px JetBrains Mono';
-  mCtx.fillText('apportioning variance to each X', PIV_X, MY + 32);
+  mCtx.fillText('assigning credit to each X', PIV_X, MY + 32);
 
   // Pivot point inside machine
   mCtx.beginPath(); mCtx.arc(PIV_X, PIV_Y, 5, 0, Math.PI * 2);
@@ -702,14 +704,14 @@ function drawMachine(r) {
     mCtx.fillText(`${totalUncertain} uncertain signal${totalUncertain > 1 ? 's' : ''} shared between X2 & X3 → SE grows → t shrinks`, W/2, BIN_TOP + binH + 16);
   }
 
-  // At high r: "both bins can explain this equally well"
+  // At high r: bins are nearly interchangeable for shared signal
   if (!dropX3 && overlap > 0.7) {
     const alpha = Math.min(0.9, (overlap - 0.7) / 0.3);
     mCtx.fillStyle = `rgba(154,52,18,${alpha})`;
     mCtx.font = `500 ${Math.round(10 + alpha * 2)}px Inter`;
     mCtx.textAlign = 'center';
     const midBinX = (BIN_XS[1] + BIN_XS[2] + binW) / 2;
-    mCtx.fillText('Both bins can explain this equally well.', midBinX, BIN_TOP - 30);
+    mCtx.fillText('Either bin explains this almost equally well.', midBinX, BIN_TOP - 30);
   }
 }
 
