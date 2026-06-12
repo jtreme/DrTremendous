@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multicollinearity — ARE 455</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e; --muted: #6b7280; --hint: #9ca3af;
+    --bg: #faf9f6; --surface: #ffffff; --border: #e5e7eb;
+    --x1: #1d4ed8; --x2: #d85a30; --x3: #7c3aed;
+    --green: #166534; --green-pale: #dcfce7;
+    --rose: #9f1239; --rose-pale: #ffe4e6;
+    --amber-pale: #fef3c7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; }
+
+  header { padding: 1.25rem 2.5rem; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: baseline; gap: 1.5rem; flex-shrink: 0; }
+  .hdr-title { font-family: 'Playfair Display'; font-size: 1.3rem; }
+  .hdr-sub { font-size: .82rem; color: var(--muted); }
+
+  .callout { background: #eef0f6; border-bottom: 1px solid #c5cbdd; padding: .875rem 2.5rem; font-size: .9rem; color: #141b34; line-height: 1.65; flex-shrink: 0; }
+  .callout strong { color: #141b34; }
+
+  main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+
+  /* LEFT */
+  .left { padding: 1.75rem 2.25rem; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 1.25rem; overflow-y: auto; }
+  .right { padding: 1.75rem 2rem; display: flex; flex-direction: column; gap: 1rem; background: #f3f2ef; overflow-y: auto; }
+
+  .sec-label { font-family: 'JetBrains Mono'; font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: #374151; margin-bottom: .4rem; }
+
+  /* Slider */
+  .slider-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .5rem; }
+  .slider-row span:first-child { font-size: .78rem; color: var(--muted); font-family: 'JetBrains Mono'; text-transform: uppercase; letter-spacing: .08em; }
+  .r-readout { font-family: 'Playfair Display'; font-size: 1.8rem; transition: color .2s; }
+  input[type=range] { width: 100%; height: 5px; -webkit-appearance: none; background: var(--border); border-radius: 3px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #6b7280; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.15); cursor: pointer; transition: transform .1s; }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+  .tick-row { display: flex; justify-content: space-between; font-family: 'JetBrains Mono'; font-size: .65rem; color: var(--hint); margin-top: .3rem; }
+
+  /* Stat table */
+  .stat-table { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; font-size: .85rem; }
+  .stat-table-hdr { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; background: #374151; color: #fff; }
+  .stat-table-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .stat-table-row:last-child { border-bottom: none; }
+  .stc { padding: .5rem .75rem; font-family: 'JetBrains Mono'; font-size: .82rem; }
+  .stc.lbl { font-family: 'Inter'; font-weight: 600; }
+
+  /* CI bars */
+  .ci-section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .ci-lbl { font-size: .7rem; font-family: 'JetBrains Mono'; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; margin-bottom: .75rem; }
+  canvas { display: block; width: 100%; }
+
+  /* Key insight box */
+  .insight { border-radius: 10px; padding: 1rem 1.25rem; font-size: .88rem; line-height: 1.7; border-left: 3px solid; transition: all .3s; }
+  .insight.green { background: var(--green-pale); border-color: #16a34a; color: var(--green); }
+  .insight.amber { background: var(--amber-pale); border-color: #d97706; color: #78350f; }
+  .insight.red   { background: var(--rose-pale);  border-color: #e11d48; color: var(--rose); }
+
+  /* R² box */
+  .r2-box { background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 10px; padding: .875rem 1.25rem; display: flex; align-items: center; gap: 1.25rem; }
+  .r2-val { font-family: 'Playfair Display'; font-size: 2rem; color: #5b21b6; }
+  .r2-text { font-size: .85rem; color: #4c1d95; line-height: 1.6; }
+  .r2-text strong { color: #3b0764; }
+
+  /* What is multicollinearity box */
+  .concept-box { background: #eef0f6; border: 1px solid #c5cbdd; border-radius: 10px; padding: 1rem 1.25rem; font-size: .88rem; line-height: 1.75; color: #141b34; }
+  .concept-box strong { color: #141b34; }
+
+  /* SE causes */
+  .se-causes { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .875rem 1.125rem; }
+  .causes-title { font-weight: 600; color: #374151; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; font-family: 'JetBrains Mono'; }
+  .cause-detail { border-bottom: 1px solid var(--border); padding: .35rem 0; }
+  .cause-detail:last-child { border-bottom: none; }
+  .cause-detail summary { display: flex; align-items: center; gap: .6rem; font-size: .88rem; color: #374151; cursor: pointer; list-style: none; padding: .2rem 0; user-select: none; }
+  .cause-detail summary::-webkit-details-marker { display: none; }
+  .cause-detail summary::after { content: '›'; margin-left: auto; color: var(--hint); font-size: 1rem; transition: transform .15s; }
+  .cause-detail[open] summary::after { transform: rotate(90deg); }
+  .cause-detail summary:hover { color: var(--ink); }
+  .cause-arrow { font-family: 'JetBrains Mono'; font-weight: 700; font-size: .88rem; min-width: 12px; }
+  .cause-expand { padding: .4rem 0 .35rem 1.6rem; font-size: .84rem; color: var(--muted); line-height: 1.65; }
+
+  /* Guided questions */
+  .guided-qs { border: 1px solid #c5cbdd; border-radius: 10px; overflow: hidden; }
+  .gq-summary { display: flex; align-items: center; gap: .5rem; padding: .875rem 1.125rem; cursor: pointer; list-style: none; background: #eef0f6; font-size: .9rem; font-weight: 600; color: #141b34; user-select: none; }
+  .gq-summary::-webkit-details-marker { display: none; }
+  .gq-arrow { margin-left: auto; color: #2a3354; font-size: 1.2rem; transition: transform .2s; display: inline-block; }
+  .guided-qs[open] .gq-summary .gq-arrow { transform: rotate(90deg); }
+  .gq-body { padding: .25rem 0; }
+  .gq-item { display: flex; gap: .875rem; padding: .875rem 1rem; border-bottom: 1px solid var(--border); }
+  .gq-item:last-child { border-bottom: none; }
+  .gq-num { width: 24px; height: 24px; border-radius: 50%; background: #2a3354; color: #fff; font-size: .78rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; font-family: 'JetBrains Mono'; }
+  .gq-content { flex: 1; display: flex; flex-direction: column; gap: .4rem; }
+  .gq-prompt { font-size: .88rem; color: var(--ink); line-height: 1.65; }
+  .gq-prompt strong { color: #141b34; }
+  .gq-hint { font-size: .78rem; color: var(--muted); font-style: italic; line-height: 1.5; }
+  .gq-input { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: .5rem .75rem; font-family: 'Inter'; font-size: .85rem; color: var(--ink); background: var(--bg); resize: vertical; outline: none; line-height: 1.5; }
+  .gq-input:focus { border-color: #2a3354; box-shadow: 0 0 0 3px rgba(42,51,84,0.12); }
+
+  footer { padding: .6rem 2.5rem; border-top: 1px solid var(--border); background: var(--surface); font-size: .7rem; color: var(--hint); font-family: 'JetBrains Mono'; display: flex; justify-content: space-between; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="https://drtremendous.netlify.app/" style="font-family:'Playfair Display',Georgia,serif;font-weight:400;font-size:1.25rem;letter-spacing:-0.01em;text-decoration:none;white-space:nowrap;align-self:center">
+    <span style="color:#141b34">Dr.Treme</span><span style="color:#d8a249">ndous</span>
+  </a>
+  <div style="width:1px;height:24px;background:var(--border);align-self:center"></div>
+  <div class="hdr-title">Multicollinearity</div>
+  <div class="hdr-sub">ARE 455 · When OLS can't tell your variables apart</div>
+</header>
+
+<div class="callout" style="padding:.625rem 2.5rem">
+  <details>
+    <summary style="cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:.5rem">
+      <strong>Multicollinearity means the model can't tell which variable deserves credit.</strong>
+      <span style="font-size:.78rem;color:#2a3354;font-weight:500">What's going on? ›</span>
+    </summary>
+    <div style="margin-top:.5rem;font-size:.85rem">
+      The estimates bounce around even when overall model fit still looks strong. OLS asks what each X contributes <em>holding the others fixed</em>. <strong>There are two bins because there are two variables, but the signal separating them is weak.</strong> When X2 and X3 move together, you almost never observe X2 changing while X3 stays fixed. The model is trying to answer a question the data give very little information about. Standard errors explode and t-stats collapse, but overall model fit often stays strong.
+    </div>
+  </details>
+</div>
+
+<main>
+  <!-- LEFT: controls + stats -->
+  <div class="left">
+
+    <!-- Step sequence — compressed -->
+    <div style="padding:.5rem .875rem;background:#eef0f6;border:1px solid #c5cbdd;border-radius:10px;font-size:.78rem;color:#141b34;line-height:1.5">
+      <span style="font-family:'JetBrains Mono';font-weight:700;color:#2a3354">Try:</span> drag r toward 1 → watch SE grow · draw new samples → watch β̂ swing · drop X3 → watch SE(X2) collapse
+    </div>
+
+    <div>
+      <div class="sec-label">Correlation between X2 and X3</div>
+      <div class="slider-row">
+        <span>r (X2, X3)</span>
+        <span class="r-readout" id="rReadout">r = 0.00</span>
+      </div>
+      <input type="range" min="0" max="98" value="0" step="1" id="rSlider">
+      <div class="tick-row"><span>No correlation</span><span>Near-perfect</span></div>
+      <div style="margin-top:.75rem;display:flex;gap:.5rem;align-items:center">
+        <button id="dropX3Btn" onclick="toggleDropX3()" style="padding:.4rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Inter';font-size:.82rem;cursor:pointer;transition:all .15s;color:var(--ink)">Drop X3 from model</button>
+        <span style="font-size:.75rem;font-family:'Inter';color:var(--muted);font-style:italic">demonstrates overlapping information</span>
+        <span id="dropX3Note" style="font-size:.75rem;font-family:'JetBrains Mono';color:#b45309;display:none">X3 removed. Watch SE(X2) collapse</span>
+      </div>
+      <div id="ovbWarning" style="display:none;margin-top:.5rem;padding:.5rem .75rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:.76rem;color:#991b1b;line-height:1.5">
+        <strong>But be careful.</strong> Dropping X3 lowers SE(X2) only because X2 now absorbs X3's effect. If X3 truly affects Y, X2's coefficient is no longer its own separate effect — you've traded variance for omitted-variable bias. Only drop a variable that is genuinely redundant or not theoretically needed. <em>(The table keeps β̂₂ fixed to isolate the SE effect; in a real re-estimated model, β̂₂ would usually change too.)</em>
+      </div>
+    </div>
+
+    <!-- Resample: watch estimates bounce -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.875rem 1rem;display:flex;flex-direction:column;gap:.625rem">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:.5rem">
+        <div class="sec-label" style="margin:0">Draw a new sample</div>
+        <span style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint)" id="drawCount">0 draws</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);line-height:1.55">
+        Same true model, fresh noise each time. <strong style="color:var(--ink)">How far the dots spread is what a standard error describes</strong> — wide spread means a large SE.
+      </div>
+      <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+        <button id="drawBtn" onclick="drawSample()" style="padding:.5rem 1.1rem;border-radius:8px;border:none;background:var(--ink);color:#fff;font-family:'Inter';font-weight:600;font-size:.82rem;cursor:pointer;transition:all .15s">Draw new sample</button>
+        <button id="autoDrawBtn" onclick="toggleAutoDraw()" style="padding:.5rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Inter';font-size:.82rem;cursor:pointer;color:var(--ink)">Auto-draw</button>
+        <button onclick="clearDraws()" style="padding:.5rem .875rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-family:'Inter';font-size:.8rem;cursor:pointer;color:var(--muted)">Clear</button>
+      </div>
+      <!-- live estimate readout -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;font-family:'JetBrains Mono';font-size:.8rem">
+        <div style="background:#fff7f4;border:1px solid #f3d4c6;border-radius:8px;padding:.45rem .7rem">
+          <span style="color:var(--x2)">β̂₂</span> = <span id="drawB2" style="font-weight:700;color:var(--ink)">—</span>
+        </div>
+        <div style="background:#f6f1fe;border:1px solid #ddd0f5;border-radius:8px;padding:.45rem .7rem">
+          <span style="color:var(--x3)">β̂₃</span> = <span id="drawB3" style="font-weight:700;color:var(--ink)">—</span>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:.45rem .7rem">
+          <span style="color:#166534">R²</span> = <span id="drawR2" style="font-weight:700;color:#166534">—</span>
+        </div>
+      </div>
+      <!-- scatter of estimates -->
+      <canvas id="scatterCanvas" height="150" style="background:#fff;border-radius:8px;border:1px solid var(--border);width:100%"></canvas>
+      <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint);line-height:1.55" id="scatterCaption">
+        Each dot is one sample's (β̂₂, β̂₃). The true value is the cross at (0.70, 0.70).
+      </div>
+    </div>
+
+    <!-- Stat table -->
+    <div>
+      <div class="sec-label">Regression output</div>
+      <div style="font-size:.72rem;color:var(--muted);font-style:italic;margin:-.25rem 0 .4rem;line-height:1.45">Stylized: β̂ are held fixed to isolate the SE and t-stat effect. Use the resample panel to see the coefficients themselves move.</div>
+      <div class="stat-table">
+        <div class="stat-table-hdr">
+          <div class="stc lbl" style="color:#fff">Variable</div>
+          <div class="stc" style="color:#fff">β̂</div>
+          <div class="stc" style="color:#fff">SE</div>
+          <div class="stc" style="color:#fff">t-stat</div>
+          <div class="stc" style="color:#fff">p (approx.)</div>
+        </div>
+        <div class="stat-table-row">
+          <div class="stc lbl" style="color:var(--x1)">X1</div>
+          <div class="stc">1.50</div>
+          <div class="stc" id="se1">0.18</div>
+          <div class="stc" id="t1">8.33</div>
+          <div class="stc" id="p1">&lt;0.01</div>
+        </div>
+        <div class="stat-table-row">
+          <div class="stc lbl" style="color:var(--x2)">X2</div>
+          <div class="stc">0.70</div>
+          <div class="stc" id="se2">0.18</div>
+          <div class="stc" id="t2">3.89</div>
+          <div class="stc" id="p2">&lt;0.01</div>
+        </div>
+        <div class="stat-table-row">
+          <div class="stc lbl" style="color:var(--x3)">X3</div>
+          <div class="stc" id="b3">0.70</div>
+          <div class="stc" id="se3">0.18</div>
+          <div class="stc" id="t3">3.89</div>
+          <div class="stc" id="p3">&lt;0.01</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- R²: fit holds up under multicollinearity -->
+    <div class="r2-box">
+      <div class="r2-val" id="r2val">—</div>
+      <div class="r2-text">
+        <strong>Model fit often stays strong.</strong> Multicollinearity usually doesn't hurt in-sample fit, and the model can still predict well for similar data. What it destroys is attribution: the model knows the combined effect but can't separate it. (Prediction can still suffer for unusual X2–X3 combinations not seen in the data.)
+      </div>
+    </div>
+
+    <!-- VIF -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem">
+        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem">VIF (X2 &amp; X3)</div>
+        <div style="font-family:'Playfair Display';font-size:1.5rem" id="vifVal">1.00</div>
+        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint);margin-top:.2rem">VIF measures how much the machine is struggling. Common rule of thumb: &gt;10 = serious problem.</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem">
+        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem">SE inflation (X2 &amp; X3)</div>
+        <div style="font-family:'Playfair Display';font-size:1.5rem" id="seInflation">×1.00</div>
+        <div style="font-size:.68rem;font-family:'JetBrains Mono';color:var(--hint);margin-top:.2rem">vs r = 0 baseline</div>
+      </div>
+    </div>
+
+    <div class="insight green" id="insight">
+      r = 0.00 — no correlation. Each variable's effect can be estimated with little interference from the others. Coefficients are precise with respect to multicollinearity.
+    </div>
+
+    <!-- What causes multicollinearity -->
+    <div class="se-causes">
+      <div class="causes-title">What causes multicollinearity?</div>
+      <details class="cause-detail">
+        <summary><span class="cause-arrow" style="color:#d97706">↑</span> Variables that are strongly correlated in the real world</summary>
+        <div class="cause-expand">Income and wealth. Years of experience and age. Square footage and number of rooms. They aren't the same thing, but they move together in most data, so OLS has very little independent variation to work with when separating their effects.</div>
+      </details>
+      <details class="cause-detail">
+        <summary><span class="cause-arrow" style="color:#d97706">↑</span> Including a variable and its transformation</summary>
+        <div class="cause-expand">X and X², or X and log(X). When X is all positive and its range is narrow, these are often highly correlated in your sample, so their individual coefficients get noisy. Two standard fixes: center X before squaring, which usually cuts the correlation sharply, and test the variables jointly (F-test) rather than one t-stat at a time.</div>
+      </details>
+      <details class="cause-detail" style="border-bottom:none">
+        <summary><span class="cause-arrow" style="color:#d97706">↑</span> Small sample with many predictors</summary>
+        <div class="cause-expand">Two problems compound here. Sample correlations between even unrelated variables bounce around more when n is small, so chance collinearity is more likely. And as the number of predictors approaches the number of observations, the data spreads thinner over more dimensions and every estimate gets noisier, collinear or not. More data helps both problems.</div>
+      </details>
+    </div>
+
+    <!-- Guided questions -->
+    <details class="guided-qs">
+      <summary class="gq-summary">
+        Guided questions
+        <span style="background:#2a3354;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;font-family:monospace;display:inline-block;line-height:1.6;margin-left:4px">6</span>
+        <span class="gq-arrow">›</span>
+      </summary>
+      <div class="gq-body">
+
+        <div class="gq-item">
+          <div class="gq-num">1</div>
+          <div class="gq-content">
+            <div class="gq-prompt">At r = 0, all three variables are significant. Drag to r = 0.90. What happens to X2 and X3? What happens to X1?</div>
+            <div class="gq-hint">Watch the SE and t-stat columns separately for each variable.</div>
+            <textarea class="gq-input" placeholder="Write your answer here…" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="gq-item">
+          <div class="gq-num">2</div>
+          <div class="gq-content">
+            <div class="gq-prompt">In the stylized table, the coefficients on X2 and X3 stay at 0.70 while their SEs grow. Why does that make them insignificant? (Then check the resample panel: across real samples the estimates also move.)</div>
+            <div class="gq-hint">Think about what SE does to the t-statistic. In the table the estimate is held still to isolate that effect; in real data both the estimate and its SE move.</div>
+            <textarea class="gq-input" placeholder="Write your answer here…" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="gq-item">
+          <div class="gq-num">3</div>
+          <div class="gq-content">
+            <div class="gq-prompt">Use the resample panel: draw samples at r = 0, then at r = 0.95. The SEs explode, but what happens to R²? What does this tell you about multicollinearity and model fit?</div>
+            <div class="gq-hint">A model can fit the data well and still have uninterpretable coefficients.</div>
+            <textarea class="gq-input" placeholder="Write your answer here…" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="gq-item">
+          <div class="gq-num">4</div>
+          <div class="gq-content">
+            <div class="gq-prompt">Look at the confidence intervals for X2 and X3 as r increases. What happens to them, and what does that mean for your ability to make decisions?</div>
+            <div class="gq-hint">A wide CI that crosses zero means you can't distinguish the effect from zero.</div>
+            <textarea class="gq-input" placeholder="Write your answer here…" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="gq-item">
+          <div class="gq-num">5</div>
+          <div class="gq-content">
+            <div class="gq-prompt">You have two highly correlated variables: household income and household wealth. Both are insignificant (p > 0.05). Should you conclude neither affects the outcome?</div>
+            <div class="gq-hint">Insignificant may mean indistinguishable, not unimportant. Consider: drop one, combine them, collect more data, or keep both if your goal is prediction rather than interpretation. Multicollinearity usually does not hurt in-sample fit much, but it mainly damages individual coefficient attribution.</div>
+            <textarea class="gq-input" placeholder="Write your answer here…" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="gq-item">
+          <div class="gq-num">6</div>
+          <div class="gq-content">
+            <div class="gq-prompt">Set r = 0.90. Note the SE and t-stat for X2. Now click "Drop X3" below the slider. What happens to X2's SE and t-stat? What does this tell you about where the problem came from?</div>
+            <div class="gq-hint">The problem wasn't X2. It was the competition with X3.</div>
+            <textarea class="gq-input" placeholder="Write your answer here…" rows="2"></textarea>
+          </div>
+        </div>
+
+      </div>
+    </details>
+
+  </div>
+
+  <!-- RIGHT: visualizations -->
+  <div class="right">
+
+    <div style="font-size:.72rem;font-family:'JetBrains Mono';color:#374151;text-transform:uppercase;letter-spacing:.1em;font-weight:600">OLS sorting machine</div>
+    <div style="font-size:.82rem;color:#6b7280;font-family:'Inter';line-height:1.5;margin-top:-.25rem">
+      The bins are <strong style="color:#374151">competing to explain the same signal</strong>. When neither can win cleanly, both estimates suffer.
+    </div>
+
+    <canvas id="machineCanvas" height="490" style="background:white;border-radius:10px;border:1px solid var(--border)"></canvas>
+    <details style="font-size:.72rem;font-family:'JetBrains Mono';color:#374151;line-height:1.6;padding:.25rem .25rem 0">
+      <summary style="cursor:pointer;color:#6b7280;list-style:none">Fine print (for the rigorous) ›</summary>
+      <div style="margin-top:.4rem">
+        * X2 and X3 have the same expected SE here because the setup is symmetric: both have true coefficient 0.70 and only their pairwise correlation drives the inflation.<br>
+        * The stat table uses an illustrative baseline SE of 0.18. The resample panel runs a real regression (n = 60, noise SD = 1.6), so its scatter spread at r = 0 is about 0.21. The two layers tell the same story; their baseline numbers differ slightly by design.<br>
+        * The ball-sorting is a metaphor. OLS doesn't assign variance piece-by-piece. Correlated regressors make <em>both</em> estimates simultaneously sensitive to noise. The "Draw a new sample" panel shows the true mechanism.<br>
+        * In multiple regression, multicollinearity depends on how each variable relates to <em>all</em> others, not just one pair. This widget shows pairwise correlation for illustration.
+      </div>
+    </details>
+
+    <div class="ci-section">
+      <div class="ci-lbl">95% confidence intervals. The bold bar is the expected 95% range for estimates, centered on the true β. The thin grey bar above it is your latest sample's interval, centered on its β̂. Draw repeatedly and watch the grey bar jump while the bold one only widens.</div>
+      <canvas id="ciCanvas" height="120"></canvas>
+    </div>
+
+    <details class="concept-box" style="padding:.75rem 1.25rem">
+      <summary style="cursor:pointer;font-weight:600;color:#141b34;font-size:.88rem;list-style:none">Why are there two bins if there's only one signal? ›</summary>
+      <div style="margin-top:.625rem">
+        Because the theory says there are two different effects. OLS builds a bin for each. But when X2 and X3 almost always move together, the data give very little guidance on how much belongs in each bin, so both estimates become unreliable.<br><br>
+        <strong style="color:#141b34">Example:</strong> X2 = study hours, X3 = attendance. If students who study more almost always attend more, did grades improve because of studying, or because of attending? You need two bins conceptually. But the data give you mostly one combined signal.<br><br>
+        <strong style="color:#141b34">When r is high:</strong> many different splits between the two bins explain the data almost equally well. That flat ridge of near-ties is the consequence of multicollinearity, and it's why the estimates swing so much from sample to sample.<br><br>
+        <strong style="color:#141b34;font-size:.95rem">"The ball didn't go to the wrong bin. The data just can't pin down which bin it belongs in."</strong>
+      </div>
+    </details>
+
+  </div>
+</main>
+
+<!-- Guided questions full width below -->
+
+<script>
+const slider = document.getElementById('rSlider');
+const machineCanvas = document.getElementById('machineCanvas');
+const mCtx = machineCanvas.getContext('2d');
+const ciCanvas = document.getElementById('ciCanvas');
+const cCtx = ciCanvas.getContext('2d');
+
+const BASE_SE = 0.18;
+const BETAS = { x1: 1.50, x2: 0.70, x3: 0.70 };
+const CRIT = 1.96;
+const X1C_GREEN = '#16a34a'; // green for X1 — stable, unaffected
+const X1C = '#1d4ed8';       // blue used in stat table only
+const X2C = '#d85a30', X3C = '#7c3aed';
+
+function getR() { return parseInt(slider.value) / 100; }
+
+let dropX3 = false;
+
+function toggleDropX3() {
+  dropX3 = !dropX3;
+  const btn = document.getElementById('dropX3Btn');
+  const note = document.getElementById('dropX3Note');
+  btn.style.background = dropX3 ? '#fef3c7' : 'var(--surface)';
+  btn.style.borderColor = dropX3 ? '#d97706' : 'var(--border)';
+  btn.style.color = dropX3 ? '#78350f' : 'var(--ink)';
+  btn.textContent = dropX3 ? 'Restore X3' : 'Drop X3 from model';
+  note.style.display = dropX3 ? 'inline' : 'none';
+  const ovb = document.getElementById('ovbWarning');
+  if (ovb) ovb.style.display = dropX3 ? 'block' : 'none';
+  const db = document.getElementById('drawBtn');
+  const ab = document.getElementById('autoDrawBtn');
+  if (db) { db.disabled = dropX3; db.style.opacity = dropX3 ? '0.4' : '1'; db.style.cursor = dropX3 ? 'not-allowed' : 'pointer'; }
+  if (ab) { ab.disabled = dropX3; ab.style.opacity = dropX3 ? '0.4' : '1'; }
+  if (dropX3 && autoDraw) toggleAutoDraw();
+  balls = []; resetBinState(); resetResamplePanel(); update();
+}
+
+function seFor(variable, r) {
+  if (variable === 'x1') return BASE_SE;
+  // When X3 is dropped, X2's SE collapses back to baseline — no more competition
+  if (variable === 'x2' && dropX3) return BASE_SE;
+  if (variable === 'x3' && dropX3) return null; // variable removed
+  const vif = 1 / (1 - r * r);
+  return BASE_SE * Math.sqrt(vif);
+}
+
+function pVal(t) {
+  const absT = Math.abs(t);
+  if (absT > 3.5) return '<0.01';
+  if (absT > 2.58) return '0.01';
+  if (absT > 1.96) return '0.05';
+  if (absT > 1.64) return '0.10';
+  return (Math.min(0.99, Math.exp(-0.7 * absT + 0.4))).toFixed(2);
+}
+
+function colForSE(se) {
+  if (se < 0.4)  return { main: X2C, cls: 'green' };
+  if (se < 0.8)  return { main: '#d97706', cls: 'amber' };
+  return              { main: '#dc2626', cls: 'red' };
+}
+
+function updateStats() {
+  const r = getR();
+  const vif = 1 / (1 - r * r);
+  const inflation = Math.sqrt(vif);
+
+  const se2 = seFor('x2', r);
+  const se3raw = seFor('x3', r);
+  const se3 = se3raw; // symmetric DGP: X2 and X3 have identical expected SE
+  const t1 = BETAS.x1 / BASE_SE;
+  const t2 = BETAS.x2 / se2;
+  const t3 = se3 !== null ? BETAS.x3 / se3 : null;
+
+  document.getElementById('rReadout').textContent = `r = ${r.toFixed(2)}`;
+  const rc = r < 0.3 ? '#166534' : r < 0.7 ? '#d97706' : '#dc2626';
+  document.getElementById('rReadout').style.color = rc;
+
+  document.getElementById('se1').textContent = BASE_SE.toFixed(2);
+  document.getElementById('se2').textContent = se2.toFixed(2);
+  document.getElementById('se2').style.color = se2 > 0.5 ? '#dc2626' : '#166534';
+  document.getElementById('se3').textContent = se3 !== null ? se3.toFixed(2) : '—';
+  document.getElementById('se3').style.color = se3 !== null && se3 > 0.5 ? '#dc2626' : '#9ca3af';
+
+  document.getElementById('t1').textContent = t1.toFixed(2);
+  document.getElementById('t2').textContent = t2.toFixed(2);
+  document.getElementById('t2').style.color = Math.abs(t2) < 1.96 ? '#dc2626' : '#166534';
+  document.getElementById('t3').textContent = t3 !== null ? t3.toFixed(2) : '—';
+  document.getElementById('t3').style.color = t3 !== null && Math.abs(t3) < 1.96 ? '#dc2626' : '#9ca3af';
+
+  document.getElementById('p1').textContent = pVal(t1);
+  document.getElementById('p2').textContent = pVal(t2);
+  document.getElementById('p2').style.color = Math.abs(t2) < 1.96 ? '#dc2626' : '#166534';
+  document.getElementById('p3').textContent = t3 !== null ? pVal(t3) : '—';
+  document.getElementById('p3').style.color = t3 !== null && Math.abs(t3) < 1.96 ? '#dc2626' : '#9ca3af';
+  const b3cell = document.getElementById('b3');
+  if (b3cell) { b3cell.textContent = dropX3 ? '—' : '0.70'; b3cell.style.color = dropX3 ? '#9ca3af' : ''; }
+
+  document.getElementById('vifVal').textContent = dropX3 ? '1.00' : vif.toFixed(2);
+  document.getElementById('vifVal').style.color = !dropX3 && vif > 10 ? '#dc2626' : !dropX3 && vif > 5 ? '#d97706' : '#374151';
+  document.getElementById('seInflation').textContent = dropX3 ? '×1.00' : `×${inflation.toFixed(2)}`;
+  document.getElementById('seInflation').style.color = !dropX3 && inflation > 3 ? '#dc2626' : !dropX3 && inflation > 2 ? '#d97706' : '#374151';
+
+  const ins = document.getElementById('insight');
+  if (dropX3) {
+    ins.className = 'insight green';
+    const collapsedSE = (BASE_SE * Math.sqrt(vif)).toFixed(2);
+    ins.innerHTML = `X3 dropped. SE(X2) collapsed from ${collapsedSE} → ${BASE_SE.toFixed(2)}. t(X2) recovered to ${t2.toFixed(2)}. <strong>The problem wasn’t X2. It was the competition with X3.</strong>`;
+    return;
+  }
+  if (r < 0.3) {
+    ins.className = 'insight green';
+    ins.textContent = `r = ${r.toFixed(2)} — low correlation. Each variable's effect can be estimated with little interference from the others. All three are significant. Coefficients are precise with respect to multicollinearity (other assumptions still apply).`;
+  } else if (r < 0.7) {
+    ins.className = 'insight amber';
+    ins.textContent = `r = ${r.toFixed(2)} — moderate multicollinearity. X2 and X3 SEs are growing. When X2 and X3 move together, there is less independent variation to sort. VIF = ${vif.toFixed(1)}.`;
+  } else if (r < 0.95) {
+    ins.className = 'insight red';
+    ins.innerHTML = `r = ${r.toFixed(2)} — high multicollinearity. X2 and X3 may appear insignificant even though both matter. VIF = ${vif.toFixed(1)}. <strong>Insignificant does NOT mean unimportant — it may mean indistinguishable.</strong>`;
+  } else {
+    ins.className = 'insight red';
+    ins.innerHTML = `r = ${r.toFixed(2)} — near-perfect collinearity. Estimates still exist, but they are wildly sensitive to noise. Draw a few samples and watch. The machine isn't broken; the data contains almost no independent variation to separate X2 from X3. <strong>Insignificant does NOT mean unimportant. It may mean indistinguishable.</strong>`;
+  }
+}
+
+function drawMachine(r) {
+  const W = machineCanvas.offsetWidth || 500;
+  machineCanvas.width = W; machineCanvas.height = 490; const H = 460;
+  mCtx.clearRect(0, 0, W, H);
+  mCtx.fillStyle = '#fff'; mCtx.fillRect(0, 0, W, H);
+
+  const { MX, PIV_X, PIV_Y, ARM_Y } = getMachineLayout(W);
+  const overlap = Math.min(0.99, r);
+  const ses = [BASE_SE, seFor('x2', r), dropX3 ? null : seFor('x3', r)];
+
+  // ── VARIANCE IN Y (top hopper) ──
+  const hopW = 100, hopH = 48, hopX = W / 2 - hopW / 2, hopY = 14;
+  roundRect(mCtx, hopX, hopY, hopW, hopH, 6);
+  mCtx.fillStyle = '#f0ede8'; mCtx.fill();
+  mCtx.strokeStyle = '#d1d5db'; mCtx.lineWidth = 1; mCtx.stroke();
+  mCtx.fillStyle = '#374151'; mCtx.font = '500 11px Inter'; mCtx.textAlign = 'center';
+  mCtx.fillText('Variance in Y', W / 2, hopY + 16);
+  mCtx.fillStyle = '#9ca3af'; mCtx.font = '10px JetBrains Mono';
+  mCtx.fillText('(to be sorted)', W / 2, hopY + 30);
+
+  // Arrow hopper → machine
+  mCtx.strokeStyle = '#d1d5db'; mCtx.lineWidth = 1.5; mCtx.setLineDash([3, 3]);
+  mCtx.beginPath(); mCtx.moveTo(W / 2, hopY + hopH); mCtx.lineTo(W / 2, MY - 2); mCtx.stroke();
+  mCtx.setLineDash([]);
+  mCtx.fillStyle = '#d1d5db';
+  mCtx.beginPath(); mCtx.moveTo(W/2, MY); mCtx.lineTo(W/2-5, MY-8); mCtx.lineTo(W/2+5, MY-8); mCtx.closePath(); mCtx.fill();
+
+  // ── MACHINE BOX ──
+  roundRect(mCtx, MX, MY, MW, MH, 10);
+  mCtx.fillStyle = '#f8f7f4'; mCtx.fill();
+  mCtx.strokeStyle = '#d1d5db'; mCtx.lineWidth = 1.5; mCtx.stroke();
+  mCtx.fillStyle = '#374151'; mCtx.font = '500 12px Inter'; mCtx.textAlign = 'center';
+  mCtx.fillText('OLS sorting machine', PIV_X, MY + 18);
+  mCtx.fillStyle = '#9ca3af'; mCtx.font = '10px JetBrains Mono';
+  mCtx.fillText('apportioning variance to each X', PIV_X, MY + 32);
+
+  // Pivot point inside machine
+  mCtx.beginPath(); mCtx.arc(PIV_X, PIV_Y, 5, 0, Math.PI * 2);
+  mCtx.fillStyle = '#9ca3af'; mCtx.fill();
+
+  // Sorting arms — stop short of label so text isn't obscured
+  const ms = overlap * 38;
+  const x1ex = MX + 28,              x1ey = ARM_Y - 20;
+  const x2ex = PIV_X - 36 + ms,      x2ey = ARM_Y - 20;
+  const x3ex = PIV_X + 36 - ms*0.9,  x3ey = ARM_Y - 20;
+
+  mCtx.lineWidth = 2.5; mCtx.setLineDash([]);
+  // X1 — always solid green
+  mCtx.strokeStyle = X1C_GREEN; mCtx.globalAlpha = 1;
+  mCtx.beginPath(); mCtx.moveTo(PIV_X, PIV_Y); mCtx.lineTo(x1ex, x1ey); mCtx.stroke();
+  // X2 — solid
+  mCtx.strokeStyle = X2C; mCtx.globalAlpha = 1;
+  mCtx.beginPath(); mCtx.moveTo(PIV_X, PIV_Y); mCtx.lineTo(x2ex, x2ey); mCtx.stroke();
+  // X3 — faded/dashed when dropped
+  mCtx.strokeStyle = X3C; mCtx.globalAlpha = dropX3 ? 0.2 : 1;
+  if (dropX3) mCtx.setLineDash([4, 4]);
+  mCtx.beginPath(); mCtx.moveTo(PIV_X, PIV_Y); mCtx.lineTo(x3ex, x3ey); mCtx.stroke();
+  mCtx.setLineDash([]); mCtx.globalAlpha = 1;
+
+  // Confusion mark — only when X3 is in model
+  if (!dropX3 && overlap > 0.35) {
+    const alpha = Math.min(1, (overlap - 0.35) / 0.65);
+    mCtx.fillStyle = `rgba(${overlap > 0.7 ? '220,38,38':'217,119,6'},${alpha})`;
+    mCtx.font = `bold ${Math.round(13 + overlap * 8)}px Inter`;
+    mCtx.textAlign = 'center';
+    mCtx.fillText('?', (x2ex+x3ex)/2, x2ey - 8);
+  }
+
+  // Arm tip labels — drawn after arms so they appear on top
+  mCtx.font = '600 12px Inter'; mCtx.textAlign = 'center';
+  [[x1ex,X1C_GREEN,'X1',1],[x2ex,X2C,'X2',1],[x3ex,X3C,'X3', dropX3?0.25:1]].forEach(([x,c,l,a])=>{
+    mCtx.fillStyle = c; mCtx.globalAlpha = a;
+    mCtx.fillText(l, x, ARM_Y - 6);
+  });
+  mCtx.globalAlpha = 1;
+
+  // ── BINS (below machine) ──
+  // Extra gap so bracket above bins has room
+  const BIN_TOP = ARM_Y + 52;
+  const binH = 72;
+  const binW = Math.floor((W - 28) / 3) - 8;
+  const binPad = 14;
+  const BIN_XS = [
+    binPad,
+    binPad + binW + 8,
+    binPad + (binW + 8) * 2,
+  ];
+
+  // Merge glow between X2 and X3 bins — only when X3 in model
+  if (!dropX3 && overlap > 0.1) {
+    const a = Math.min(0.22, (overlap-0.1)/0.9*0.22);
+    const g = mCtx.createLinearGradient(BIN_XS[1]+binW, BIN_TOP, BIN_XS[2], BIN_TOP);
+    g.addColorStop(0, `rgba(216,90,48,${a})`);
+    g.addColorStop(1, `rgba(124,58,237,${a})`);
+    mCtx.fillStyle = g;
+    mCtx.fillRect(BIN_XS[1]+binW, BIN_TOP, BIN_XS[2]-BIN_XS[1]-binW, binH);
+  }
+
+  // X2 and X3 share the same expected SE: the DGP is symmetric (equal true
+  // coefficients, only their pairwise correlation drives the inflation).
+  const se2 = ses[1];
+  const se3 = ses[2];
+  const seActual = [ses[0], se2, se3];
+
+  [X1C_GREEN, X2C, X3C].forEach((col, i) => {
+    const trueSE = seActual[i];
+    const isDropped = i === 2 && dropX3;
+    const displaySE = isDropped ? null : (i === 0 ? BASE_SE : Math.max(trueSE || 0, binState[i].animSE));
+    const beta = [BETAS.x1, BETAS.x2, BETAS.x3][i];
+    const t = displaySE ? beta / displaySE : null;
+    const bx2 = BIN_XS[i];
+    const isSig = t !== null && Math.abs(t) >= 1.96;
+    const isFlashing = !isDropped && Date.now() < binState[i].flashUntil;
+    const flashPulse = isFlashing ? 0.5 + 0.5 * Math.sin(Date.now() / 55) : 0;
+
+    // Dropped bin — greyed out
+    if (isDropped) {
+      roundRect(mCtx, bx2, BIN_TOP, binW, binH, 6);
+      mCtx.fillStyle = '#f5f5f5'; mCtx.fill();
+      mCtx.strokeStyle = '#d1d5db'; mCtx.lineWidth = 1; mCtx.setLineDash([4,4]); mCtx.stroke();
+      mCtx.setLineDash([]);
+      mCtx.fillStyle = '#9ca3af'; mCtx.font = '600 12px Inter'; mCtx.textAlign = 'center';
+      mCtx.fillText('X3', bx2 + binW/2, BIN_TOP + 22);
+      mCtx.fillStyle = '#c4c4c4'; mCtx.font = '10px JetBrains Mono';
+      mCtx.fillText('dropped', bx2 + binW/2, BIN_TOP + 40);
+      return;
+    }
+
+    // Flash red overlay
+    if (isFlashing) {
+      roundRect(mCtx, bx2, BIN_TOP, binW, binH, 6);
+      mCtx.fillStyle = `rgba(220,38,38,${flashPulse * 0.2})`; mCtx.fill();
+    }
+
+    roundRect(mCtx, bx2, BIN_TOP, binW, binH, 6);
+    mCtx.fillStyle = isFlashing ? '#fff6f6' : '#fff'; mCtx.fill();
+    mCtx.strokeStyle = isFlashing ? '#dc2626' : col;
+    mCtx.lineWidth = isFlashing ? 2.5 : (i === 0 ? 1.5 : Math.min(3.5, 1.5 + overlap * 2.5));
+    mCtx.stroke();
+
+    // Variable name — inside box
+    mCtx.fillStyle = isFlashing ? '#dc2626' : col;
+    mCtx.font = '600 13px Inter'; mCtx.textAlign = 'center';
+    mCtx.fillText(['X1','X2','X3'][i], bx2 + binW/2, BIN_TOP + 18);
+
+    // SE bar
+    const barX = bx2 + 6, barMaxW = binW - 12;
+    const barFill = Math.min(barMaxW, (displaySE / 2.8) * barMaxW);
+    roundRect(mCtx, barX, BIN_TOP + 26, barMaxW, 5, 2);
+    mCtx.fillStyle = '#e5e7eb'; mCtx.fill();
+    const fc = i===0 ? X1C_GREEN : isFlashing ? '#dc2626' : displaySE > BASE_SE*2 ? '#dc2626' : displaySE > BASE_SE*1.3 ? '#d97706' : col;
+    roundRect(mCtx, barX, BIN_TOP + 26, barFill, 5, 2);
+    mCtx.fillStyle = fc; mCtx.fill();
+
+    // SE value
+    mCtx.fillStyle = fc; mCtx.font = '500 10px JetBrains Mono'; mCtx.textAlign = 'center';
+    mCtx.fillText(`SE = ${displaySE.toFixed(2)}`, bx2 + binW/2, BIN_TOP + 46);
+
+    // t-stat + significance
+    if (isFlashing) {
+      mCtx.fillStyle = '#dc2626'; mCtx.font = 'bold 10px Inter'; mCtx.textAlign = 'center';
+      const attrLabel = ['explained by X1','explained by X2','explained by X3'][i];
+      mCtx.fillText(`← ${attrLabel}?`, bx2 + binW/2, BIN_TOP + 62);
+    } else {
+      const tCol = isSig ? (i===0 ? X1C_GREEN : col) : '#dc2626';
+      mCtx.fillStyle = tCol; mCtx.font = '500 10px JetBrains Mono'; mCtx.textAlign = 'center';
+      mCtx.fillText(`t = ${t.toFixed(2)} ${isSig ? '✓' : '✗'}`, bx2 + binW/2, BIN_TOP + 62);
+    }
+
+    // Drop chute
+    const armTipX = [x1ex,x2ex,x3ex][i];
+    const binCx = bx2 + binW/2;
+    mCtx.strokeStyle = col; mCtx.lineWidth = 1; mCtx.setLineDash([2,3]); mCtx.globalAlpha = 0.3;
+    mCtx.beginPath(); mCtx.moveTo(armTipX, ARM_Y+14); mCtx.lineTo(binCx, BIN_TOP); mCtx.stroke();
+    mCtx.setLineDash([]); mCtx.globalAlpha = 1;
+  });
+
+  // Shared uncertain signal counter — shown between X2 and X3 bins, above them
+  const totalUncertain = binState[1].uncertainCount + binState[2].uncertainCount;
+  if (totalUncertain > 0) {
+    const x2cx = BIN_XS[1] + binW / 2;
+    const x3cx = BIN_XS[2] + binW / 2;
+    const midX = (x2cx + x3cx) / 2;
+
+    // Bracket over X2 and X3
+    mCtx.strokeStyle = '#dc2626'; mCtx.lineWidth = 1.5; mCtx.setLineDash([]);
+    mCtx.beginPath();
+    mCtx.moveTo(x2cx, BIN_TOP - 6);
+    mCtx.lineTo(x2cx, BIN_TOP - 12);
+    mCtx.lineTo(x3cx, BIN_TOP - 12);
+    mCtx.lineTo(x3cx, BIN_TOP - 6);
+    mCtx.stroke();
+
+    // Badge in the middle of the bracket
+    mCtx.beginPath(); mCtx.arc(midX, BIN_TOP - 20, 12, 0, Math.PI * 2);
+    mCtx.fillStyle = '#dc2626'; mCtx.fill();
+    mCtx.fillStyle = '#fff'; mCtx.font = 'bold 10px JetBrains Mono'; mCtx.textAlign = 'center';
+    mCtx.fillText(`${totalUncertain}?`, midX, BIN_TOP - 16);
+
+    // Label
+    mCtx.fillStyle = 'rgba(220,38,38,0.85)'; mCtx.font = '500 10px Inter'; mCtx.textAlign = 'center';
+    mCtx.fillText(`${totalUncertain} uncertain signal${totalUncertain > 1 ? 's' : ''} shared between X2 & X3 → SE grows → t shrinks`, W/2, BIN_TOP + binH + 16);
+  }
+
+  // At high r: "both bins can explain this equally well"
+  if (!dropX3 && overlap > 0.7) {
+    const alpha = Math.min(0.9, (overlap - 0.7) / 0.3);
+    mCtx.fillStyle = `rgba(154,52,18,${alpha})`;
+    mCtx.font = `500 ${Math.round(10 + alpha * 2)}px Inter`;
+    mCtx.textAlign = 'center';
+    const midBinX = (BIN_XS[1] + BIN_XS[2] + binW) / 2;
+    mCtx.fillText('Both bins can explain this equally well.', midBinX, BIN_TOP - 30);
+  }
+}
+
+function drawCIs(r) {
+  const W = ciCanvas.offsetWidth || 500;
+  ciCanvas.width = W; ciCanvas.height = 120;
+  cCtx.clearRect(0, 0, W, 120);
+  cCtx.fillStyle = '#ffffff'; cCtx.fillRect(0, 0, W, 120);
+
+  const xMin = -1.5, xMax = 4, range = xMax - xMin;
+  const pad = { l: 48, r: 16 };
+  const cW = W - pad.l - pad.r;
+  function px(x) { return pad.l + (x - xMin) / range * cW; }
+
+  const vars = [
+    { lbl: 'X1', beta: BETAS.x1, se: BASE_SE, col: X1C, y: 22 },
+    { lbl: 'X2', beta: BETAS.x2, se: seFor('x2', r), col: X2C, y: 60 },
+    { lbl: 'X3', beta: BETAS.x3, se: seFor('x3', r), col: X3C, y: 98 },
+  ];
+
+  // Zero line
+  cCtx.strokeStyle = 'rgba(0,0,0,0.15)'; cCtx.lineWidth = 1; cCtx.setLineDash([3, 3]);
+  cCtx.beginPath(); cCtx.moveTo(px(0), 4); cCtx.lineTo(px(0), 116); cCtx.stroke();
+  cCtx.setLineDash([]);
+  cCtx.fillStyle = 'rgba(0,0,0,0.35)'; cCtx.font = '10px JetBrains Mono'; cCtx.textAlign = 'center';
+  cCtx.fillText('0', px(0), 115);
+
+  vars.forEach(({ lbl, beta, se, col, y }) => {
+    // X3 is removed from the model when dropped — don't draw a phantom interval
+    if (dropX3 && lbl === 'X3') {
+      cCtx.fillStyle = '#9ca3af'; cCtx.font = '600 12px Inter'; cCtx.textAlign = 'right';
+      cCtx.fillText(lbl, pad.l - 6, y + 4);
+      cCtx.fillStyle = '#c4c4c4'; cCtx.font = 'italic 11px Inter'; cCtx.textAlign = 'left';
+      cCtx.fillText('dropped from model', pad.l + 8, y + 4);
+      return;
+    }
+    const ciL = beta - CRIT * se, ciR = beta + CRIT * se;
+    const crossesZero = ciL < 0;
+
+    // ── Sample CI overlay (latest draw) — only X2/X3, only when draws exist ──
+    if (lastDraw && !dropX3 && (lbl === 'X2' || lbl === 'X3')) {
+      const bhat = lbl === 'X2' ? lastDraw.b2 : lastDraw.b3;
+      const sL = bhat - CRIT * se, sR = bhat + CRIT * se;
+      const sCrosses = sL < 0;
+      const yo = y - 11; // sit just above the analytic bar
+      const dL = Math.max(pad.l, px(sL)), dR = Math.min(pad.l + cW, px(sR));
+      cCtx.strokeStyle = sCrosses ? 'rgba(220,38,38,0.5)' : 'rgba(120,120,120,0.55)';
+      cCtx.lineWidth = 1.5; cCtx.setLineDash([]);
+      cCtx.beginPath(); cCtx.moveTo(dL, yo); cCtx.lineTo(dR, yo); cCtx.stroke();
+      [sL, sR].forEach(x => {
+        const px2 = Math.max(pad.l + 1, Math.min(pad.l + cW - 1, px(x)));
+        cCtx.beginPath(); cCtx.moveTo(px2, yo - 3); cCtx.lineTo(px2, yo + 3); cCtx.stroke();
+      });
+      cCtx.beginPath(); cCtx.arc(px(bhat), yo, 2.5, 0, Math.PI * 2);
+      cCtx.fillStyle = sCrosses ? 'rgba(220,38,38,0.7)' : 'rgba(90,90,90,0.8)'; cCtx.fill();
+    }
+
+    // Variable label
+    cCtx.fillStyle = col; cCtx.font = '600 12px Inter'; cCtx.textAlign = 'right';
+    cCtx.fillText(lbl, pad.l - 6, y + 4);
+
+    // CI line
+    const drawL = Math.max(pad.l, px(ciL)), drawR = Math.min(pad.l + cW, px(ciR));
+    cCtx.strokeStyle = crossesZero ? '#dc2626' : col;
+    cCtx.lineWidth = 2.5; cCtx.setLineDash([]);
+    cCtx.beginPath(); cCtx.moveTo(drawL, y); cCtx.lineTo(drawR, y); cCtx.stroke();
+
+    // Caps
+    [ciL, ciR].forEach(x => {
+      const px2 = Math.max(pad.l + 1, Math.min(pad.l + cW - 1, px(x)));
+      cCtx.beginPath(); cCtx.moveTo(px2, y - 6); cCtx.lineTo(px2, y + 6); cCtx.stroke();
+    });
+
+    // Center dot
+    cCtx.beginPath(); cCtx.arc(px(beta), y, 4, 0, Math.PI * 2);
+    cCtx.fillStyle = crossesZero ? '#dc2626' : col; cCtx.fill();
+
+    // Crosses zero indicator
+    if (crossesZero) {
+      cCtx.strokeStyle = '#dc2626'; cCtx.lineWidth = 1.5;
+      cCtx.beginPath(); cCtx.moveTo(px(0), y - 10); cCtx.lineTo(px(0), y + 10); cCtx.stroke();
+    }
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function arrowHead(ctx, x, y, col) {
+  ctx.fillStyle = col;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 8, y - 4); ctx.lineTo(x - 8, y + 4);
+  ctx.closePath(); ctx.fill();
+}
+
+// ── ANIMATION ──
+// Layout constants — must match drawMachine exactly
+const MW = 240, MH = 195, MY = 90;
+function getMachineLayout(W) {
+  const MX = Math.floor((W - MW) / 2);
+  return { MX, PIV_X: MX + MW/2, PIV_Y: MY + 52, ARM_Y: MY + MH - 10 };
+}
+
+let balls = [];
+let animFrame = null;
+let lastSpawn = 0;
+const SPAWN_INTERVAL = 1200;
+
+function getBinCenters(W) {
+  const binW = Math.floor((W - 28) / 3) - 8;
+  const binPad = 14;
+  return [
+    binPad + binW / 2,
+    binPad + binW + 8 + binW / 2,
+    binPad + (binW + 8) * 2 + binW / 2,
+  ];
+}
+
+function getArmTips(r, W) {
+  const { MX, PIV_X, ARM_Y } = getMachineLayout(W || machineCanvas.width || 500);
+  const ms = Math.min(0.99, r) * 38;
+  return [
+    { x: MX + 28,               y: ARM_Y },
+    { x: PIV_X - 36 + ms,      y: ARM_Y },
+    { x: PIV_X + 36 - ms*0.9,  y: ARM_Y },
+  ];
+}
+
+function spawnBall() {
+  const W = machineCanvas.width || 500;
+  const { PIV_X, MY: _MY } = getMachineLayout(W);
+  const startY = MY - 22;
+  const availableTargets = dropX3 ? [0, 1] : [0, 1, 2];
+  const target = availableTargets[Math.floor(Math.random() * availableTargets.length)];
+  const cols = [X1C_GREEN, X2C, X3C];
+  balls.push({
+    x: PIV_X, y: startY,
+    phase: 'falling', progress: 0,
+    intendedTarget: target,
+    target,
+    col: cols[target], isShared: target > 0,
+    startX: PIV_X, startY,
+    wobble: 0, wobbleDir: 1, radius: 8,
+    uncertainSort: false,
+  });
+}
+
+// Per-bin state: tracks flashes and animated SE
+const binState = [
+  { uncertainCount: 0, flashUntil: 0, animSE: BASE_SE },
+  { uncertainCount: 0, flashUntil: 0, animSE: BASE_SE },
+  { uncertainCount: 0, flashUntil: 0, animSE: BASE_SE },
+];
+
+function resetBinState() {
+  [0,1,2].forEach(i => {
+    binState[i].uncertainCount = 0;
+    binState[i].flashUntil = 0;
+    binState[i].animSE = BASE_SE;
+  });
+}
+
+function stepBalls(dt, W) {
+  const r = getR();
+  const { PIV_X, PIV_Y, ARM_Y } = getMachineLayout(W);
+  const tips = getArmTips(r, W);
+  const binCenters = getBinCenters(W);
+  const BIN_TOP = ARM_Y + 30;
+
+  balls.forEach(b => {
+    if (b.phase === 'falling') {
+      b.progress += dt * 0.0015;
+      b.x = PIV_X;
+      b.y = b.startY + b.progress * (PIV_Y - b.startY);
+      if (b.progress >= 1) { b.phase = 'sorting'; b.progress = 0; b.wobble = 0; }
+
+    } else if (b.phase === 'sorting') {
+      b.progress += dt * 0.0015;
+      const confusion = b.isShared ? r : 0;
+      b.wobble += b.wobbleDir * dt * 0.013 * (1 + confusion * 3.5);
+      if (Math.abs(b.wobble) > 4 + confusion * 26) b.wobbleDir *= -1;
+      b.x = PIV_X + b.wobble;
+      b.y = PIV_Y + Math.sin(b.progress * Math.PI * 2) * 4;
+
+      if (b.progress >= 1) {
+        // Uncertain signal chance: ramps sharply with r, only for X2/X3
+        // When X3 is dropped, no uncertainty — X2 gets everything cleanly
+        const uncertainChance = (b.isShared && !dropX3) ? Math.pow(r, 2.2) * 0.9 : 0;
+        if (Math.random() < uncertainChance) {
+          // Send to the OTHER correlated bin (always X2↔X3, never X1)
+          b.target = b.intendedTarget === 1 ? 2 : 1;
+          b.uncertainSort = true;
+          b.col = '#dc2626'; // turn red to signal uncertain signal
+        }
+        b.phase = 'dropping'; b.progress = 0;
+        b.startX = b.x; b.startY = b.y;
+      }
+
+    } else if (b.phase === 'dropping') {
+      b.progress += dt * 0.0014;
+      const tip = tips[b.target];
+      const binCx = binCenters[b.target];
+      if (b.progress < 0.45) {
+        const p = b.progress / 0.45;
+        b.x = b.startX + p * (tip.x - b.startX);
+        b.y = b.startY + p * (tip.y - b.startY);
+      } else {
+        const p = (b.progress - 0.45) / 0.55;
+        b.x = tip.x + p * (binCx - tip.x);
+        b.y = tip.y + p * (BIN_TOP + 18 - tip.y);
+      }
+      if (b.progress >= 1) {
+        b.phase = 'landed';
+        b.landTime = Date.now();
+        if (b.uncertainSort) {
+          // Trigger flash on that bin and grow its SE
+          binState[b.target].flashUntil = Date.now() + 800;
+          binState[b.target].uncertainCount++;
+          // Grow animSE by a small bump (capped at 3x baseline)
+          binState[b.target].animSE = Math.min(BASE_SE * 3.5,
+            binState[b.target].animSE + BASE_SE * 0.18);
+          // Also grow the intended bin's SE (shared uncertainty)
+          binState[b.intendedTarget].animSE = Math.min(BASE_SE * 3.5,
+            binState[b.intendedTarget].animSE + BASE_SE * 0.18);
+        }
+      }
+
+    } else if (b.phase === 'landed') {
+      if (Date.now() - b.landTime > 900) b.phase = 'done';
+    }
+  });
+
+  balls = balls.filter(b => b.phase !== 'done');
+}
+
+function animLoop(now) {
+  const dt = Math.min(now - (animLoop.last || now), 50);
+  animLoop.last = now;
+  if (now - lastSpawn > SPAWN_INTERVAL && balls.length < 7) {
+    spawnBall(); lastSpawn = now;
+  }
+  const r = getR();
+  const W = machineCanvas.offsetWidth || 400;
+  stepBalls(dt, W);
+  drawMachine(r);
+  drawBalls();
+  drawCIs(r);
+  animFrame = requestAnimationFrame(animLoop);
+}
+
+function drawBalls() {
+  balls.forEach(b => {
+    if (b.phase === 'done') return;
+    let alpha = 1;
+    if (b.phase === 'landed') alpha = Math.max(0, 1-(Date.now()-b.landTime)/900);
+    mCtx.globalAlpha = alpha;
+    mCtx.beginPath(); mCtx.arc(b.x, b.y, b.radius||8, 0, Math.PI*2);
+    mCtx.fillStyle = b.col; mCtx.fill();
+    mCtx.strokeStyle = b.uncertainSort ? '#fff' : 'rgba(255,255,255,0.85)';
+    mCtx.lineWidth = b.uncertainSort ? 2 : 1.5; mCtx.stroke();
+    // "!" label on wrong-sort balls
+    if (b.uncertainSort && b.phase !== 'landed') {
+      mCtx.fillStyle = '#fff'; mCtx.font = 'bold 9px Inter'; mCtx.textAlign = 'center';
+      mCtx.fillText('!', b.x, b.y + 3);
+    }
+    mCtx.globalAlpha = 1;
+  });
+}
+
+function update() {
+  const r = getR();
+  updateStats();
+  drawCIs(r);
+  if (typeof refreshScatterUI === 'function') refreshScatterUI();
+  if (!animFrame) animFrame = requestAnimationFrame(animLoop);
+}
+
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(update, 50); });
+slider.addEventListener('input', () => {
+  balls = [];
+  resetBinState();
+  resetResamplePanel();
+  update();
+});
+
+/* ════════════════════════════════════════════════
+   RESAMPLE ENGINE — real OLS on simulated correlated data
+   True model: Y = 1.50*X1 + 0.70*X2 + 0.70*X3 + noise
+   X1 independent; X2,X3 correlated at r (the slider value).
+   Each draw runs an actual 3-var regression so the β̂
+   scatter is genuine, not animated.
+   ════════════════════════════════════════════════ */
+const SIM_N = 60;
+const NOISE_SD = 1.6;
+let draws = [];
+let lastDraw = null; // latest sample's estimates, for the CI overlay
+let autoDraw = false, autoDrawTimer = null;
+
+function gauss() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function regress(r) {
+  const n = SIM_N, X = [], y = [];
+  const rho = Math.min(0.999, r);
+  const comp = Math.sqrt(Math.max(0, 1 - rho*rho));
+  for (let i = 0; i < n; i++) {
+    const x1 = gauss();
+    const z = gauss();
+    const x2 = z;
+    const x3 = rho * z + comp * gauss();
+    const yi = BETAS.x1*x1 + BETAS.x2*x2 + BETAS.x3*x3 + NOISE_SD * gauss();
+    X.push([1, x1, x2, x3]); y.push(yi);
+  }
+  const k = 4;
+  const XtX = Array.from({length:k}, () => new Array(k).fill(0));
+  const Xty = new Array(k).fill(0);
+  for (let i = 0; i < n; i++)
+    for (let a = 0; a < k; a++) {
+      Xty[a] += X[i][a]*y[i];
+      for (let b = 0; b < k; b++) XtX[a][b] += X[i][a]*X[i][b];
+    }
+  const M = XtX.map((row,i) => [...row, Xty[i]]);
+  for (let col = 0; col < k; col++) {
+    let piv = col;
+    for (let rr = col+1; rr < k; rr++) if (Math.abs(M[rr][col]) > Math.abs(M[piv][col])) piv = rr;
+    [M[col], M[piv]] = [M[piv], M[col]];
+    if (Math.abs(M[col][col]) < 1e-9) return null;
+    const d = M[col][col];
+    for (let c = col; c <= k; c++) M[col][c] /= d;
+    for (let rr = 0; rr < k; rr++) {
+      if (rr === col) continue;
+      const f = M[rr][col];
+      for (let c = col; c <= k; c++) M[rr][c] -= f * M[col][c];
+    }
+  }
+  return { b2: M[2][k], b3: M[3][k], r2: (() => {
+    // R² from this sample: 1 - SSR/SST using the fitted coefficients
+    const b = [M[0][k], M[1][k], M[2][k], M[3][k]];
+    let ssr = 0, sst = 0;
+    const ybar = y.reduce((s,v)=>s+v,0)/n;
+    for (let i = 0; i < n; i++) {
+      const fit = b[0] + b[1]*X[i][1] + b[2]*X[i][2] + b[3]*X[i][3];
+      ssr += (y[i]-fit)**2;
+      sst += (y[i]-ybar)**2;
+    }
+    return 1 - ssr/sst;
+  })() };
+}
+
+function drawSample() {
+  if (dropX3) return;
+  const res = regress(getR());
+  if (!res) return;
+  draws.push({ b2: res.b2, b3: res.b3 });
+  lastDraw = { b2: res.b2, b3: res.b3 };
+  if (draws.length > 60) draws.shift();
+  document.getElementById('drawB2').textContent = res.b2.toFixed(2);
+  document.getElementById('drawB3').textContent = res.b3.toFixed(2);
+  document.getElementById('drawR2').textContent = res.r2.toFixed(2);
+  const r2box = document.getElementById('r2val');
+  if (r2box) r2box.textContent = res.r2.toFixed(2);
+  document.getElementById('drawB2').style.color = Math.abs(res.b2 - BETAS.x2) > 0.6 ? '#dc2626' : 'var(--ink)';
+  document.getElementById('drawB3').style.color = Math.abs(res.b3 - BETAS.x3) > 0.6 ? '#dc2626' : 'var(--ink)';
+  document.getElementById('drawCount').textContent = draws.length + (draws.length === 1 ? ' draw' : ' draws');
+  drawScatter();
+  drawCIs(getR());
+}
+
+function resetResamplePanel() {
+  draws = [];
+  lastDraw = null;
+  document.getElementById('drawB2').textContent = '—';
+  document.getElementById('drawB3').textContent = '—';
+  document.getElementById('drawR2').textContent = '—';
+  const r2box = document.getElementById('r2val');
+  if (r2box) r2box.textContent = '—';
+  document.getElementById('drawCount').textContent = '0 draws';
+}
+
+function clearDraws() {
+  resetResamplePanel();
+  drawScatter();
+  drawCIs(getR());
+}
+
+function toggleAutoDraw() {
+  autoDraw = !autoDraw;
+  const btn = document.getElementById('autoDrawBtn');
+  btn.style.background = autoDraw ? '#fef3c7' : 'var(--surface)';
+  btn.style.borderColor = autoDraw ? '#d97706' : 'var(--border)';
+  btn.style.color = autoDraw ? '#78350f' : 'var(--ink)';
+  btn.textContent = autoDraw ? 'Stop' : 'Auto-draw';
+  if (autoDraw) autoDrawTimer = setInterval(drawSample, 320);
+  else clearInterval(autoDrawTimer);
+}
+
+const scatterCanvas = document.getElementById('scatterCanvas');
+const sCtx = scatterCanvas.getContext('2d');
+const S_LO = -1.0, S_HI = 2.4;
+
+function drawScatter() {
+  const W = scatterCanvas.offsetWidth || 320;
+  scatterCanvas.width = W; scatterCanvas.height = 150;
+  const H = 150, pad = 26;
+  sCtx.clearRect(0,0,W,H);
+  sCtx.fillStyle = '#fff'; sCtx.fillRect(0,0,W,H);
+  const sx = v => pad + (v - S_LO)/(S_HI - S_LO) * (W - pad - 8);
+  const sy = v => (H - pad) - (v - S_LO)/(S_HI - S_LO) * (H - pad - 8);
+  sCtx.strokeStyle = '#f3f4f6'; sCtx.lineWidth = 1;
+  sCtx.beginPath(); sCtx.moveTo(sx(0), 4); sCtx.lineTo(sx(0), H-pad); sCtx.stroke();
+  sCtx.beginPath(); sCtx.moveTo(pad, sy(0)); sCtx.lineTo(W-8, sy(0)); sCtx.stroke();
+  sCtx.fillStyle = '#9ca3af'; sCtx.font = '10px JetBrains Mono'; sCtx.textAlign = 'center';
+  sCtx.fillText('β̂₂', W/2, H - 8);
+  sCtx.save(); sCtx.translate(9, H/2); sCtx.rotate(-Math.PI/2);
+  sCtx.fillText('β̂₃', 0, 0); sCtx.restore();
+  draws.forEach((d, i) => {
+    const age = i / Math.max(1, draws.length - 1);
+    const isLast = i === draws.length - 1;
+    sCtx.beginPath();
+    sCtx.arc(sx(d.b2), sy(d.b3), isLast ? 5 : 3.2, 0, Math.PI*2);
+    sCtx.fillStyle = isLast ? '#dc2626' : `rgba(124,58,237,${0.18 + age*0.32})`;
+    sCtx.fill();
+  });
+  const tx = sx(0.70), ty = sy(0.70);
+  sCtx.strokeStyle = '#16a34a'; sCtx.lineWidth = 2;
+  sCtx.beginPath(); sCtx.moveTo(tx-6, ty); sCtx.lineTo(tx+6, ty);
+  sCtx.moveTo(tx, ty-6); sCtx.lineTo(tx, ty+6); sCtx.stroke();
+}
+
+function updateScatterCaption() {
+  const r = getR();
+  const cap = document.getElementById('scatterCaption');
+  if (!cap) return;
+  if (dropX3) cap.innerHTML = 'X3 dropped. Restore it to see the estimate scatter widen.';
+  else if (r < 0.3) cap.innerHTML = 'Low r: dots cluster tightly on the green cross. Estimates are stable across samples.';
+  else if (r < 0.85) cap.innerHTML = 'Moderate r: the cloud stretches along the anti-diagonal: high β̂₂ pairs with low β̂₃. They trade off.';
+  else cap.innerHTML = 'High r: dots fly far from the cross and across zero. β̂ flips sign sample to sample. That is the exploding SE, made visible.';
+}
+
+function refreshScatterUI() { updateScatterCaption(); drawScatter(); }
+
+update();
+drawSample(); // seed one draw so R², chips, and scatter start consistent
+</script>
+</body>
+</html>
