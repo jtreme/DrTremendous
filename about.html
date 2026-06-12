@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Dr. Tremendous</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f9f2e2;
+    --cream-deep: #efe4ca;
+    --cream-warm: #f3e9d2;
+    --navy: #141b34;
+    --navy-soft: #2a3354;
+    --navy-mute: #4a5274;
+    --gold: #d8a249;
+    --gold-deep: #b88532;
+    --gray: #6b6f7a;
+    --rule: rgba(20, 27, 52, 0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--cream); color: var(--navy); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 56px; }
+
+  /* NAV */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em; text-decoration: none; line-height: 1; }
+  .nav-logo img { height: 38px; width: auto; display: block; }
+  .nav-logo .navy { color: var(--navy); }
+  .nav-logo .gold { color: var(--gold); }
+  .nav-links { display: flex; gap: 40px; align-items: center; }
+  .nav-links a { font-size: 12px; font-weight: 600; color: var(--navy-soft); text-decoration: none; letter-spacing: 0.15em; text-transform: uppercase; padding: 6px 0; border-bottom: 1.5px solid transparent; transition: border-color 0.2s, color 0.2s; }
+  .nav-links a:hover, .nav-links a.active { color: var(--gold-deep); border-bottom-color: var(--gold); }
+
+  /* ARTICLE */
+  .article { max-width: 720px; margin: 0 auto; padding: 72px 0 40px; }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 24px; display: flex; align-items: center; gap: 14px; }
+  .eyebrow::before { content: ''; display: block; width: 32px; height: 2px; background: var(--gold); }
+  h1 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 60px; line-height: 1.04; letter-spacing: -0.02em; color: var(--navy); margin-bottom: 40px; }
+
+  .lede { font-family: 'Playfair Display', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--gold-deep); margin-bottom: 40px; }
+
+  .article p { font-size: 18px; line-height: 1.75; color: var(--navy-soft); margin-bottom: 24px; }
+  .article p strong { color: var(--navy); font-weight: 600; }
+
+  .section-label { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 30px; color: var(--navy); letter-spacing: -0.01em; margin: 56px 0 24px; }
+
+  /* Pulled examples list */
+  .examples { margin: 32px 0; padding-left: 0; list-style: none; }
+  .examples li { position: relative; padding: 18px 0 18px 28px; border-top: 1px solid var(--rule); font-size: 17px; line-height: 1.6; color: var(--navy-soft); }
+  .examples li:last-child { border-bottom: 1px solid var(--rule); }
+  .examples li::before { content: ''; position: absolute; left: 0; top: 26px; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }
+
+  /* Closing pull line */
+  .closer { font-family: 'Playfair Display', serif; font-style: italic; font-size: 24px; line-height: 1.45; color: var(--navy); margin: 48px 0; padding: 32px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); text-align: center; }
+
+  .door-line { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--navy-mute); text-align: center; margin-bottom: 40px; }
+
+  /* CTA */
+  .cta-wrap { text-align: center; padding: 16px 0 72px; }
+  .btn-primary { display: inline-block; background: var(--navy); color: var(--cream); border: none; padding: 16px 36px; font-size: 13px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; border-radius: 2px; cursor: pointer; text-decoration: none; transition: background 0.2s; }
+  .btn-primary:hover { background: var(--gold-deep); }
+
+  /* T-Rex flourish */
+  .rex-flourish { text-align: center; margin: 0 0 8px; }
+  .rex-flourish img { width: 92px; height: auto; opacity: 0.95; }
+
+  footer { margin-top: 0; padding: 48px 0 64px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
+  .footer-logo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 20px; }
+  .footer-logo .navy { color: var(--navy); }
+  .footer-logo .gold { color: var(--gold); }
+  .footer-tag { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray); }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 0 24px; }
+    h1 { font-size: 40px; }
+    .lede { font-size: 21px; }
+    .article p { font-size: 16px; }
+    .closer { font-size: 20px; }
+    .nav-links { gap: 16px; }
+    .nav-links a { font-size: 10px; }
+    .nav-logo { font-size: 17px; }
+    .nav-logo img { height: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <nav>
+    <a href="index.html" class="nav-logo">
+      <img src="trex.png" alt="">
+      <span><span class="navy">Dr.Treme</span><span class="gold">ndous</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">The Collection</a>
+      <a href="about.html" class="active">Office Hours</a>
+      <a href="#">Field Notes</a>
+    </div>
+  </nav>
+
+  <article class="article">
+
+    <div class="eyebrow">About Dr. Tremendous</div>
+    <h1>The Origin of Dr. Tremendous</h1>
+
+    <p class="lede">It was an accident.</p>
+
+    <p>My last name is Treme, and for years, autocorrect had opinions about that. Students would start an email with "Dr. Treme," and their phones would helpfully finish it: <strong>"Dr. Tremendous."</strong></p>
+
+    <p>It happened often enough that it stopped being a typo and became a running joke. Eventually, it became a name I just answered to.</p>
+
+    <p>So by the time I started building things, the character already had a name. Dr. Tremendous was just waiting for the tools.</p>
+
+    <div class="section-label">Why the Tools</div>
+
+    <p>I'm an economist. I teach applied microeconomics, build courses, and direct an undergraduate program. I am not a programmer by training.</p>
+
+    <p>But I have always had ideas about how economics should be taught: what students need to see, what they should try to predict before the answer is revealed, and which moments of confusion are worth creating because they lead to understanding.</p>
+
+    <p>For most of my career, many of those ideas stayed ideas. The distance between imagining a teaching tool and actually building one required a team, a budget, and technical skills I did not have.</p>
+
+    <p><strong>That distance has collapsed.</strong></p>
+
+    <p>Now I can describe what I want, work through it, test it, revise it, and watch it become real — often faster than I can talk myself out of it. The economics and the teaching are mine. The building is collaborative.</p>
+
+    <p>So I build the things that do not exist yet.</p>
+
+    <ul class="examples">
+      <li>A grocery store where students discover why a fertilizer shock reaches butter but barely touches bread.</li>
+      <li>A supply-and-demand market you can hear, where a shortage climbs and a surplus sags.</li>
+      <li>A degree planner that holds four years of advising logic, so students can walk in ready to talk about where they are going instead of which box to check next.</li>
+    </ul>
+
+    <p>None of these were available off the shelf. If I wanted them to exist, I had to make them.</p>
+
+    <p>And it turns out that making things students can actually use is the most fun I have had in this job.</p>
+
+    <div class="closer">That is the whole project, really: I have an idea, and now there is almost nothing between the idea and the thing existing.</div>
+
+    <div class="rex-flourish">
+      <img src="trex.png" alt="">
+    </div>
+    <p class="door-line">Dr. Tremendous is just the name on the door.</p>
+
+    <div class="cta-wrap">
+      <a href="index.html" class="btn-primary">Explore the Tools →</a>
+    </div>
+
+  </article>
+
+  <footer>
+    <div>
+      <div class="footer-logo"><span class="navy">Dr.Treme</span><span class="gold">ndous</span></div>
+      <div class="footer-tag">Solutions, made visible.</div>
+    </div>
+  </footer>
+
+</div>
+
+</body>
+</html>
