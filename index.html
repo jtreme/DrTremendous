@@ -142,7 +142,16 @@
   }
   .section-head h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
 
-  .tools-live { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+  .tools-live { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+  .tool-group { margin-bottom: 8px; }
+  .group-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 52px 0 18px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  #collection .tool-group:first-of-type .group-label { margin-top: 28px; }
   .tool {
     background: var(--cream-warm);
     padding: 36px 32px 30px;
@@ -355,156 +364,169 @@
       </div>
     </div>
 
-    <div class="tools-live">
-      <a href="https://drtremendous-analytics-tutor.netlify.app/" target="_blank" rel="noopener" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Tutor · Live</div>
-          <div class="tool-num">01</div>
-        </div>
-        <div class="tool-title">Dr. Tremendous<br>Analytics Tutor</div>
-        <div class="tool-desc">
-          A patient, slightly deadpan tutor that walks students through analytics one Socratic question at a time.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">ARE Analytics</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+    <div class="tool-group">
+      <div class="group-label">Econometrics &amp; Stats</div>
+      <div class="tools-live">
+        <a href="https://drtremendous-analytics-tutor.netlify.app/" target="_blank" rel="noopener" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Tutor · Live</div>
+          </div>
+          <div class="tool-title">Dr. Tremendous<br>Analytics Tutor</div>
+          <div class="tool-desc">
+            A patient, slightly deadpan tutor that walks students through analytics one Socratic question at a time.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE Analytics</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
 
-      <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Advising · Live</div>
-          <div class="tool-num">02</div>
-        </div>
-        <div class="tool-title">Paw Plan</div>
-        <div class="tool-desc">
-          A four-year degree planner for ARE &amp; ABM students. Drag courses across semesters, auto-check prerequisites, save your plan, and bring it to advising. Mobile-friendly.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">ARE / ABM Advising</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+        <a href="multicollinearity.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Visualizer · Live</div>
+          </div>
+          <div class="tool-title">The OLS<br>Sorting Machine</div>
+          <div class="tool-desc">
+            Watch variance in Y get sorted into bins for each predictor. Crank the correlation and draw new samples to see coefficients swing — and flip sign — while R² holds steady. Multicollinearity, made visible.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 455 · Econometrics</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
 
-      <a href="supply-demand-practice.html" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Practice · Live</div>
-          <div class="tool-num">03</div>
-        </div>
-        <div class="tool-title">Supply &amp; Demand<br>Practice</div>
-        <div class="tool-desc">
-          Five levels of curve-dragging, from classifying shifts up to simultaneous shocks and real news scenarios. Drag the curves, watch equilibrium move, check your reasoning.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">ARE 201 · Unit 4</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+    <div class="tool-group">
+      <div class="group-label">Markets &amp; Micro</div>
+      <div class="tools-live">
+        <a href="supply-demand-practice.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Practice · Live</div>
+          </div>
+          <div class="tool-title">Supply &amp; Demand<br>Practice</div>
+          <div class="tool-desc">
+            Five levels of curve-dragging, from classifying shifts up to simultaneous shocks and real news scenarios. Drag the curves, watch equilibrium move, check your reasoning.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Unit 4</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
 
-      <a href="sound-toy.html" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Sound Toy · Live</div>
-          <div class="tool-num">04</div>
-        </div>
-        <div class="tool-title">The Sound of<br>a Market</div>
-        <div class="tool-desc">
-          Drag the price and hear the market respond. Shortage sounds anxious, surplus sounds heavy, equilibrium resolves to a calm chord — learn to hear disequilibrium before you read the graph.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">ARE 201 · Supply &amp; Demand</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+        <a href="sound-toy.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Sound Toy · Live</div>
+          </div>
+          <div class="tool-title">The Sound of<br>a Market</div>
+          <div class="tool-desc">
+            Drag the price and hear the market respond. Shortage sounds anxious, surplus sounds heavy, equilibrium resolves to a calm chord — learn to hear disequilibrium before you read the graph.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Supply &amp; Demand</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
 
-      <a href="multicollinearity.html" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Visualizer · Live</div>
-          <div class="tool-num">05</div>
-        </div>
-        <div class="tool-title">The OLS<br>Sorting Machine</div>
-        <div class="tool-desc">
-          Watch variance in Y get sorted into bins for each predictor. Crank the correlation and draw new samples to see coefficients swing — and flip sign — while R² holds steady. Multicollinearity, made visible.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">ARE 455 · Econometrics</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+        <a href="drowning-skyline.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">The Drowning<br>Skyline</div>
+          <div class="tool-desc">
+            A city of gothic towers rising from a stormy sea. Each tower is a firm; its height is productivity. Raise the waterline and watch the survivors' average rise — not because anyone improved, but because the short towers drowned. Melitz selection, made cinematic.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Firm Selection</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
 
-      <a href="drowning-skyline.html" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Simulation · Live</div>
-          <div class="tool-num">06</div>
-        </div>
-        <div class="tool-title">The Drowning<br>Skyline</div>
-        <div class="tool-desc">
-          A city of gothic towers rising from a stormy sea. Each tower is a firm; its height is productivity. Raise the waterline and watch the survivors' average rise — not because anyone improved, but because the short towers drowned. Melitz selection, made cinematic.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">ARE 201 · Firm Selection</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+        <a href="aisle-economics.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">Aisle<br>Economics</div>
+          <div class="tool-desc">
+            A walkable grocery store that turns prices, substitutes, and shocks into something you can see on a shelf.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Intro Micro</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
 
-      <a href="aisle-economics.html" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Simulation · Live</div>
-          <div class="tool-num">07</div>
-        </div>
-        <div class="tool-title">Aisle<br>Economics</div>
-        <div class="tool-desc">
-          A walkable grocery store that turns prices, substitutes, and shocks into something you can see on a shelf.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">ARE 201 · Intro Micro</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+    <div class="tool-group">
+      <div class="group-label">Advising &amp; Program</div>
+      <div class="tools-live">
+        <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Advising · Live</div>
+          </div>
+          <div class="tool-title">Paw Plan</div>
+          <div class="tool-desc">
+            A four-year degree planner for ARE &amp; ABM students. Drag courses across semesters, auto-check prerequisites, save your plan, and bring it to advising. Mobile-friendly.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE / ABM Advising</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
 
-      <a href="cash-rent-estimator.html" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Calculator · Live</div>
-          <div class="tool-num">08</div>
-        </div>
-        <div class="tool-title">Cash Rent<br>Estimator</div>
-        <div class="tool-desc">
-          Estimate a fair cropland cash rent several ways at once — tenant's residual, share of gross revenue, and county benchmark — then see where the landowner's floor and the tenant's ceiling leave room to deal. NC county rent data built in.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">Farm Management</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+    <div class="tool-group">
+      <div class="group-label">Farm &amp; Extension</div>
+      <div class="tools-live">
+        <a href="cash-rent-estimator.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Calculator · Live</div>
+          </div>
+          <div class="tool-title">Cash Rent<br>Estimator</div>
+          <div class="tool-desc">
+            Estimate a fair cropland cash rent several ways at once — tenant's residual, share of gross revenue, and county benchmark — then see where the landowner's floor and the tenant's ceiling leave room to deal. NC county rent data built in.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">Farm Management</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
 
-      <a href="crop-budget-builder.html" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Calculator · Live</div>
-          <div class="tool-num">09</div>
-        </div>
-        <div class="tool-title">Crop Budget<br>Builder</div>
-        <div class="tool-desc">
-          Build a per-acre budget for corn, soybeans, or wheat, then stress-test it — break-evens, tornado sensitivity, and price &amp; yield scenarios, all charted. Pre-filled with NC State enterprise-budget numbers.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">Farm Management</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+        <a href="crop-budget-builder.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Calculator · Live</div>
+          </div>
+          <div class="tool-title">Crop Budget<br>Builder</div>
+          <div class="tool-desc">
+            Build a per-acre budget for corn, soybeans, or wheat, then stress-test it — break-evens, tornado sensitivity, and price &amp; yield scenarios, all charted. Pre-filled with NC State enterprise-budget numbers.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">Farm Management</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
 
-      <a href="https://jtreme.github.io/QBTrainer/" target="_blank" rel="noopener" class="tool">
-        <div class="tool-top">
-          <div class="tool-tag">Trainer · Live</div>
-          <div class="tool-num">10</div>
-        </div>
-        <div class="tool-title">Quiz Bowl<br>Trainer</div>
-        <div class="tool-desc">
-          A practice trainer for the AAEA Academic Quiz Bowl — timed practice rounds, spaced-repetition review, performance analytics, and a Fact Cards deck. Built for the team headed to Kansas City.
-        </div>
-        <div class="tool-foot">
-          <div class="tool-course">Quiz Bowl</div>
-          <div class="tool-launch">Launch</div>
-        </div>
-      </a>
+    <div class="tool-group">
+      <div class="group-label">Quiz Bowl &amp; Coaching</div>
+      <div class="tools-live">
+        <a href="https://jtreme.github.io/QBTrainer/" target="_blank" rel="noopener" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Trainer · Live</div>
+          </div>
+          <div class="tool-title">Quiz Bowl<br>Trainer</div>
+          <div class="tool-desc">
+            A practice trainer for the AAEA Academic Quiz Bowl — timed practice rounds, spaced-repetition review, performance analytics, and a Fact Cards deck. Built for the team headed to Kansas City.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">Quiz Bowl</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
     </div>
   </section>
 
