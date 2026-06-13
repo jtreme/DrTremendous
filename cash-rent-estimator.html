@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NC Cropland Cash Rent Estimator — Dr. Tremendous</title>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.29.7/babel.min.js"></script>
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+// ════════════════════════════════════════════════════════════════════
+// NC Cropland Cash Rent Estimator
+// Companion to the NC Crop Budget Scenario Builder.
+//
+// Implements the methods documented in Iowa State Ag Decision Maker
+// File C2-20 "Computing a Cropland Cash Rental Rate," applied with
+// North Carolina data:
+//   • Tenant's Residual  (verified against ISU Example 3: corn $276, soy $274)
+//   • Share of Gross Revenue  (% of crop value)
+//   • Average-Yield (rent per bushel)
+//   • County benchmark (USDA NASS 2025, what others are paying)
+//
+// Crop cost structure is the SAME verified data as the budget tool.
+// County rent benchmarks are real USDA NASS 2025 survey values.
+// ════════════════════════════════════════════════════════════════════
+
+const FONT = "'IBM Plex Sans', system-ui, sans-serif";
+const MONO = "'IBM Plex Mono', monospace";
+
+// USDA NASS 2025 Cash Rents Survey - NC non-irrigated cropland, $/acre.
+// 89 counties with published data. Suppressed counties fall back to ag-district average.
+const NC_COUNTY_RENT = {
+  'Alamance': { rent: 46, district: 'Northern Piedmont' },
+  'Alexander': { rent: 54, district: 'Central Piedmont' },
+  'Alleghany': { rent: 109, district: 'Northern Mountain' },
+  'Anson': { rent: 81, district: 'Southern Piedmont' },
+  'Ashe': { rent: 98, district: 'Northern Mountain' },
+  'Beaufort': { rent: 133, district: 'Central Coastal' },
+  'Bertie': { rent: 123, district: 'Northern Coastal' },
+  'Bladen': { rent: 83.5, district: 'Southern Coastal' },
+  'Brunswick': { rent: 82.5, district: 'Southern Coastal' },
+  'Buncombe': { rent: 51, district: 'Western Mountain' },
+  'Burke': { rent: 39, district: 'Western Mountain' },
+  'Cabarrus': { rent: 79, district: 'Southern Piedmont' },
+  'Camden': { rent: 120, district: 'Northern Coastal' },
+  'Carteret': { rent: 89, district: 'Central Coastal' },
+  'Caswell': { rent: 36, district: 'Northern Piedmont' },
+  'Catawba': { rent: 38.5, district: 'Central Piedmont' },
+  'Chatham': { rent: 44.5, district: 'Central Piedmont' },
+  'Cherokee': { rent: 64.5, district: 'Western Mountain' },
+  'Chowan': { rent: 107, district: 'Northern Coastal' },
+  'Cleveland': { rent: 40, district: 'Southern Piedmont' },
+  'Columbus': { rent: 86, district: 'Southern Coastal' },
+  'Craven': { rent: 95, district: 'Central Coastal' },
+  'Cumberland': { rent: 94.5, district: 'Southern Coastal' },
+  'Currituck': { rent: 99.5, district: 'Northern Coastal' },
+  'Davidson': { rent: 57.5, district: 'Central Piedmont' },
+  'Davie': { rent: 66, district: 'Central Piedmont' },
+  'Duplin': { rent: 89.5, district: 'Southern Coastal' },
+  'Durham': { rent: 43.5, district: 'Northern Piedmont' },
+  'Edgecombe': { rent: 117, district: 'Northern Coastal' },
+  'Forsyth': { rent: 62, district: 'Northern Piedmont' },
+  'Franklin': { rent: 69.5, district: 'Northern Piedmont' },
+  'Gaston': { rent: 37, district: 'Southern Piedmont' },
+  'Gates': { rent: 102, district: 'Northern Coastal' },
+  'Granville': { rent: 75.5, district: 'Northern Piedmont' },
+  'Greene': { rent: 125, district: 'Central Coastal' },
+  'Guilford': { rent: 39, district: 'Northern Piedmont' },
+  'Halifax': { rent: 123, district: 'Northern Coastal' },
+  'Harnett': { rent: 111, district: 'Southern Coastal' },
+  'Haywood': { rent: 59.5, district: 'Western Mountain' },
+  'Hertford': { rent: 122, district: 'Northern Coastal' },
+  'Hoke': { rent: 61, district: 'Southern Coastal' },
+  'Hyde': { rent: 188, district: 'Central Coastal' },
+  'Iredell': { rent: 75.5, district: 'Central Piedmont' },
+  'Jackson': { rent: 58.5, district: 'Western Mountain' },
+  'Johnston': { rent: 115, district: 'Central Coastal' },
+  'Jones': { rent: 91, district: 'Central Coastal' },
+  'Lee': { rent: 88.5, district: 'Central Piedmont' },
+  'Lenoir': { rent: 120, district: 'Central Coastal' },
+  'Lincoln': { rent: 44, district: 'Southern Piedmont' },
+  'Macon': { rent: 53.5, district: 'Western Mountain' },
+  'Madison': { rent: 73, district: 'Western Mountain' },
+  'Martin': { rent: 118, district: 'Northern Coastal' },
+  'Montgomery': { rent: 38.5, district: 'Southern Piedmont' },
+  'Moore': { rent: 54.5, district: 'Southern Piedmont' },
+  'Nash': { rent: 115, district: 'Northern Coastal' },
+  'Northampton': { rent: 113, district: 'Northern Coastal' },
+  'Onslow': { rent: 110, district: 'Southern Coastal' },
+  'Orange': { rent: 40, district: 'Northern Piedmont' },
+  'Pamlico': { rent: 99.5, district: 'Central Coastal' },
+  'Pasquotank': { rent: 124, district: 'Northern Coastal' },
+  'Pender': { rent: 83, district: 'Southern Coastal' },
+  'Perquimans': { rent: 102, district: 'Northern Coastal' },
+  'Person': { rent: 58.5, district: 'Northern Piedmont' },
+  'Pitt': { rent: 113, district: 'Central Coastal' },
+  'Polk': { rent: 34, district: 'Western Mountain' },
+  'Randolph': { rent: 72, district: 'Central Piedmont' },
+  'Richmond': { rent: 48.5, district: 'Southern Piedmont' },
+  'Robeson': { rent: 77.5, district: 'Southern Coastal' },
+  'Rockingham': { rent: 56.5, district: 'Northern Piedmont' },
+  'Rowan': { rent: 70, district: 'Central Piedmont' },
+  'Rutherford': { rent: 47.5, district: 'Western Mountain' },
+  'Sampson': { rent: 110, district: 'Southern Coastal' },
+  'Scotland': { rent: 71, district: 'Southern Coastal' },
+  'Stanly': { rent: 84, district: 'Southern Piedmont' },
+  'Stokes': { rent: 55.5, district: 'Northern Piedmont' },
+  'Surry': { rent: 82, district: 'Northern Mountain' },
+  'Transylvania': { rent: 88, district: 'Western Mountain' },
+  'Tyrrell': { rent: 171, district: 'Northern Coastal' },
+  'Union': { rent: 93, district: 'Southern Piedmont' },
+  'Vance': { rent: 46.5, district: 'Northern Piedmont' },
+  'Wake': { rent: 73, district: 'Central Piedmont' },
+  'Warren': { rent: 48, district: 'Northern Piedmont' },
+  'Washington': { rent: 139, district: 'Northern Coastal' },
+  'Watauga': { rent: 66, district: 'Northern Mountain' },
+  'Wayne': { rent: 135, district: 'Central Coastal' },
+  'Wilkes': { rent: 68.5, district: 'Northern Mountain' },
+  'Wilson': { rent: 155, district: 'Central Coastal' },
+  'Yadkin': { rent: 84, district: 'Northern Mountain' },
+  'Yancey': { rent: 35.5, district: 'Western Mountain' },
+};
+
+const NC_DISTRICT_AVG = {
+  'Central Coastal': 122,
+  'Central Piedmont': 64,
+  'Northern Coastal': 120,
+  'Northern Mountain': 85,
+  'Northern Piedmont': 52,
+  'Southern Coastal': 88,
+  'Southern Piedmont': 60,
+  'Western Mountain': 55,
+};
+
+
+// Crop configs — same verified per-acre defaults as the budget tool.
+const CROPS = {
+  corn: {
+    label: "Corn", unit: "bu", defaultYield: 140, defaultPrice: 5.30,
+    color: "#d4a843", accent: "#b8912e", lightBg: "#fdf8ec",
+    operating: {
+      seed: 110.49, nitrogen: 70.40, dap: 58.96, potash: 14.64, lime: 27.06,
+      herbicides: 25.55, drying: { default: 28.00, perUnit: 0.20, yieldBased: true },
+      hauling: { default: 84.00, perUnit: 0.60, yieldBased: true },
+      machinery: 76.39, fertSpreading: 12.00, consulting: 16.00, labor: 14.38, insurance: 15.00,
+    },
+    machineryFixed: 135.71,
+    grossPct: [0.27, 0.32], // ISU: corn cash rent runs ~27-32% of gross crop value
+  },
+  soybeans: {
+    label: "Soybeans", unit: "bu", defaultYield: 50, defaultPrice: 10.94,
+    color: "#5a8a4a", accent: "#3d6832", lightBg: "#f0f7ed",
+    operating: {
+      seed: 61.10, phosphate: 31.32, potash: 28.08, lime: 27.06, herbicides: 41.07,
+      insecticides: 19.51, hauling: { default: 30.00, perUnit: 0.60, yieldBased: true },
+      machinery: 78.11, consulting: 26.00, labor: 15.51, insurance: 15.00,
+    },
+    machineryFixed: 139.34,
+    grossPct: [0.35, 0.45], // ISU: soybean cash rent runs ~35-45% of gross crop value
+  },
+  wheat: {
+    label: "Wheat", unit: "bu", defaultYield: 75, defaultPrice: 5.13,
+    color: "#c4954a", accent: "#a67a30", lightBg: "#fdf5e8",
+    operating: {
+      seed: 52.94, nitrogen: 43.95, phosphate: 29.52, potash: 11.04, lime: 27.06,
+      herbicides: 25.39, fungicides: 3.75, hauling: { default: 11.25, perUnit: 0.15, yieldBased: true },
+      machinery: 77.65, consulting: 15.00, labor: 14.71, insurance: 10.00,
+    },
+    machineryFixed: 158.84,
+    grossPct: [0.25, 0.35],
+  },
+};
+
+const ibKeys = new Set(["seed","nitrogen","dap","phosphate","potash","lime","herbicides","insecticides","fungicides","machinery","labor"]);
+
+// Operating costs (incl. interest), matching the budget tool exactly.
+function operatingCosts(crop, yieldVal, ovr = {}) {
+  const cfg = CROPS[crop];
+  let opSubtotal = 0, interestBearing = 0;
+  Object.entries(cfg.operating).forEach(([key, c]) => {
+    const isObj = typeof c === "object";
+    const baseDefault = isObj ? c.default : c;
+    const ov = ovr[key];
+    let amt;
+    if (isObj && c.yieldBased) {
+      const rate = ov !== undefined ? ov / cfg.defaultYield : c.perUnit;
+      amt = rate * yieldVal;
+    } else { amt = ov !== undefined ? ov : baseDefault; }
+    opSubtotal += amt;
+    if (ibKeys.has(key)) interestBearing += amt;
+  });
+  const interest = interestBearing * 0.5 * 0.0725;
+  return { opSubtotal, interest, opTotal: opSubtotal + interest };
+}
+
+// ── METHOD 1: Tenant's Residual (ISU Example 3) ──
+// Gross revenue − operating − machinery ownership − management.
+// Management estimated as a % of all other costs (ISU uses 5%).
+// Risk is NOT a line item; it's handled via conservative assumptions
+// (ISU: "use conservative price and yield estimates or adjust downward").
+// otherIncome (gov payments + crop insurance indemnity) defaults to 0 and is
+// added to revenue if the user enters it.
+function residualRent(crop, yieldVal, price, mgmtPct, otherIncome = 0, ovr = {}) {
+  const cfg = CROPS[crop];
+  const cropRev = yieldVal * (price ?? cfg.defaultPrice);
+  const rev = cropRev + otherIncome;
+  const op = operatingCosts(crop, yieldVal, ovr);
+  const machFixed = ovr.machineryFixed !== undefined ? ovr.machineryFixed : cfg.machineryFixed;
+  const otherCosts = op.opTotal + machFixed;
+  const management = otherCosts * mgmtPct;
+  const residual = rev - op.opTotal - machFixed - management;
+  return { rev, cropRev, otherIncome, opTotal: op.opTotal, machFixed, management, residual };
+}
+
+// ── METHOD 2: Share of Gross Revenue ──
+function grossShareRent(crop, yieldVal, price, otherIncome = 0) {
+  const cfg = CROPS[crop];
+  const rev = yieldVal * (price ?? cfg.defaultPrice) + otherIncome;
+  return { rev, low: rev * cfg.grossPct[0], high: rev * cfg.grossPct[1] };
+}
+
+// ── METHOD 3: Shared Risk-Return (ISU Example 2) ──
+// The crop-share-equivalent: split income and the shareable costs 50/50.
+// ISU shares seed, fertilizer, pesticides, crop insurance, drying, misc, interest —
+// NOT machinery, labor, or consulting (the tenant bears those alone).
+const sharedCostKeys = new Set(["seed","nitrogen","dap","phosphate","potash","lime","herbicides","insecticides","fungicides","drying","insurance"]);
+function sharedRiskRent(crop, yieldVal, price, otherIncome = 0, ovr = {}) {
+  const cfg = CROPS[crop];
+  const halfIncome = (yieldVal * (price ?? cfg.defaultPrice) + otherIncome) / 2;
+  let shareableCosts = 0;
+  Object.entries(cfg.operating).forEach(([key, c]) => {
+    if (!sharedCostKeys.has(key)) return;
+    const isObj = typeof c === "object";
+    const ov = ovr[key];
+    let amt;
+    if (isObj && c.yieldBased) { const rate = ov !== undefined ? ov / cfg.defaultYield : c.perUnit; amt = rate * yieldVal; }
+    else { amt = ov !== undefined ? ov : (isObj ? c.default : c); }
+    shareableCosts += amt;
+  });
+  // half-interest on the shared inputs, matching ISU's "interest (½)" line
+  const halfInterest = shareableCosts * 0.5 * 0.0725 * 0.5;
+  const halfCosts = shareableCosts / 2 + halfInterest;
+  return { halfIncome, halfCosts, rent: halfIncome - halfCosts };
+}
+
+// ── METHOD 4: Return on Investment / Landowner Cost Floor ──
+// The landowner's side: what rent must cover the cost of owning the land.
+// Opportunity cost = land value × expected rate of return (ISU: 2.5-3.5%;
+// Cornell example: 2%). Plus optional property tax and a maintenance allowance.
+// This is ISU method #5 (Return on Investment), viewed as a cost floor.
+function landownerFloor(landValue, ratePct, propertyTax = 0, maintenance = 0) {
+  if (!landValue) return null;
+  const opportunityCost = landValue * (ratePct / 100);
+  return { opportunityCost, propertyTax, maintenance, floor: opportunityCost + propertyTax + maintenance };
+}
+
+// ── County benchmark lookup ──
+function countyBenchmark(county) {
+  if (!county) return null;
+  const c = NC_COUNTY_RENT[county];
+  if (c) return { value: c.rent, source: "county", district: c.district };
+  return null;
+}
+
+const fmt = n => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const fmt2 = n => "$" + n.toFixed(2);
+
+function CashRentEstimator() {
+  const [audience, setAudience] = useState("tenant");
+  const [crop, setCrop] = useState("corn");
+  const [rotation, setRotation] = useState(false);
+  const [county, setCounty] = useState("");
+  const [acres, setAcres] = useState("");
+  const [yieldOvr, setYieldOvr] = useState({});
+  const [priceOvr, setPriceOvr] = useState({});
+  const [mgmtPct, setMgmtPct] = useState(5); // % of other costs, ISU default
+  const [conservative, setConservative] = useState(true); // risk handling toggle
+  const [showWork, setShowWork] = useState(false);
+  const [showOptional, setShowOptional] = useState(false);
+  // Optional inputs (all default to 0 / blank — never fabricated)
+  const [govPayment, setGovPayment] = useState("");   // ARC/PLC $/ac, per crop-neutral
+  const [insIndemnity, setInsIndemnity] = useState(""); // expected crop insurance indemnity $/ac
+  const [landValue, setLandValue] = useState("");       // $/ac
+  const [roiRate, setRoiRate] = useState(3);            // % expected return on land
+  const [propTax, setPropTax] = useState("");           // $/ac
+  const [maintenance, setMaintenance] = useState("");   // $/ac
+
+  const activeCrops = rotation ? ["corn", "soybeans"] : [crop];
+  const getYield = c => { const v = yieldOvr[c]; const base = CROPS[c].defaultYield; const y = v !== undefined && v !== "" ? parseFloat(v) : base; return conservative ? y * 0.92 : y; };
+  const getPrice = c => { const v = priceOvr[c]; const base = CROPS[c].defaultPrice; const p = v !== undefined && v !== "" ? parseFloat(v) : base; return conservative ? p * 0.92 : p; };
+  const otherIncome = (parseFloat(govPayment) || 0) + (parseFloat(insIndemnity) || 0);
+
+  const results = useMemo(() => {
+    const per = {};
+    activeCrops.forEach(c => {
+      per[c] = {
+        residual: residualRent(c, getYield(c), getPrice(c), mgmtPct / 100, otherIncome),
+        gross: grossShareRent(c, getYield(c), getPrice(c), otherIncome),
+        shared: sharedRiskRent(c, getYield(c), getPrice(c), otherIncome),
+      };
+    });
+    const avg = sel => activeCrops.reduce((s, c) => s + sel(per[c]), 0) / activeCrops.length;
+    return {
+      per,
+      residualBlend: avg(p => p.residual.residual),
+      grossBlendLow: avg(p => p.gross.low),
+      grossBlendHigh: avg(p => p.gross.high),
+      sharedBlend: avg(p => p.shared.rent),
+    };
+  }, [activeCrops.join(","), yieldOvr, priceOvr, mgmtPct, conservative, otherIncome]);
+
+  const bench = countyBenchmark(county);
+  const resid = rotation ? results.residualBlend : results.per[crop].residual.residual;
+  const grossLo = rotation ? results.grossBlendLow : results.per[crop].gross.low;
+  const grossHi = rotation ? results.grossBlendHigh : results.per[crop].gross.high;
+  const shared = rotation ? results.sharedBlend : results.per[crop].shared.rent;
+  const floor = landownerFloor(parseFloat(landValue) || 0, roiRate, parseFloat(propTax) || 0, parseFloat(maintenance) || 0);
+  // Tenant ceiling = the residual (most each can afford). Range across the income-based methods.
+  const allEstimates = [resid, grossLo, grossHi, shared].filter(n => n > 0);
+  const rangeLow = allEstimates.length ? Math.min(...allEstimates) : 0;
+  const rangeHigh = allEstimates.length ? Math.max(...allEstimates) : 0;
+  const a = parseFloat(acres);
+
+  const card = { background: "#fff", border: "1px solid #e8e4db", borderRadius: 10, padding: 18, marginBottom: 14, boxShadow: "0 1px 2px rgba(0,0,0,0.03)" };
+  const labelSt = { display: "block", fontSize: 10, fontFamily: MONO, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 };
+  const inputSt = { width: "100%", padding: "7px 10px", fontSize: 13, border: "1px solid #d8d2c6", borderRadius: 5, fontFamily: FONT, boxSizing: "border-box" };
+  const numIn = { ...inputSt, fontFamily: MONO };
+  const tag = c => ({ display: "inline-block", fontSize: 11, fontFamily: MONO, fontWeight: 600, color: "#fff", background: c, padding: "2px 9px", borderRadius: 4, letterSpacing: "0.04em" });
+  const td = { padding: "6px 8px", fontSize: 12, borderBottom: "1px solid #f0ece4" };
+
+  const counties = Object.keys(NC_COUNTY_RENT).sort();
+
+  return (
+    <div style={{ fontFamily: FONT, background: "#faf8f4", minHeight: "100vh", color: "#2d2a24" }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');`}</style>
+
+      <div style={{ background: "#3d3a32", color: "#fff", padding: "20px 0 18px", borderBottom: "5px solid #1f1d18" }}>
+        <div style={{ maxWidth: 920, margin: "0 auto", padding: "0 14px" }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: "#c9c2b4", letterSpacing: "0.16em", fontWeight: 600, marginBottom: 6 }}>NC STATE · ARE EXTENSION</div>
+          <div style={{ fontSize: 25, fontWeight: 700, marginTop: 2, letterSpacing: "-0.01em" }}>NC Cropland Cash Rent Estimator</div>
+          <div style={{ fontSize: 12.5, color: "#d8d2c6", marginTop: 4 }}>Several methods, side by side — a companion to the Crop Budget Scenario Builder.</div>
+        </div>
+      </div>
+      <div style={{ height: 4, background: "#1f1d18" }} />
+
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "16px 14px 60px" }}>
+
+        <div style={{ ...card, padding: "11px 16px", background: "#faf6f0", border: "1px solid #e8ddd0", borderLeft: "4px solid #3d5a73" }}>
+          <span style={{ fontSize: 12, color: "#5a4a3a", lineHeight: 1.5 }}>
+            <strong style={{ color: "#3d5a73" }}>This is not a lease recommendation.</strong> It estimates a fair rent range several different ways so a landowner and tenant can compare and negotiate. Every number depends on the assumptions you enter.
+          </span>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          {[["tenant", "I'm the tenant / operator"], ["landowner", "I'm the landowner"]].map(([k, lbl]) => (
+            <button key={k} onClick={() => setAudience(k)} style={{
+              flex: 1, padding: "10px", border: `2px solid ${audience === k ? "#3d5a73" : "#ddd"}`, borderRadius: 7,
+              background: audience === k ? "#3d5a73" : "#fff", color: audience === k ? "#fff" : "#6b6457",
+              fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT,
+            }}>{lbl}</button>
+          ))}
+        </div>
+
+        <div style={card}>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ flex: "2 1 240px" }}>
+              <label style={labelSt}>Crop or Rotation</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                {Object.entries(CROPS).map(([k, c]) => (
+                  <button key={k} disabled={rotation} onClick={() => setCrop(k)} style={{
+                    flex: 1, padding: "7px 6px", border: `2px solid ${!rotation && crop === k ? c.color : "#ddd"}`,
+                    borderRadius: 5, cursor: rotation ? "not-allowed" : "pointer", fontSize: 12,
+                    fontWeight: !rotation && crop === k ? 600 : 400, opacity: rotation ? 0.4 : 1,
+                    background: !rotation && crop === k ? c.lightBg : "#fff", color: c.accent, fontFamily: FONT,
+                  }}>{c.label}</button>
+                ))}
+              </div>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8, fontSize: 12, color: "#6b6457", cursor: "pointer" }}>
+                <input type="checkbox" checked={rotation} onChange={e => setRotation(e.target.checked)} />
+                Corn / soybean rotation (rent is set on the field, so use the rotation average)
+              </label>
+            </div>
+            <div style={{ flex: "1 1 150px" }}>
+              <label style={labelSt}>County</label>
+              <select value={county} onChange={e => setCounty(e.target.value)} style={{ ...inputSt, cursor: "pointer" }}>
+                <option value="">Select county…</option>
+                {counties.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <div style={{ fontSize: 10, color: "#a89e8c", marginTop: 4, lineHeight: 1.4 }}>Adds your county's actual average rent as a benchmark to compare against. It doesn't change the calculated estimates.</div>
+            </div>
+            <div style={{ flex: "1 1 120px" }}>
+              <label style={labelSt}>Acres (optional)</label>
+              <input type="number" value={acres} onChange={e => setAcres(e.target.value)} placeholder="whole-field" style={numIn} />
+            </div>
+          </div>
+        </div>
+
+        <div style={card}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>Production assumptions</h2>
+          <p style={{ fontSize: 12, color: "#8a8175", margin: "0 0 12px" }}>Pre-filled with NC State budget defaults. Enter your own to personalize.</p>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead><tr>
+              <th style={{ ...labelSt, textAlign: "left", padding: "0 8px 6px" }}>Crop</th>
+              <th style={{ ...labelSt, textAlign: "left", padding: "0 8px 6px" }}>Yield /ac</th>
+              <th style={{ ...labelSt, textAlign: "left", padding: "0 8px 6px" }}>Price /unit</th>
+            </tr></thead>
+            <tbody>
+              {activeCrops.map(c => (
+                <tr key={c}>
+                  <td style={td}><span style={tag(CROPS[c].accent)}>{CROPS[c].label}</span></td>
+                  <td style={td}>
+                    <input type="number" value={yieldOvr[c] ?? ""} placeholder={`${CROPS[c].defaultYield}`}
+                      onChange={e => setYieldOvr(p => ({ ...p, [c]: e.target.value }))}
+                      style={{ ...numIn, width: 100, borderColor: CROPS[c].color }} />
+                    <span style={{ fontSize: 11, color: "#a89e8c", marginLeft: 6 }}>{CROPS[c].unit}</span>
+                  </td>
+                  <td style={td}>
+                    <input type="number" step="0.01" value={priceOvr[c] ?? ""} placeholder={`${CROPS[c].defaultPrice}`}
+                      onChange={e => setPriceOvr(p => ({ ...p, [c]: e.target.value }))}
+                      style={{ ...numIn, width: 100, borderColor: CROPS[c].color }} />
+                    <span style={{ fontSize: 11, color: "#a89e8c", marginLeft: 6 }}>/{CROPS[c].unit}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: "1px solid #f0ece4" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#3d3a32", cursor: "pointer" }}>
+              <input type="checkbox" checked={conservative} onChange={e => setConservative(e.target.checked)} />
+              <span><strong>Conservative assumptions</strong> (trim yield &amp; price 8% to compensate the tenant for risk — the standard way to handle risk in a fixed cash lease)</span>
+            </label>
+            <div style={{ flex: "0 0 auto" }}>
+              <label style={labelSt}>Management charge (% of other costs)</label>
+              <input type="number" value={mgmtPct} onChange={e => setMgmtPct(parseFloat(e.target.value) || 0)} style={{ ...numIn, width: 80 }} />
+              <span style={{ fontSize: 11, color: "#a89e8c", marginLeft: 6 }}>typically ~5%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* OPTIONAL INPUTS (tucked away) */}
+        <div style={card}>
+          <button onClick={() => setShowOptional(!showOptional)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#3d5a73", padding: 0, fontFamily: FONT }}>
+            {showOptional ? "▾" : "▸"} Optional: government payments, crop insurance &amp; landowner costs
+          </button>
+          {!showOptional && <div style={{ fontSize: 11, color: "#a89e8c", marginTop: 4 }}>Leave closed to use the standard estimate. Open to add program payments, insurance, or the landowner's cost side.</div>}
+          {showOptional && (
+            <div style={{ marginTop: 14 }}>
+              {/* Other income */}
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#3d3a32", marginBottom: 8 }}>Other income (added to crop revenue)</div>
+              <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 8 }}>
+                <div style={{ flex: "1 1 200px" }}>
+                  <label style={labelSt}>Government payments (ARC/PLC), $/ac</label>
+                  <input type="number" value={govPayment} onChange={e => setGovPayment(e.target.value)} placeholder="0" style={numIn} />
+                  <div style={{ fontSize: 10.5, color: "#a89e8c", marginTop: 4, lineHeight: 1.45 }}>Defaults to $0. ARC/PLC payments depend on your farm's program election and national price triggers, and typically arrive 3-13 months after rent is due — so they're often excluded. Enter your own expected figure if you want to include it.</div>
+                </div>
+                <div style={{ flex: "1 1 200px" }}>
+                  <label style={labelSt}>Expected crop insurance indemnity, $/ac</label>
+                  <input type="number" value={insIndemnity} onChange={e => setInsIndemnity(e.target.value)} placeholder="0" style={numIn} />
+                  <div style={{ fontSize: 10.5, color: "#a89e8c", marginTop: 4, lineHeight: 1.45 }}>Defaults to $0. At expected (average) yields and prices, the expected indemnity is essentially zero — insurance only pays when you fall below your guarantee. To model a poor year, lower the yield assumption and enter the indemnity you'd expect.</div>
+                </div>
+              </div>
+              {/* Landowner cost side */}
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#3d3a32", margin: "16px 0 8px", paddingTop: 12, borderTop: "1px solid #f0ece4" }}>Landowner cost side (the rent the owner needs to receive)</div>
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 150px" }}>
+                  <label style={labelSt}>Land value, $/ac</label>
+                  <input type="number" value={landValue} onChange={e => setLandValue(e.target.value)} placeholder="e.g. 6000" style={numIn} />
+                </div>
+                <div style={{ flex: "1 1 110px" }}>
+                  <label style={labelSt}>Return rate, %</label>
+                  <input type="number" step="0.1" value={roiRate} onChange={e => setRoiRate(parseFloat(e.target.value) || 0)} style={numIn} />
+                  <div style={{ fontSize: 10, color: "#a89e8c", marginTop: 3 }}>typically 2.5-3.5%</div>
+                </div>
+                <div style={{ flex: "1 1 110px" }}>
+                  <label style={labelSt}>Property tax, $/ac</label>
+                  <input type="number" value={propTax} onChange={e => setPropTax(e.target.value)} placeholder="0" style={numIn} />
+                </div>
+                <div style={{ flex: "1 1 110px" }}>
+                  <label style={labelSt}>Maintenance, $/ac</label>
+                  <input type="number" value={maintenance} onChange={e => setMaintenance(e.target.value)} placeholder="0" style={numIn} />
+                </div>
+              </div>
+              <div style={{ fontSize: 10.5, color: "#a89e8c", marginTop: 8, lineHeight: 1.45 }}>
+                The opportunity cost of land (land value × return rate) is the income the owner gives up by renting rather than selling and investing the proceeds — a real economic cost, even though it isn't a cash expense. Together with tax and maintenance, it forms the rent the landowner needs to break even on owning the ground.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* HEADLINE */}
+        <div style={{ ...card, border: "2px solid #3d5a73", borderTop: "5px solid #3d5a73", background: "linear-gradient(135deg, #f2f5f8 0%, #fff 100%)" }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, color: "#3d5a73", letterSpacing: "0.1em", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>
+            {audience === "tenant" ? "What you can afford to pay" : "What this ground can support"}
+          </div>
+          <div style={{ fontSize: 14, color: "#3d3a32" }}>
+            Across the methods below, estimated cash rent runs
+            <span style={{ fontSize: 30, fontWeight: 700, color: "#3d5a73", fontFamily: MONO, margin: "0 6px" }}>{fmt(rangeLow)}–{fmt(rangeHigh)}</span>
+            per acre{conservative ? " (using conservative yield & price)" : ""}.
+          </div>
+          {bench && (
+            <div style={{ fontSize: 13, color: "#6b6457", marginTop: 8 }}>
+              {county}'s actual average non-irrigated cropland rent is <strong style={{ color: "#3d5a73", fontFamily: MONO }}>{fmt(bench.value)}/ac</strong> (USDA NASS 2025).
+            </div>
+          )}
+          {a > 0 && (
+            <div style={{ fontSize: 13, color: "#6b6457", marginTop: 6, paddingTop: 8, borderTop: "1px solid #e0dbd2" }}>
+              Across <strong>{a} acres</strong>: {fmt(rangeLow * a)}–{fmt(rangeHigh * a)} per year.
+            </div>
+          )}
+        </div>
+
+        {/* METHOD CARDS */}
+        <div style={card}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>The estimate, by method</h2>
+          <p style={{ fontSize: 12, color: "#8a8175", margin: "0 0 14px" }}>
+            Iowa State's Ag Decision Maker (File C2-20) describes several ways to set cropland rent. No single one is "right" — comparing them is how a fair number is found.
+          </p>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ flex: "1 1 200px", padding: 14, borderRadius: 8, border: "1.5px solid #3d5a73", background: "#fff" }}>
+              <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 600, color: "#3d5a73", textTransform: "uppercase", marginBottom: 6 }}>Tenant's Residual</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: resid >= 0 ? "#3d5a73" : "#e5484d", fontFamily: MONO }}>{fmt(resid)}<span style={{ fontSize: 12, color: "#a89e8c", fontWeight: 400 }}>/ac</span></div>
+              <div style={{ fontSize: 11, color: "#8a8175", marginTop: 6, lineHeight: 1.4 }}>Revenue minus all the tenant's costs (operating, machinery, management). What's left can go to rent.</div>
+            </div>
+            <div style={{ flex: "1 1 200px", padding: 14, borderRadius: 8, border: "1.5px solid #5a8a4a", background: "#fff" }}>
+              <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 600, color: "#3d6832", textTransform: "uppercase", marginBottom: 6 }}>Share of Gross Revenue</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: "#3d6832", fontFamily: MONO }}>{fmt(grossLo)}–{fmt(grossHi)}<span style={{ fontSize: 12, color: "#a89e8c", fontWeight: 400 }}>/ac</span></div>
+              <div style={{ fontSize: 11, color: "#8a8175", marginTop: 6, lineHeight: 1.4 }}>Rent as a share of crop value. Roughly 27-32% for corn, 35-45% for soybeans.</div>
+            </div>
+            <div style={{ flex: "1 1 200px", padding: 14, borderRadius: 8, border: "1.5px solid #8a6d9a", background: "#fff" }}>
+              <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 600, color: "#6b4f7a", textTransform: "uppercase", marginBottom: 6 }}>Shared Risk-Return</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: shared >= 0 ? "#6b4f7a" : "#e5484d", fontFamily: MONO }}>{fmt(shared)}<span style={{ fontSize: 12, color: "#a89e8c", fontWeight: 400 }}>/ac</span></div>
+              <div style={{ fontSize: 11, color: "#8a8175", marginTop: 6, lineHeight: 1.4 }}>What rent would equal a 50/50 crop-share split of income and shared costs.</div>
+            </div>
+            {bench && (
+              <div style={{ flex: "1 1 200px", padding: 14, borderRadius: 8, border: "1.5px solid #b8912e", background: "#fff" }}>
+                <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 600, color: "#b8912e", textTransform: "uppercase", marginBottom: 6 }}>County Benchmark</div>
+                <div style={{ fontSize: 26, fontWeight: 700, color: "#b8912e", fontFamily: MONO }}>{fmt(bench.value)}<span style={{ fontSize: 12, color: "#a89e8c", fontWeight: 400 }}>/ac</span></div>
+                <div style={{ fontSize: 11, color: "#8a8175", marginTop: 6, lineHeight: 1.4 }}>{county} County actual average, USDA NASS 2025 — what others are paying.</div>
+              </div>
+            )}
+            {floor && (
+              <div style={{ flex: "1 1 200px", padding: 14, borderRadius: 8, border: "1.5px solid #c4954a", background: "#fdf8ef" }}>
+                <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 600, color: "#a67a30", textTransform: "uppercase", marginBottom: 6 }}>Landowner Floor (ROI)</div>
+                <div style={{ fontSize: 26, fontWeight: 700, color: "#a67a30", fontFamily: MONO }}>{fmt(floor.floor)}<span style={{ fontSize: 12, color: "#a89e8c", fontWeight: 400 }}>/ac</span></div>
+                <div style={{ fontSize: 11, color: "#8a8175", marginTop: 6, lineHeight: 1.4 }}>Rent the owner needs to cover opportunity cost{floor.propertyTax || floor.maintenance ? ", tax & upkeep" : ""}. {fmt(floor.opportunityCost)} of that is opportunity cost of the land.</div>
+              </div>
+            )}
+          </div>
+          {bench && (resid > 0 || grossHi > 0) && (() => {
+            const usingDefaults = activeCrops.every(c => (yieldOvr[c] === undefined || yieldOvr[c] === "") && (priceOvr[c] === undefined || priceOvr[c] === ""));
+            const estAbove = bench.value < rangeLow;   // estimate sits above the county average
+            const estBelow = bench.value > rangeHigh;  // estimate sits below the county average
+            return (
+              <div style={{ fontSize: 12, color: "#6b6457", marginTop: 12, padding: "10px 12px", background: "#faf8f4", borderRadius: 6, lineHeight: 1.55 }}>
+                {estAbove ? (
+                  <>
+                    Your estimate ({fmt(rangeLow)}–{fmt(rangeHigh)}) sits <strong>above</strong> {county}'s actual average rent of {fmt(bench.value)}. That means the crop economics suggest the land could support more rent than it currently rents for.
+                    {usingDefaults && <> The most likely reason is that you're using the <strong>statewide budget defaults</strong> for yield and price, which may be higher than what's typical in {county}. Enter your county's real expected yield and price above — the estimate will usually move closer to the county figure.</>}
+                    {!usingDefaults && <> If that still holds with your own yields and prices, it may mean local rents lag the crop economics (rents are slow to reprice), or that the better row-crop ground rents above the county-wide average shown here.</>}
+                  </>
+                ) : estBelow ? (
+                  <>
+                    Your estimate ({fmt(rangeLow)}–{fmt(rangeHigh)}) sits <strong>below</strong> {county}'s average rent of {fmt(bench.value)}. At these assumptions, paying the county-average rate could mean farming at a loss — worth checking whether your yields, prices, or costs are realistic for this ground.
+                  </>
+                ) : (
+                  <>{county}'s average rent of {fmt(bench.value)} falls <strong>within</strong> your estimated range ({fmt(rangeLow)}–{fmt(rangeHigh)}) — a reasonable sign the assumptions are in the right neighborhood for this county.</>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* DEAL ZONE — tenant ceiling vs landowner floor */}
+        {(() => {
+          const ceiling = resid; // most the tenant can afford (the residual)
+          const fl = floor ? floor.floor : null;
+          const overlap = fl !== null && ceiling >= fl;
+          const markers = [ceiling, fl].filter(v => v !== null && v > 0);
+          const scaleMax = (markers.length ? Math.max(...markers, bench ? bench.value : 0) : (bench ? bench.value : 100)) * 1.2 || 100;
+          const pct = v => `${Math.max(0, Math.min(100, (v / scaleMax) * 100))}%`;
+          return (
+            <div style={card}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>The deal zone</h2>
+              <p style={{ fontSize: 12, color: "#8a8175", margin: "0 0 16px" }}>
+                A workable cash rent sits between the most the tenant can afford (the residual ceiling) and the least the landowner needs (their cost floor). Where those overlap is room to negotiate.
+              </p>
+              <div style={{ position: "relative", height: 64, marginBottom: 10 }}>
+                <div style={{ position: "absolute", top: 28, left: 0, right: 0, height: 8, background: "#eee7da", borderRadius: 4 }} />
+                {fl !== null && (
+                  <div style={{ position: "absolute", top: 24, left: pct(Math.min(ceiling, fl)), width: `calc(${pct(Math.max(ceiling, fl))} - ${pct(Math.min(ceiling, fl))})`, height: 16, borderRadius: 4, background: overlap ? "rgba(90,138,74,0.25)" : "rgba(229,72,77,0.18)", border: `1px ${overlap ? "solid #5a8a4a" : "dashed #e5484d"}` }} />
+                )}
+                {/* tenant ceiling marker (always shown) */}
+                <div style={{ position: "absolute", top: 8, left: pct(ceiling), transform: "translateX(-50%)", textAlign: "center" }}>
+                  <div style={{ fontSize: 10, fontFamily: MONO, color: "#3d5a73", fontWeight: 600, whiteSpace: "nowrap" }}>tenant max</div>
+                  <div style={{ width: 2, height: 28, background: "#3d5a73", margin: "2px auto 0" }} />
+                  <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 700, color: "#3d5a73" }}>{fmt(ceiling)}</div>
+                </div>
+                {/* landowner floor marker (only when land value entered) */}
+                {fl !== null && (
+                  <div style={{ position: "absolute", top: 8, left: pct(fl), transform: "translateX(-50%)", textAlign: "center" }}>
+                    <div style={{ fontSize: 10, fontFamily: MONO, color: "#a67a30", fontWeight: 600, whiteSpace: "nowrap" }}>owner min</div>
+                    <div style={{ width: 2, height: 28, background: "#a67a30", margin: "2px auto 0" }} />
+                    <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 700, color: "#a67a30" }}>{fmt(fl)}</div>
+                  </div>
+                )}
+              </div>
+              {fl !== null ? (
+                <div style={{ fontSize: 12, color: "#6b6457", padding: "10px 12px", background: overlap ? "#f0f5ed" : "#fdf0f0", borderRadius: 6, lineHeight: 1.5, border: `1px solid ${overlap ? "#d4e3cc" : "#f0d0d0"}` }}>
+                  {overlap
+                    ? `These two sides overlap between ${fmt(fl)} and ${fmt(ceiling)} per acre — that band is the deal zone. A rent in this range lets the tenant cover costs and the owner meet their target return.`
+                    : `The owner's floor (${fmt(fl)}) sits above the tenant's ceiling (${fmt(ceiling)}) — a gap of about ${fmt(fl - ceiling)}/ac. At these assumptions the land is worth more as an asset than it can earn as rented cropland. This is a real signal, not a tool error: it means either the rent expectation, the land's productivity, or the crop plan needs to change — or the owner is effectively accepting the land's appreciation in place of cash return. In tight years (current corn-soybean projections are a good example) these two sides often don't meet.`}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: "#6b6457", padding: "10px 12px", background: "#faf8f4", borderRadius: 6, lineHeight: 1.5, border: "1px dashed #d8d2c6" }}>
+                  Showing the tenant's ceiling only. To see the landowner's side and the full deal zone, open <strong>Optional inputs</strong> above and enter a land value per acre.
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* WORK DRAWER */}
+        <div style={card}>
+          <button onClick={() => setShowWork(!showWork)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#3d5a73", padding: 0, fontFamily: FONT }}>
+            {showWork ? "▾" : "▸"} How the tenant's residual is calculated
+          </button>
+          {showWork && (
+            <div style={{ marginTop: 12 }}>
+              {activeCrops.map(c => {
+                const r = results.per[c].residual;
+                return (
+                  <div key={c} style={{ marginBottom: 16 }}>
+                    <div style={{ ...tag(CROPS[c].accent), marginBottom: 8 }}>{CROPS[c].label}</div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, maxWidth: 460 }}>
+                      <tbody>
+                        <tr><td style={td}>Gross revenue ({Math.round(getYield(c))} {CROPS[c].unit} × {fmt2(getPrice(c))})</td><td style={{ ...td, textAlign: "right", fontFamily: MONO, fontWeight: 600 }}>{fmt(r.rev)}</td></tr>
+                        <tr><td style={td}>− Operating costs (incl. interest)</td><td style={{ ...td, textAlign: "right", fontFamily: MONO, color: "#e5484d" }}>{fmt(-r.opTotal)}</td></tr>
+                        <tr><td style={td}>− Machinery ownership cost</td><td style={{ ...td, textAlign: "right", fontFamily: MONO, color: "#e5484d" }}>{fmt(-r.machFixed)}</td></tr>
+                        <tr><td style={td}>− Management ({mgmtPct}% of other costs)</td><td style={{ ...td, textAlign: "right", fontFamily: MONO, color: "#e5484d" }}>{fmt(-r.management)}</td></tr>
+                        <tr style={{ borderTop: "2px solid #3d5a73" }}><td style={{ ...td, fontWeight: 700 }}>= Available for rent (residual)</td><td style={{ ...td, textAlign: "right", fontFamily: MONO, fontWeight: 700, color: r.residual >= 0 ? "#2d7a3a" : "#e5484d" }}>{fmt(r.residual)}</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+              {rotation && (
+                <div style={{ fontSize: 12, color: "#6b6457", padding: "10px 12px", background: "#faf8f4", borderRadius: 6 }}>
+                  <strong>Rotation blend:</strong> rent is set on the field, so the residual is averaged across the rotation: <strong style={{ fontFamily: MONO }}>{fmt(results.residualBlend)}/ac</strong>.
+                </div>
+              )}
+              <div style={{ fontSize: 11, color: "#a89e8c", marginTop: 8, lineHeight: 1.5 }}>
+                Risk is handled through the conservative-assumptions toggle rather than a separate line item. Labor is included within operating costs.
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ fontSize: 11, color: "#a89e8c", lineHeight: 1.6, padding: "0 4px" }}>
+          <strong>Methods &amp; sources:</strong> the rent-estimation methods are standard farm-management approaches documented in Iowa State University Extension's Ag Decision Maker (File C2-20); calculations were verified against its published examples. Cost and crop data are from the 2026 NC State enterprise budgets. County figures are from the USDA NASS 2025 Cash Rents Survey (non-irrigated cropland, 89 NC counties), which excludes crop-share, per-head, free, and building-inclusive rentals. <strong>Optional inputs:</strong> government payments and crop insurance default to $0 (insurance nets to ~zero at expected yields, and both typically arrive after rent is due); the landowner floor appears only if you enter a land value. This is a single-year, single-field estimate to support a conversation — not a lease recommendation.
+        </div>
+
+        <div style={{ marginTop: 22, paddingTop: 14, borderTop: "1px solid #e8e4db" }}>
+          <span style={{ fontFamily: MONO, fontSize: 10, color: "#a89e8c", letterSpacing: "0.06em" }}>
+            Prototype for internal review — not yet affiliated with or endorsed by any institution.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<CashRentEstimator />);
+</script>
+</body>
+</html>

@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NC Crop Budget Scenario Builder — Dr. Tremendous</title>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+<script crossorigin src="https://cdn.jsdelivr.net/npm/recharts@2.15.4/umd/Recharts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.29.7/babel.min.js"></script>
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useCallback, useEffect } = React;
+const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, LineChart, Line, CartesianGrid, Legend } = Recharts;
+
+const CURRENT_YEAR = new Date().getFullYear();
+const DEFAULT_YEARS = [CURRENT_YEAR - 1, CURRENT_YEAR - 2, CURRENT_YEAR - 3, CURRENT_YEAR - 4, CURRENT_YEAR - 5, CURRENT_YEAR - 6];
+
+const CROPS = {
+  corn: {
+    label: "Corn", unit: "bu", defaultYield: 140, defaultPrice: 5.30, basis: 0.80, futuresPrice: 4.50,
+    color: "#d4a843", accent: "#b8912e", lightBg: "#fdf8ec",
+    operating: {
+      seed: { label: "Seed", default: 110.49, interestBearing: true },
+      nitrogen: { label: "Nitrogen (32%)", default: 70.40, interestBearing: true },
+      dap: { label: "DAP (18-46-0)", default: 58.96, interestBearing: true },
+      potash: { label: "Potash (0-0-60)", default: 14.64, interestBearing: true },
+      lime: { label: "Lime (prorated)", default: 27.06, interestBearing: true },
+      herbicides: { label: "Herbicides", default: 25.55, interestBearing: true },
+      drying: { label: "Drying", default: 28.00, perUnit: 0.20, yieldBased: true, interestBearing: false },
+      hauling: { label: "Hauling", default: 84.00, perUnit: 0.60, yieldBased: true, interestBearing: false },
+      machinery: { label: "Tractor/Machinery", default: 76.39, interestBearing: true },
+      fertSpreading: { label: "Fert. Spreading", default: 12.00, interestBearing: false },
+      consulting: { label: "Consulting", default: 16.00, interestBearing: false },
+      labor: { label: "Labor", default: 14.38, interestBearing: true },
+      insurance: { label: "Crop Insurance", default: 15.00, interestBearing: false },
+    },
+    ownership: {
+      landRent: { label: "Land Rent", default: 100.00 },
+      machineryFixed: { label: "Machinery (fixed)", default: 135.71 },
+    },
+    overheadRate: 0.07, interestRate: 0.0725,
+  },
+  soybeans: {
+    label: "Soybeans", unit: "bu", defaultYield: 50, defaultPrice: 10.94, basis: 0.30, futuresPrice: 10.64,
+    color: "#5a8a4a", accent: "#3d6832", lightBg: "#f0f7ed",
+    operating: {
+      seed: { label: "Seed", default: 61.10, interestBearing: true },
+      phosphate: { label: "Phosphate", default: 31.32, interestBearing: true },
+      potash: { label: "Potash (0-0-60)", default: 28.08, interestBearing: true },
+      lime: { label: "Lime (prorated)", default: 27.06, interestBearing: true },
+      herbicides: { label: "Herbicides", default: 41.07, interestBearing: true },
+      insecticides: { label: "Insecticides", default: 19.51, interestBearing: true },
+      hauling: { label: "Hauling", default: 30.00, perUnit: 0.60, yieldBased: true, interestBearing: false },
+      machinery: { label: "Tractor/Machinery", default: 78.11, interestBearing: true },
+      consulting: { label: "Consulting", default: 26.00, interestBearing: false },
+      labor: { label: "Labor", default: 15.51, interestBearing: true },
+      insurance: { label: "Crop Insurance", default: 15.00, interestBearing: false },
+    },
+    ownership: {
+      landRent: { label: "Land Rent", default: 100.00 },
+      machineryFixed: { label: "Machinery (fixed)", default: 139.34 },
+    },
+    overheadRate: 0.07, interestRate: 0.0725,
+  },
+  wheat: {
+    label: "Wheat", unit: "bu", defaultYield: 75, defaultPrice: 5.13, basis: 0.75, futuresPrice: 4.38,
+    color: "#c4954a", accent: "#a67a30", lightBg: "#fdf5e8",
+    operating: {
+      seed: { label: "Seed", default: 52.94, interestBearing: true },
+      nitrogen: { label: "Nitrogen (30%)", default: 43.95, interestBearing: true },
+      phosphate: { label: "Phosphate", default: 29.52, interestBearing: true },
+      potash: { label: "Potash (0-0-60)", default: 11.04, interestBearing: true },
+      lime: { label: "Lime (prorated)", default: 27.06, interestBearing: true },
+      herbicides: { label: "Herbicides", default: 25.39, interestBearing: true },
+      fungicides: { label: "Fungicides", default: 3.75, interestBearing: true },
+      hauling: { label: "Hauling", default: 11.25, perUnit: 0.15, yieldBased: true, interestBearing: false },
+      machinery: { label: "Tractor/Machinery", default: 77.65, interestBearing: true },
+      consulting: { label: "Consulting", default: 15.00, interestBearing: false },
+      labor: { label: "Labor", default: 14.71, interestBearing: true },
+      insurance: { label: "Crop Insurance", default: 10.00, interestBearing: false },
+    },
+    ownership: {
+      landRent: { label: "Land Rent", default: 100.00 },
+      machineryFixed: { label: "Machinery (fixed)", default: 158.84 },
+    },
+    overheadRate: 0.07, interestRate: 0.0725,
+  },
+};
+
+function linearTrend(points) {
+  const valid = points.filter(p => p.y !== null && p.y !== undefined && p.y !== "");
+  if (valid.length < 3) return null;
+  const n = valid.length;
+  const sumX = valid.reduce((s, p) => s + p.x, 0);
+  const sumY = valid.reduce((s, p) => s + p.y, 0);
+  const sumXY = valid.reduce((s, p) => s + p.x * p.y, 0);
+  const sumXX = valid.reduce((s, p) => s + p.x * p.x, 0);
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  const predicted = slope * CURRENT_YEAR + intercept;
+  const sorted = [...valid].map(p => p.y).sort((a, b) => a - b);
+  const p25 = pctile(sorted, 0.25);
+  const p75 = pctile(sorted, 0.75);
+  // Multiple averages
+  // valid is sorted newest-first (from sortedYears), so slice(0, N) gets the most recent N years
+  const recent5 = valid.slice(0, 5);
+  const recent10 = valid.slice(0, 10);
+  const avg5 = recent5.reduce((s, p) => s + p.y, 0) / recent5.length;
+  const avg10 = recent10.reduce((s, p) => s + p.y, 0) / recent10.length;
+  const avgAll = sumY / n;
+  return { slope, intercept, predicted: Math.max(0, predicted), avg5, avg10, avgAll, n, n5: recent5.length, n10: recent10.length, points: valid, p25, p75 };
+}
+
+function pctile(sorted, p) {
+  if (!sorted.length) return 0;
+  const i = p * (sorted.length - 1), lo = Math.floor(i), hi = Math.ceil(i);
+  return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
+}
+
+function calcBudget(crop, yieldVal, costOverrides, priceOverride) {
+  const cfg = CROPS[crop];
+  const price = priceOverride ?? cfg.defaultPrice;
+  const gross = yieldVal * price;
+
+  let opSubtotal = 0;
+  let interestBearingSubtotal = 0;
+  Object.entries(cfg.operating).forEach(([key, c]) => {
+    const ov = costOverrides?.[key];
+    let amt;
+    if (c.yieldBased) {
+      const rate = ov !== undefined ? ov / cfg.defaultYield : c.perUnit;
+      amt = rate * yieldVal;
+    } else { amt = ov !== undefined ? ov : c.default; }
+    opSubtotal += amt;
+    if (c.interestBearing) interestBearingSubtotal += amt;
+  });
+  // Match published budgets exactly: interest is on selected items only (seed, fertilizer, lime,
+  // chemicals, machinery, labor — not drying/hauling/spreading/consulting/insurance). Overhead is
+  // 7% of total operating costs INCLUDING interest. See Corn Mod formulas D22 and D27.
+  const interest = interestBearingSubtotal * 0.5 * cfg.interestRate;
+  const opTotal = opSubtotal + interest;
+  const overhead = opTotal * cfg.overheadRate;
+
+  let ownTotal = 0;
+  Object.entries(cfg.ownership).forEach(([key, c]) => {
+    ownTotal += (costOverrides?.[key] !== undefined ? costOverrides[key] : c.default);
+  });
+
+  const totalCost = opTotal + ownTotal + overhead;
+  const netReturn = gross - totalCost;
+  const incAboveOp = gross - opTotal;
+
+  return {
+    gross, opTotal, ownTotal, overhead, totalCost, netReturn, incAboveOp, price, yield: yieldVal,
+    beYieldTotal: price > 0 ? totalCost / price : 0,
+    bePriceTotal: yieldVal > 0 ? totalCost / yieldVal : 0,
+    beYieldOp: price > 0 ? opTotal / price : 0,
+    bePriceOp: yieldVal > 0 ? opTotal / yieldVal : 0,
+  };
+}
+
+function tornadoAnalysis(crop, baseYield, co, po, swing = 0.15) {
+  const base = calcBudget(crop, baseYield, co, po);
+  const results = [];
+  const yL = calcBudget(crop, baseYield * (1 - swing), co, po);
+  const yH = calcBudget(crop, baseYield * (1 + swing), co, po);
+  results.push({ label: "Yield", low: yL.netReturn, high: yH.netReturn, spread: yH.netReturn - yL.netReturn });
+  const pBase = po ?? CROPS[crop].defaultPrice;
+  const pL = calcBudget(crop, baseYield, co, pBase * (1 - swing));
+  const pH = calcBudget(crop, baseYield, co, pBase * (1 + swing));
+  results.push({ label: "Price", low: pL.netReturn, high: pH.netReturn, spread: pH.netReturn - pL.netReturn });
+  const allCosts = { ...CROPS[crop].operating, ...CROPS[crop].ownership };
+  Object.entries(allCosts).forEach(([key, c]) => {
+    const val = co?.[key] ?? c.default;
+    if (val < 5) return;
+    const oL = { ...co, [key]: val * (1 - swing) };
+    const oH = { ...co, [key]: val * (1 + swing) };
+    const bL = calcBudget(crop, baseYield, oL, po);
+    const bH = calcBudget(crop, baseYield, oH, po);
+    results.push({ label: c.label, low: bH.netReturn, high: bL.netReturn, spread: Math.abs(bL.netReturn - bH.netReturn) });
+  });
+  results.sort((a, b) => b.spread - a.spread);
+  return results.slice(0, 8);
+}
+
+// "What would have to change?" analysis
+function breakEvenAnalysis(crop, yieldVal, co, po) {
+  const b = calcBudget(crop, yieldVal, co, po);
+  const cfg = CROPS[crop];
+  // Max land rent to break even: current rent + net return (if negative, reduces max rent)
+  const currentRent = co?.landRent ?? cfg.ownership.landRent.default;
+  const maxRent = Math.max(0, currentRent + b.netReturn);
+  // Required cost reduction to break even (total, spread across operating costs)
+  const costReduction = b.netReturn < 0 ? Math.abs(b.netReturn) : 0;
+  // Price sensitivity: $/acre change per $0.10 price change
+  const priceSens = yieldVal * 0.10;
+  // Price × yield combo table
+  const priceSteps = [-0.50, -0.25, 0, 0.25, 0.50];
+  const yieldPcts = [-15, -10, 0, 10, 15];
+  const comboTable = yieldPcts.map(yPct => {
+    const y = Math.round(yieldVal * (1 + yPct / 100));
+    return {
+      yieldLabel: yPct === 0 ? `${y} (base)` : `${y} (${yPct > 0 ? "+" : ""}${yPct}%)`,
+      cells: priceSteps.map(pDelta => {
+        const p = (po ?? cfg.defaultPrice) + pDelta;
+        return { price: p, net: calcBudget(crop, y, co, p).netReturn };
+      }),
+    };
+  });
+  // Warnings
+  const warnings = [];
+  const yieldRatio = yieldVal / cfg.defaultYield;
+  if (yieldRatio > 1.35) warnings.push({ type: "caution", msg: `Your yield (${Math.round(yieldVal)}) is ${Math.round((yieldRatio - 1) * 100)}% above the budget default of ${cfg.defaultYield}.` });
+  if (yieldRatio < 0.65) warnings.push({ type: "caution", msg: `Your yield (${Math.round(yieldVal)}) is ${Math.round((1 - yieldRatio) * 100)}% below the budget default of ${cfg.defaultYield}.` });
+  if (b.price < b.bePriceTotal) warnings.push({ type: "alert", msg: `Price ($${b.price.toFixed(2)}) is below total-cost break-even ($${b.bePriceTotal.toFixed(2)}).` });
+  if (b.incAboveOp >= 0 && b.netReturn < 0) warnings.push({ type: "info", msg: "Covers operating costs but not total costs. May still be worth planting short-term, but not sustainable long-term." });
+  if (b.incAboveOp < 0) warnings.push({ type: "alert", msg: "At these assumptions, the crop does not cover operating costs before ownership and overhead." });
+  if (currentRent > 0 && currentRent / b.totalCost > 0.15 && b.netReturn < 0) warnings.push({ type: "info", msg: `Land rent ($${currentRent.toFixed(0)}/ac) is ${Math.round(currentRent / b.totalCost * 100)}% of total cost and a major driver of the negative return.` });
+  return { maxRent, costReduction, priceSens, comboTable, priceSteps, warnings, coversOp: b.incAboveOp >= 0, coversTotal: b.netReturn >= 0 };
+}
+
+const fmtD = v => { if (v == null) return "—"; const neg = v < 0; const s = Math.abs(v).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ","); return neg ? `($${s})` : `$${s}`; };
+const fmtDec = v => { if (v == null) return "—"; const neg = v < 0; return neg ? `($${Math.abs(v).toFixed(2)})` : `$${v.toFixed(2)}`; };
+
+const FONT = "'IBM Plex Sans','Segoe UI',sans-serif";
+const MONO = "'IBM Plex Mono',monospace";
+const labelSt = { display: "block", fontSize: 11, fontWeight: 600, color: "#7a7265", marginBottom: 5, fontFamily: MONO, textTransform: "uppercase", letterSpacing: "0.1em" };
+const inputSt = { width: "100%", padding: "9px 12px", border: "1.5px solid #dcd6ca", borderRadius: 5, fontSize: 14, outline: "none", background: "#faf8f4", fontFamily: FONT };
+const numIn = { padding: "7px 6px", border: "1.5px solid #dcd6ca", borderRadius: 4, fontSize: 13, outline: "none", textAlign: "center", fontFamily: MONO, background: "#fff" };
+const btnP = { padding: "11px 24px", border: "none", borderRadius: 5, cursor: "pointer", fontSize: 13, fontWeight: 600, background: "#2d2a24", color: "#d4a843", fontFamily: FONT };
+const btnS = { padding: "11px 24px", border: "1px solid #dcd6ca", borderRadius: 5, cursor: "pointer", fontSize: 13, fontWeight: 500, background: "#fff", color: "#6b6457", fontFamily: FONT };
+const thSt = { padding: "9px 10px", textAlign: "left", fontSize: 11, fontWeight: 600, borderBottom: "2px solid #e0dbd2", fontFamily: MONO, textTransform: "uppercase", letterSpacing: "0.04em", color: "#7a7265" };
+const tdSt = { padding: "9px 10px", borderBottom: "1px solid #f0ece4", fontSize: 13 };
+const card = { background: "#fff", border: "1px solid #e0dbd2", borderRadius: 8, padding: 24, marginBottom: 18 };
+const tag = (color) => ({ display: "inline-block", fontSize: 10, fontWeight: 600, fontFamily: MONO, letterSpacing: "0.08em", textTransform: "uppercase", padding: "3px 8px", borderRadius: 3, background: `${color}18`, color, marginBottom: 8 });
+
+// Quick-scenario pill button
+function Pill({ label, active, onClick }) {
+  return <button onClick={onClick} style={{ padding: "5px 12px", border: `1.5px solid ${active ? "#2d2a24" : "#dcd6ca"}`, borderRadius: 20, cursor: "pointer", fontSize: 11, fontWeight: active ? 600 : 400, background: active ? "#2d2a24" : "#fff", color: active ? "#d4a843" : "#6b6457", fontFamily: MONO, transition: "all 0.15s" }}>{label}</button>;
+}
+
+function FarmBudgetTool() {
+  const [tab, setTab] = useState("projections"); // projections | risk | history
+  const [farmName, setFarmName] = useState("");
+  const [activeCrops, setActiveCrops] = useState(["corn", "soybeans"]);
+  const [acres, setAcres] = useState({ corn: "", soybeans: "", wheat: "" });
+  const [yieldOverrides, setYieldOverrides] = useState({}); // manual yield per crop
+  const [costOverrides, setCostOverrides] = useState({ corn: {}, soybeans: {}, wheat: {} });
+  const [priceOverrides, setPriceOverrides] = useState({});
+  const [expandedCosts, setExpandedCosts] = useState({});
+  const [histYears, setHistYears] = useState([...DEFAULT_YEARS]);
+  const [yields, setYields] = useState({
+    corn: Object.fromEntries(DEFAULT_YEARS.map(y => [y, ""])),
+    soybeans: Object.fromEntries(DEFAULT_YEARS.map(y => [y, ""])),
+    wheat: Object.fromEntries(DEFAULT_YEARS.map(y => [y, ""])),
+  });
+  const [projMethod, setProjMethod] = useState("trend"); // trend | avg5 | avg10 | avgAll
+  // Quick scenario toggles
+  const [priceScenario, setPriceScenario] = useState("base");
+  const [yieldScenario, setYieldScenario] = useState("base");
+  const [fertScenario, setFertScenario] = useState("base");
+  const [fuelScenario, setFuelScenario] = useState("base");
+
+  const addYear = () => {
+    const minYear = histYears.length > 0 ? Math.min(...histYears) : CURRENT_YEAR;
+    const newYear = minYear - 1;
+    if (newYear < 1980) return;
+    setHistYears(prev => [...prev, newYear].sort((a, b) => b - a));
+    setYields(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(crop => { next[crop] = { ...next[crop], [newYear]: "" }; });
+      return next;
+    });
+  };
+
+  const removeYear = (year) => {
+    if (histYears.length <= 3) return;
+    setHistYears(prev => prev.filter(y => y !== year));
+    setYields(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(crop => { const c = { ...next[crop] }; delete c[year]; next[crop] = c; });
+      return next;
+    });
+  };
+
+  const toggleCrop = crop => {
+    setActiveCrops(prev => {
+      if (prev.includes(crop) && prev.length <= 1) return prev;
+      return prev.includes(crop) ? prev.filter(c => c !== crop) : [...prev, crop];
+    });
+  };
+
+  const sortedYears = useMemo(() => [...histYears].sort((a, b) => b - a), [histYears]);
+
+  const trends = useMemo(() => {
+    const r = {};
+    activeCrops.forEach(crop => {
+      const pts = sortedYears.map(y => ({ x: y, y: yields[crop][y] === "" ? null : parseFloat(yields[crop][y]) }));
+      r[crop] = linearTrend(pts);
+    });
+    return r;
+  }, [yields, activeCrops, sortedYears]);
+
+  // Reset projMethod if the selected option is no longer available
+  useEffect(() => {
+    const maxN = Math.max(...activeCrops.map(c => trends[c]?.n || 0));
+    if (projMethod === "avg10" && maxN < 10) setProjMethod("avg5");
+    if (projMethod === "avgAll" && maxN < 7) setProjMethod("avg5");
+  }, [activeCrops, trends, projMethod]);
+
+  // Effective yield: manual override > projection method > default
+  const getYield = useCallback((crop) => {
+    if (yieldOverrides[crop] !== undefined && yieldOverrides[crop] !== "") return parseFloat(yieldOverrides[crop]);
+    const t = trends[crop];
+    if (t) {
+      if (projMethod === "avg5") return Math.round(t.avg5);
+      if (projMethod === "avg10") return Math.round(t.avg10);
+      if (projMethod === "avgAll") return Math.round(t.avgAll);
+      return Math.round(t.predicted); // trend
+    }
+    return CROPS[crop].defaultYield;
+  }, [yieldOverrides, trends, projMethod]);
+
+  // Apply quick-scenario multipliers
+  const getEffectiveCosts = useCallback((crop) => {
+    const co = { ...costOverrides[crop] };
+    if (fertScenario === "+15%") {
+      const fertKeys = ["nitrogen", "dap", "potash", "phosphate", "lime", "fertSpreading"];
+      const allCosts = { ...CROPS[crop].operating, ...CROPS[crop].ownership };
+      fertKeys.forEach(k => { if (allCosts[k]) co[k] = (co[k] ?? allCosts[k].default) * 1.15; });
+    }
+    if (fuelScenario === "+15%") {
+      const fuelKeys = ["hauling", "drying", "machinery"];
+      const allCosts = { ...CROPS[crop].operating };
+      fuelKeys.forEach(k => { if (allCosts[k]) co[k] = (co[k] ?? allCosts[k].default) * 1.15; });
+    }
+    return co;
+  }, [costOverrides, fertScenario, fuelScenario]);
+
+  const getEffectivePrice = useCallback((crop) => {
+    const base = priceOverrides[crop] ?? CROPS[crop].defaultPrice;
+    if (priceScenario === "-10%") return base * 0.9;
+    if (priceScenario === "+10%") return base * 1.1;
+    return base;
+  }, [priceOverrides, priceScenario]);
+
+  const getEffectiveYield = useCallback((crop) => {
+    const base = getYield(crop);
+    if (yieldScenario === "-10%") return Math.round(base * 0.9);
+    if (yieldScenario === "+10%") return Math.round(base * 1.1);
+    return base;
+  }, [getYield, yieldScenario]);
+
+  const budgets = useMemo(() => {
+    const r = {};
+    activeCrops.forEach(crop => {
+      r[crop] = calcBudget(crop, getEffectiveYield(crop), getEffectiveCosts(crop), getEffectivePrice(crop));
+    });
+    return r;
+  }, [activeCrops, getEffectiveYield, getEffectiveCosts, getEffectivePrice]);
+
+  const farmTotal = useMemo(() => {
+    let total = 0; let hasAcres = false;
+    activeCrops.forEach(crop => {
+      const a = parseFloat(acres[crop]);
+      if (a > 0) { total += a * (budgets[crop]?.netReturn || 0); hasAcres = true; }
+    });
+    return hasAcres ? total : null;
+  }, [budgets, acres, activeCrops]);
+
+  const riskBudgets = useMemo(() => {
+    const r = {};
+    activeCrops.forEach(crop => {
+      const t = trends[crop]; if (!t) return;
+      const poor = Math.round(t.p25);
+      const typical = getEffectiveYield(crop); // respects selected projection method
+      const strong = Math.round(t.p75);
+      const co = getEffectiveCosts(crop), po = getEffectivePrice(crop);
+      const yearsNeg = t.points.filter(p => calcBudget(crop, p.y, co, po).netReturn < 0).length;
+      r[crop] = {
+        poor: { ...calcBudget(crop, poor, co, po), yieldUsed: poor },
+        typical: { ...calcBudget(crop, typical, co, po), yieldUsed: typical },
+        strong: { ...calcBudget(crop, strong, co, po), yieldUsed: strong },
+        yearsNeg, yearsTotal: t.points.length,
+      };
+    });
+    return r;
+  }, [trends, activeCrops, getEffectiveYield, getEffectiveCosts, getEffectivePrice]);
+
+  const tornadoData = useMemo(() => {
+    const r = {};
+    activeCrops.forEach(crop => {
+      r[crop] = tornadoAnalysis(crop, getEffectiveYield(crop), getEffectiveCosts(crop), getEffectivePrice(crop));
+    });
+    return r;
+  }, [activeCrops, getEffectiveYield, getEffectiveCosts, getEffectivePrice]);
+
+  const beData = useMemo(() => {
+    const r = {};
+    activeCrops.forEach(crop => {
+      r[crop] = breakEvenAnalysis(crop, getEffectiveYield(crop), getEffectiveCosts(crop), getEffectivePrice(crop));
+    });
+    return r;
+  }, [activeCrops, getEffectiveYield, getEffectiveCosts, getEffectivePrice]);
+
+  const cropRankings = useMemo(() => {
+    if (activeCrops.length < 2) return null;
+    const items = activeCrops.map(c => ({ crop: c, label: CROPS[c].label, b: budgets[c], be: beData[c] }));
+    return {
+      byNetReturn: [...items].sort((a, b) => b.b.netReturn - a.b.netReturn),
+      byBEPrice: [...items].sort((a, b) => a.b.bePriceTotal - b.b.bePriceTotal),
+      byOpMargin: [...items].sort((a, b) => b.b.incAboveOp - a.b.incAboveOp),
+    };
+  }, [activeCrops, budgets, beData]);
+
+  const resetAll = () => {
+    setPriceScenario("base"); setYieldScenario("base"); setFertScenario("base"); setFuelScenario("base");
+    setCostOverrides({ corn: {}, soybeans: {}, wheat: {} }); setPriceOverrides({}); setYieldOverrides({});
+  };
+
+  const hasAnyHistory = activeCrops.some(c => trends[c]);
+  const anyScenarioActive = priceScenario !== "base" || yieldScenario !== "base" || fertScenario !== "base" || fuelScenario !== "base";
+
+  // Check if a crop has any user modifications
+  const isModified = useCallback((crop) => {
+    const hasYieldOv = yieldOverrides[crop] !== undefined && yieldOverrides[crop] !== "";
+    const hasPriceOv = priceOverrides[crop] !== undefined;
+    const hasCostOv = Object.keys(costOverrides[crop] || {}).some(k => costOverrides[crop][k] !== undefined);
+    const hasTrend = !!trends[crop];
+    return hasYieldOv || hasPriceOv || hasCostOv || hasTrend || anyScenarioActive;
+  }, [yieldOverrides, priceOverrides, costOverrides, trends, anyScenarioActive]);
+
+  // Assumption status label for a crop
+  const assumptionStatus = useCallback((crop) => {
+    const parts = [];
+    if (anyScenarioActive) parts.push("scenario active");
+    if (yieldOverrides[crop] !== undefined && yieldOverrides[crop] !== "") parts.push("yield: manual");
+    else if (trends[crop]) {
+      const methodLabels = { trend: "trend", avg5: "5-yr avg", avg10: "10-yr avg", avgAll: "all-yr avg" };
+      parts.push(`yield: ${methodLabels[projMethod] || "trend"}`);
+    }
+    else parts.push("yield: budget default");
+    if (priceOverrides[crop] !== undefined) parts.push("price: adjusted");
+    const numCostChanges = Object.keys(costOverrides[crop] || {}).filter(k => costOverrides[crop][k] !== undefined).length;
+    if (numCostChanges > 0) parts.push(`${numCostChanges} cost${numCostChanges > 1 ? "s" : ""} adjusted`);
+    return parts;
+  }, [yieldOverrides, priceOverrides, costOverrides, trends, anyScenarioActive, projMethod]);
+
+  // Default budget (no overrides, no scenarios) for comparison
+  const defaultBudgets = useMemo(() => {
+    const r = {};
+    activeCrops.forEach(crop => {
+      r[crop] = calcBudget(crop, CROPS[crop].defaultYield, {}, undefined);
+    });
+    return r;
+  }, [activeCrops]);
+
+  const hasAnyAcres = activeCrops.some(c => parseFloat(acres[c]) > 0);
+  const allDefaults = activeCrops.every(c => !isModified(c));
+
+  return (
+    <div style={{ fontFamily: FONT, background: "#faf8f4", minHeight: "100vh", color: "#2d2a24" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+      `}</style>
+
+      {/* ── HEADER ── */}
+      <div style={{ background: "linear-gradient(135deg, #2d2a24 0%, #4a4435 100%)", padding: "22px 20px 18px", borderBottom: "4px solid #d4a843" }}>
+        <div style={{ maxWidth: 980, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#d4a843", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🌾</div>
+            <div>
+              <div style={{ color: "#d4a843", fontSize: 10, fontFamily: MONO, letterSpacing: "0.15em", textTransform: "uppercase" }}>NC State · ARE Extension</div>
+              <h1 style={{ color: "#faf8f4", fontSize: 19, fontWeight: 700 }}>NC Crop Budget Scenario Builder</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ maxWidth: 980, margin: "0 auto", padding: "16px 14px 60px" }}>
+        {/* ── START HERE BOX ── */}
+        <div style={{ ...card, padding: "14px 18px", marginBottom: 12, background: "linear-gradient(135deg, #fdf8ec 0%, #faf8f4 100%)", border: "1.5px solid #d4a843" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 6, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: "#b8912e", letterSpacing: "0.1em", textTransform: "uppercase" }}>Start Here</span>
+            <span style={{ fontSize: 11, color: "#6b6457" }}>The simplest path through the tool.</span>
+          </div>
+          <ol style={{ margin: 0, paddingLeft: 22, fontSize: 12, color: "#3d3a32", lineHeight: 1.55 }}>
+            <li style={{ marginBottom: 1 }}>Choose your crops below.</li>
+            <li style={{ marginBottom: 1 }}>Enter your acres for each.</li>
+            <li style={{ marginBottom: 1 }}>Enter your expected yield and price, or leave the NC State defaults in place.</li>
+            <li>Look at net return, break-even price, and break-even yield for each crop.</li>
+          </ol>
+          <div style={{ fontSize: 11, color: "#6b6457", marginTop: 8, paddingTop: 8, borderTop: "1px dashed #d4a843" }}>
+            Want a more personalized result? <strong>Add your yield history</strong> in the Personalize tab to replace the default NC State yields with your own farm record.
+          </div>
+          <div style={{ fontSize: 11, color: "#6b6457", marginTop: 6 }}>
+            Need to adjust costs? <strong>Every cost line is editable</strong> — scroll to the per-crop budget tables below to override fertilizer, seed, chemicals, and other inputs individually. The "Fertilizer +15%" and "Fuel/Hauling +15%" toggles above apply a quick stress test across all crops at once.
+          </div>
+        </div>
+
+        {/* ── FARM SETUP BAR ── */}
+        <div style={{ ...card, padding: 18, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+          <div style={{ flex: "1 1 200px" }}>
+            <label style={labelSt}>Farm Name</label>
+            <input value={farmName} onChange={e => setFarmName(e.target.value)} placeholder="Optional" style={{ ...inputSt, padding: "7px 10px", fontSize: 13 }} />
+          </div>
+          <div style={{ flex: "2 1 280px" }}>
+            <label style={labelSt}>Crops</label>
+            <div style={{ display: "flex", gap: 6 }}>
+              {Object.entries(CROPS).map(([key, c]) => (
+                <button key={key} onClick={() => toggleCrop(key)} style={{
+                  flex: 1, padding: "7px 8px", border: `2px solid ${activeCrops.includes(key) ? c.color : "#ddd"}`,
+                  borderRadius: 5, cursor: "pointer", fontSize: 12, fontWeight: activeCrops.includes(key) ? 600 : 400,
+                  background: activeCrops.includes(key) ? c.lightBg : "#faf8f4",
+                  color: activeCrops.includes(key) ? c.accent : "#aaa", fontFamily: FONT, transition: "all 0.15s",
+                }}>{activeCrops.includes(key) ? "✓ " : ""}{c.label}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── ACRES + YIELD ROW ── */}
+        <div style={{ ...card, padding: 18 }}>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead><tr>
+                <th style={{ ...thSt, width: 90 }}></th>
+                {activeCrops.map(c => <th key={c} style={{ ...thSt, color: CROPS[c].accent, textAlign: "center" }}>{CROPS[c].label}</th>)}
+              </tr></thead>
+              <tbody>
+                <tr>
+                  <td style={{ ...tdSt, fontWeight: 600, fontSize: 12 }}>Acres</td>
+                  {activeCrops.map(c => (
+                    <td key={c} style={{ ...tdSt, textAlign: "center" }}>
+                      <input type="number" min="0" value={acres[c]} onChange={e => setAcres(p => ({ ...p, [c]: e.target.value }))}
+                        placeholder="—" style={{ ...numIn, width: 90, borderColor: acres[c] ? CROPS[c].color : "#dcd6ca" }} />
+                    </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td style={{ ...tdSt, fontWeight: 600, fontSize: 12 }}>
+                    Expected Yield
+                    <div style={{ fontSize: 9, color: "#a89e8c", fontWeight: 400 }}>Override or use default</div>
+                  </td>
+                  {activeCrops.map(c => {
+                    const t = trends[c];
+                    const src = yieldOverrides[c] !== undefined && yieldOverrides[c] !== "" ? "manual" : t ? "method" : "default";
+                    const methodLabels = { trend: "from trend", avg5: "from 5-yr avg", avg10: "from 10-yr avg", avgAll: "from all-yr avg" };
+                    const placeholder = t ? getYield(c) : CROPS[c].defaultYield;
+                    return (
+                      <td key={c} style={{ ...tdSt, textAlign: "center" }}>
+                        <input type="number" min="0" value={yieldOverrides[c] ?? ""} onChange={e => setYieldOverrides(p => ({ ...p, [c]: e.target.value === "" ? undefined : e.target.value }))}
+                          placeholder={`${placeholder}`}
+                          style={{ ...numIn, width: 90, borderColor: CROPS[c].color }} />
+                        <div style={{ fontSize: 9, color: "#a89e8c", marginTop: 2 }}>
+                          {src === "manual" ? "manual" : src === "method" ? (methodLabels[projMethod] || "from trend") : "budget default"} · {CROPS[c].unit}/ac
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+                <tr>
+                  <td style={{ ...tdSt, fontWeight: 600, fontSize: 12 }}>Price ($/{activeCrops.length > 0 ? "unit" : ""})</td>
+                  {activeCrops.map(c => (
+                    <td key={c} style={{ ...tdSt, textAlign: "center" }}>
+                      <input type="number" step="0.01" value={priceOverrides[c] ?? ""} onChange={e => setPriceOverrides(p => ({ ...p, [c]: e.target.value === "" ? undefined : parseFloat(e.target.value) }))}
+                        placeholder={CROPS[c].defaultPrice.toFixed(2)}
+                        style={{ ...numIn, width: 90, borderColor: CROPS[c].color }} />
+                      <div style={{ fontSize: 9, color: "#a89e8c", marginTop: 2 }}>${CROPS[c].futuresPrice}+{CROPS[c].basis} basis</div>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+        </div>
+
+        {/* ── QUICK SCENARIO BAR ── */}
+        <div style={{ ...card, padding: "14px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <div style={{ fontSize: 11, fontFamily: MONO, fontWeight: 600, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.08em" }}>Quick Scenarios</div>
+            {anyScenarioActive && <button onClick={resetAll} style={{ fontSize: 11, border: "1px solid #dcd6ca", borderRadius: 4, padding: "3px 10px", cursor: "pointer", background: "#fff", color: "#e5484d", fontWeight: 600, fontFamily: MONO }}>Reset Assumptions</button>}
+          </div>
+          <div style={{ display: "flex", gap: 16, marginTop: 10, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 4 }}>Price</div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {["-10%", "base", "+10%"].map(s => <Pill key={s} label={s === "base" ? "Base" : s} active={priceScenario === s} onClick={() => setPriceScenario(s)} />)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 4 }}>Yield</div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {["-10%", "base", "+10%"].map(s => <Pill key={s} label={s === "base" ? "Base" : s} active={yieldScenario === s} onClick={() => setYieldScenario(s)} />)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 4 }}>Fertilizer</div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {["base", "+15%"].map(s => <Pill key={s} label={s === "base" ? "Base" : s} active={fertScenario === s} onClick={() => setFertScenario(s)} />)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 4 }}>Fuel / Hauling</div>
+              <div style={{ display: "flex", gap: 4 }}>
+                {["base", "+15%"].map(s => <Pill key={s} label={s === "base" ? "Base" : s} active={fuelScenario === s} onClick={() => setFuelScenario(s)} />)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── TAB NAV ── */}
+        <div style={{ display: "flex", gap: 3, marginBottom: 18 }}>
+          {[
+            { key: "projections", label: "Budget Projections" },
+            { key: "risk", label: "Risk & Sensitivity" },
+            { key: "history", label: "Personalize (Yield History)" },
+            { key: "methodology", label: "Methodology" },
+          ].map((t, i, arr) => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{
+              flex: 1, padding: "10px 8px", border: "none", cursor: "pointer",
+              background: tab === t.key ? "#2d2a24" : "#e8e4db", color: tab === t.key ? "#d4a843" : "#6b6457",
+              fontSize: 11, fontWeight: 600, fontFamily: MONO, letterSpacing: "0.03em",
+              borderRadius: i === 0 ? "5px 0 0 5px" : i === arr.length - 1 ? "0 5px 5px 0" : 0,
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* ═══════ TAB: PROJECTIONS ═══════ */}
+        {tab === "projections" && (
+          <div>
+            {/* Farm Total Banner */}
+            {farmTotal !== null && (
+              <div style={{ ...card, padding: 18, background: farmTotal >= 0 ? "#f0faf2" : "#fef3f2", border: `2px solid ${farmTotal >= 0 ? "#2d7a3a" : "#e5484d"}`, textAlign: "center" }}>
+                <div style={{ fontSize: 11, fontFamily: MONO, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  Projected Total Farm Net Return{farmName ? ` · ${farmName}` : ""}
+                </div>
+                <div style={{ fontSize: 36, fontWeight: 700, color: farmTotal >= 0 ? "#2d7a3a" : "#e5484d", marginTop: 4 }}>{fmtD(farmTotal)}</div>
+                <div style={{ fontSize: 11, color: "#8a8175", marginTop: 4 }}>
+                  {activeCrops.filter(c => parseFloat(acres[c]) > 0).map(c => `${CROPS[c].label}: ${acres[c]} ac × ${fmtD(budgets[c]?.netReturn)}/ac = ${fmtD(parseFloat(acres[c]) * (budgets[c]?.netReturn || 0))}`).join("  ·  ")}
+                </div>
+              </div>
+            )}
+
+            {/* Active scenario label */}
+            {anyScenarioActive && (
+              <div style={{ padding: "8px 14px", background: "#fff8e6", border: "1px solid #e8d89c", borderRadius: 6, fontSize: 11, color: "#8a7530", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontWeight: 700 }}>Scenario active:</span>
+                {priceScenario !== "base" && <span>Price {priceScenario}</span>}
+                {yieldScenario !== "base" && <span>Yield {yieldScenario}</span>}
+                {fertScenario !== "base" && <span>Fertilizer {fertScenario}</span>}
+                {fuelScenario !== "base" && <span>Fuel/Hauling {fuelScenario}</span>}
+              </div>
+            )}
+
+            {/* Defaults warning */}
+            {hasAnyAcres && allDefaults && (
+              <div style={{ padding: "8px 14px", background: "#f4f1eb", border: "1px solid #dcd6ca", borderRadius: 6, fontSize: 11, color: "#7a7265", marginBottom: 14 }}>
+                Using NC State budget defaults. Adjust yield, price, or costs above to reflect your operation.
+              </div>
+            )}
+
+            {/* Crop Ranking */}
+            {cropRankings && (
+              <div style={{ ...card, padding: "14px 18px", marginBottom: 14 }}>
+                <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 10, fontFamily: MONO, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>By Net Return</div>
+                    {cropRankings.byNetReturn.map((r, i) => (
+                      <div key={r.crop} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2 }}>
+                        <span style={{ fontSize: 10, fontFamily: MONO, color: "#a89e8c", width: 14 }}>{i + 1}.</span>
+                        <span style={{ color: CROPS[r.crop].accent, fontWeight: 600 }}>{r.label}</span>
+                        <span style={{ fontFamily: MONO, color: r.b.netReturn >= 0 ? "#2d7a3a" : "#e5484d" }}>{fmtD(r.b.netReturn)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontFamily: MONO, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>Lowest Break-Even Price</div>
+                    {cropRankings.byBEPrice.map((r, i) => (
+                      <div key={r.crop} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2 }}>
+                        <span style={{ fontSize: 10, fontFamily: MONO, color: "#a89e8c", width: 14 }}>{i + 1}.</span>
+                        <span style={{ color: CROPS[r.crop].accent, fontWeight: 600 }}>{r.label}</span>
+                        <span style={{ fontFamily: MONO, color: "#6b6457" }}>${r.b.bePriceTotal.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 10, fontFamily: MONO, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>By Operating Margin</div>
+                    {cropRankings.byOpMargin.map((r, i) => (
+                      <div key={r.crop} style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 2 }}>
+                        <span style={{ fontSize: 10, fontFamily: MONO, color: "#a89e8c", width: 14 }}>{i + 1}.</span>
+                        <span style={{ color: CROPS[r.crop].accent, fontWeight: 600 }}>{r.label}</span>
+                        <span style={{ fontFamily: MONO, color: r.b.incAboveOp >= 0 ? "#2d7a3a" : "#e5484d" }}>{fmtD(r.b.incAboveOp)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Per-acre cards */}
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 18 }}>
+              {activeCrops.map(crop => {
+                const b = budgets[crop]; const db = defaultBudgets[crop]; const a = parseFloat(acres[crop]);
+                const status = assumptionStatus(crop);
+                const yieldDiff = Math.round(b.yield) !== CROPS[crop].defaultYield;
+                const priceDiff = b.price !== CROPS[crop].defaultPrice;
+                const netDiff = Math.abs(b.netReturn - db.netReturn) > 0.5;
+                const be = beData[crop];
+                return (
+                  <div key={crop} style={{ flex: "1 1 220px", ...card, marginBottom: 0, padding: 18, border: `2px solid ${b.netReturn >= 0 ? CROPS[crop].color : "#e5484d"}`, background: b.netReturn >= 0 ? CROPS[crop].lightBg : "#fef3f2" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={tag(CROPS[crop].accent)}>{CROPS[crop].label}</div>
+                      {/* Operating cost coverage signal */}
+                      {be && (
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <span title="Covers operating costs?" style={{ fontSize: 11, padding: "2px 6px", borderRadius: 3, fontWeight: 600, background: be.coversOp ? "#e6f4ea" : "#fde8e8", color: be.coversOp ? "#2d7a3a" : "#e5484d" }}>
+                            {be.coversOp ? "✓ Op" : "✗ Op"}
+                          </span>
+                          <span title="Covers total costs?" style={{ fontSize: 11, padding: "2px 6px", borderRadius: 3, fontWeight: 600, background: be.coversTotal ? "#e6f4ea" : "#fde8e8", color: be.coversTotal ? "#2d7a3a" : "#e5484d" }}>
+                            {be.coversTotal ? "✓ Total" : "✗ Total"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Assumption status */}
+                    <div style={{ fontSize: 9, color: "#a89e8c", marginBottom: 6, lineHeight: 1.4 }}>
+                      {status.join(" · ")}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#8a8175", marginBottom: 6 }}>
+                      {Math.round(b.yield)} {CROPS[crop].unit}/ac @ ${b.price.toFixed(2)}/{CROPS[crop].unit}
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: b.netReturn >= 0 ? CROPS[crop].accent : "#e5484d", lineHeight: 1 }}>{fmtD(b.netReturn)}</div>
+                    <div style={{ fontSize: 10, color: "#8a8175", marginTop: 4 }}>net return / acre</div>
+                    {a > 0 && <div style={{ fontSize: 12, color: "#6b6457", marginTop: 6, padding: "4px 0", borderTop: "1px solid #e0dbd2" }}>{a} acres → <strong>{fmtD(a * b.netReturn)}</strong> total</div>}
+                    <div style={{ display: "flex", gap: 10, marginTop: 8, fontSize: 11, color: "#6b6457" }}>
+                      <div>BE yield: <strong>{Math.round(b.beYieldTotal)}</strong></div>
+                      <div>BE price: <strong>${b.bePriceTotal.toFixed(2)}</strong></div>
+                    </div>
+                    {/* Warnings */}
+                    {be && be.warnings.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        {be.warnings.map((w, i) => (
+                          <div key={i} style={{ fontSize: 10, lineHeight: 1.4, marginBottom: 3, padding: "3px 6px", borderRadius: 3, background: w.type === "alert" ? "#fde8e8" : w.type === "caution" ? "#fff8e6" : w.type === "info" ? "#e8f0fe" : "#f4f1eb", color: w.type === "alert" ? "#c53030" : w.type === "caution" ? "#8a6d1b" : "#4a5568" }}>
+                            {w.msg}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Compare to default */}
+                    {netDiff && (
+                      <div style={{ marginTop: 10, padding: "8px 10px", background: "#faf8f4", borderRadius: 5, border: "1px solid #e8e4db" }}>
+                        <div style={{ fontSize: 9, fontFamily: MONO, color: "#a89e8c", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 5 }}>vs. NC State Budget Default</div>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}><tbody>
+                          <tr style={{ borderBottom: "1px solid #e8e4db" }}>
+                            <td style={{ padding: "3px 0", color: "#8a8175" }}></td>
+                            <td style={{ padding: "3px 4px", fontWeight: 600, color: "#7a7265", textAlign: "right", fontSize: 10 }}>Yours</td>
+                            <td style={{ padding: "3px 4px", fontWeight: 600, color: "#a89e8c", textAlign: "right", fontSize: 10 }}>Default</td>
+                          </tr>
+                          {yieldDiff && <tr style={{ borderBottom: "1px solid #f0ece4" }}>
+                            <td style={{ padding: "3px 0", color: "#8a8175" }}>Yield</td>
+                            <td style={{ padding: "3px 4px", textAlign: "right", fontFamily: MONO }}>{Math.round(b.yield)}</td>
+                            <td style={{ padding: "3px 4px", textAlign: "right", fontFamily: MONO, color: "#a89e8c" }}>{CROPS[crop].defaultYield}</td>
+                          </tr>}
+                          {priceDiff && <tr style={{ borderBottom: "1px solid #f0ece4" }}>
+                            <td style={{ padding: "3px 0", color: "#8a8175" }}>Price</td>
+                            <td style={{ padding: "3px 4px", textAlign: "right", fontFamily: MONO }}>${b.price.toFixed(2)}</td>
+                            <td style={{ padding: "3px 4px", textAlign: "right", fontFamily: MONO, color: "#a89e8c" }}>${CROPS[crop].defaultPrice.toFixed(2)}</td>
+                          </tr>}
+                          <tr>
+                            <td style={{ padding: "3px 0", color: "#8a8175", fontWeight: 600 }}>Net Return</td>
+                            <td style={{ padding: "3px 4px", textAlign: "right", fontFamily: MONO, fontWeight: 600, color: b.netReturn >= 0 ? CROPS[crop].accent : "#e5484d" }}>{fmtD(b.netReturn)}</td>
+                            <td style={{ padding: "3px 4px", textAlign: "right", fontFamily: MONO, color: "#a89e8c" }}>{fmtD(db.netReturn)}</td>
+                          </tr>
+                        </tbody></table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Stacked bar */}
+            <div style={{ ...card, padding: "18px 18px 12px" }}>
+              <div style={{ height: 220 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={activeCrops.map(c => ({ crop: CROPS[c].label, Revenue: budgets[c]?.gross || 0, "Operating": -(budgets[c]?.opTotal || 0), "Ownership+OH": -((budgets[c]?.ownTotal || 0) + (budgets[c]?.overhead || 0)) }))} barCategoryGap="20%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e8e4db" vertical={false} />
+                    <XAxis dataKey="crop" tick={{ fontSize: 12, fontWeight: 600 }} />
+                    <YAxis tick={{ fontSize: 10, fill: "#8a8175" }} tickFormatter={v => `$${v}`} />
+                    <Tooltip formatter={v => `$${Math.abs(v).toFixed(0)}`} contentStyle={{ fontSize: 11, borderRadius: 5 }} />
+                    <ReferenceLine y={0} stroke="#2d2a24" strokeWidth={1.5} />
+                    <Bar dataKey="Revenue" stackId="a" fill="#5a8a4a" radius={[3, 3, 0, 0]} />
+                    <Bar dataKey="Operating" stackId="a" fill="#c0392b" />
+                    <Bar dataKey="Ownership+OH" stackId="a" fill="#e67e22" radius={[0, 0, 3, 3]} />
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Budget detail per crop */}
+            {activeCrops.map(crop => {
+              const b = budgets[crop];
+              return (
+                <div key={crop} style={card}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700 }}><span style={{ color: CROPS[crop].accent }}>■</span> {CROPS[crop].label} Detail</h3>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => { setCostOverrides(p => ({ ...p, [crop]: {} })); setPriceOverrides(p => { const n = { ...p }; delete n[crop]; return n; }); setYieldOverrides(p => { const n = { ...p }; delete n[crop]; return n; }); }} style={{ ...btnS, fontSize: 10, padding: "4px 10px" }}>Reset</button>
+                      <button onClick={() => setExpandedCosts(p => ({ ...p, [crop]: !p[crop] }))} style={{ ...btnS, fontSize: 10, padding: "4px 10px" }}>{expandedCosts[crop] ? "Hide ▲" : "Adjust ▼"}</button>
+                    </div>
+                  </div>
+                  {expandedCosts[crop] && (
+                    <div style={{ marginBottom: 12, padding: 12, background: "#faf8f4", borderRadius: 5 }}>
+                      <div style={{ fontSize: 10, fontFamily: MONO, color: "#7a7265", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>Operating Costs</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 6 }}>
+                        {Object.entries(CROPS[crop].operating).map(([key, c]) => (
+                          <div key={key} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            <label style={{ fontSize: 11, flex: 1, color: "#6b6457" }}>{c.label}</label>
+                            <input type="number" step="0.01"
+                              value={costOverrides[crop]?.[key] ?? ""}
+                              placeholder={c.default.toFixed(2)}
+                              onChange={e => setCostOverrides(p => ({ ...p, [crop]: { ...p[crop], [key]: e.target.value === "" ? undefined : parseFloat(e.target.value) } }))}
+                              style={{ ...numIn, width: 75, fontSize: 11 }} />
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ fontSize: 10, fontFamily: MONO, color: "#7a7265", marginTop: 10, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ownership / Overhead</div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 6 }}>
+                        {Object.entries(CROPS[crop].ownership).map(([key, c]) => (
+                          <div key={key} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            <label style={{ fontSize: 11, flex: 1, color: "#6b6457" }}>{c.label}</label>
+                            <input type="number" step="0.01"
+                              value={costOverrides[crop]?.[key] ?? ""}
+                              placeholder={c.default.toFixed(2)}
+                              onChange={e => setCostOverrides(p => ({ ...p, [crop]: { ...p[crop], [key]: e.target.value === "" ? undefined : parseFloat(e.target.value) } }))}
+                              style={{ ...numIn, width: 75, fontSize: 11 }} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}><tbody>
+                    <BRow label="Revenue" val={fmtD(b.gross)} bold sub={`${Math.round(b.yield)} ${CROPS[crop].unit} × $${b.price.toFixed(2)}`} accent={CROPS[crop].accent} />
+                    <BRow label="Operating Costs" val={fmtD(b.opTotal)} bold />
+                    <BRow label="Income Above Operating Costs" val={fmtD(b.incAboveOp)} bold pos={b.incAboveOp >= 0} />
+                    <BRow label="Ownership Costs" val={fmtD(b.ownTotal)} sub="land rent + machinery fixed" />
+                    <BRow label="General Overhead (7%)" val={fmtD(b.overhead)} />
+                    <BRow label="Total Costs" val={fmtD(b.totalCost)} bold />
+                    <BRow label="Net Return to Risk & Management" val={fmtD(b.netReturn)} bold hl pos={b.netReturn >= 0} accent={b.netReturn >= 0 ? CROPS[crop].accent : "#e5484d"} />
+                  </tbody></table>
+                </div>
+              );
+            })}
+
+            {/* ── WHAT WOULD HAVE TO CHANGE? ── */}
+            <div style={card}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 3 }}>What Would Have to Change?</h2>
+              <p style={{ color: "#8a8175", fontSize: 12, marginBottom: 16 }}>
+                For each crop, what conditions are needed to break even — and how do price and yield interact?
+              </p>
+              {activeCrops.map(crop => {
+                const b = budgets[crop]; const be = beData[crop]; if (!be) return null;
+                const cfg = CROPS[crop];
+                const currentRent = getEffectiveCosts(crop)?.landRent ?? cfg.ownership.landRent.default;
+                return (
+                  <div key={crop} style={{ marginBottom: 22 }}>
+                    <div style={tag(CROPS[crop].accent)}>{CROPS[crop].label} · To break even, you need one of:</div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8, marginBottom: 14 }}>
+                      <div style={{ flex: "1 1 140px", padding: 10, background: "#faf8f4", borderRadius: 5, border: "1px solid #e8e4db", textAlign: "center" }}>
+                        <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 3 }}>Price at least</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color: CROPS[crop].accent }}>${b.bePriceTotal.toFixed(2)}</div>
+                        <div style={{ fontSize: 10, color: "#a89e8c" }}>/{cfg.unit} (current: ${b.price.toFixed(2)})</div>
+                        <div style={{ fontSize: 9, color: "#a89e8c", marginTop: 4, paddingTop: 4, borderTop: "1px dashed #e0dbd2" }}>
+                          $0.10 change ≈ ${be.priceSens.toFixed(0)}/ac
+                        </div>
+                      </div>
+                      <div style={{ flex: "1 1 140px", padding: 10, background: "#faf8f4", borderRadius: 5, border: "1px solid #e8e4db", textAlign: "center" }}>
+                        <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 3 }}>Yield at least</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color: CROPS[crop].accent }}>{Math.round(b.beYieldTotal)}</div>
+                        <div style={{ fontSize: 10, color: "#a89e8c" }}>{cfg.unit}/ac (current: {Math.round(b.yield)})</div>
+                      </div>
+                      <div style={{ flex: "1 1 140px", padding: 10, background: "#faf8f4", borderRadius: 5, border: "1px solid #e8e4db", textAlign: "center" }}>
+                        <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 3 }}>Land rent no more than</div>
+                        <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color: be.maxRent < currentRent ? "#e5484d" : CROPS[crop].accent }}>${Math.round(be.maxRent)}</div>
+                        <div style={{ fontSize: 10, color: "#a89e8c" }}>/ac (current: ${Math.round(currentRent)})</div>
+                      </div>
+                      {be.costReduction > 0 && (
+                        <div style={{ flex: "1 1 140px", padding: 10, background: "#fde8e8", borderRadius: 5, border: "1px solid #f0c0c0", textAlign: "center" }}>
+                          <div style={{ fontSize: 10, color: "#8a8175", marginBottom: 3 }}>Or reduce costs by</div>
+                          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: MONO, color: "#e5484d" }}>{fmtD(be.costReduction)}</div>
+                          <div style={{ fontSize: 10, color: "#a89e8c" }}>/ac to reach break-even</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Price × Yield combo table */}
+                    <div style={{ fontSize: 10, fontFamily: MONO, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Price × Yield: Net Return per Acre</div>
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                        <thead><tr>
+                          <th style={{ ...thSt, fontSize: 9 }}>Yield ↓ / Price →</th>
+                          {be.priceSteps.map(p => {
+                            const price = (getEffectivePrice(crop) || cfg.defaultPrice) + p;
+                            return <th key={p} style={{ ...thSt, fontSize: 9, textAlign: "center" }}>${price.toFixed(2)}{p === 0 ? " ●" : ""}</th>;
+                          })}
+                        </tr></thead>
+                        <tbody>
+                          {be.comboTable.map((row, i) => (
+                            <tr key={i} style={{ background: i === 2 ? "#faf8f4" : "transparent" }}>
+                              <td style={{ ...tdSt, fontSize: 11, fontWeight: i === 2 ? 600 : 400 }}>{row.yieldLabel}</td>
+                              {row.cells.map((cell, j) => (
+                                <td key={j} style={{ ...tdSt, textAlign: "center", fontFamily: MONO, fontWeight: (i === 2 && j === 2) ? 700 : 400, color: cell.net >= 0 ? "#2d7a3a" : "#e5484d", background: (i === 2 && j === 2) ? "#e8e4db" : "transparent" }}>
+                                  {fmtD(cell.net)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#a89e8c", marginTop: 4 }}>
+                      ● = current price. Green = profitable. Red = loss. The base case is highlighted.
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════ TAB: RISK & SENSITIVITY ═══════ */}
+        {tab === "risk" && (
+          <div>
+            {/* Risk scenarios */}
+            <div style={card}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 3 }}>How Bad Can It Get?</h2>
+              <p style={{ color: "#8a8175", fontSize: 12, marginBottom: 16 }}>
+                Three scenarios based on your yield history at current prices and costs. Add yield history in the Personalize tab to unlock this analysis.
+              </p>
+              {activeCrops.map(crop => {
+                const rb = riskBudgets[crop]; const t = trends[crop];
+                if (!rb || !t) return (
+                  <div key={crop} style={{ padding: 14, background: "#faf8f4", borderRadius: 6, marginBottom: 10, fontSize: 12, color: "#8a8175" }}>
+                    <strong style={{ color: CROPS[crop].accent }}>{CROPS[crop].label}:</strong> Add 3+ years of yield data in the Personalize tab to see risk scenarios.
+                  </div>
+                );
+                const methodLabel = ({ trend: "Trend", avg5: "5-yr Avg", avg10: "10-yr Avg", avgAll: "All-yr Avg" })[projMethod] || "Trend";
+                const scenarios = [
+                  { ...rb.poor, label: "Historical Lower-Yield (25%)", icon: "▼", color: "#e5484d" },
+                  { ...rb.typical, label: `Selected Expected (${methodLabel})`, icon: "●", color: "#6b6457" },
+                  { ...rb.strong, label: "Historical Higher-Yield (75%)", icon: "▲", color: "#2d7a3a" },
+                ];
+                const expectedOutsideRange = rb.typical.yieldUsed > rb.strong.yieldUsed || rb.typical.yieldUsed < rb.poor.yieldUsed;
+                return (
+                  <div key={crop} style={{ marginBottom: 18 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+                      <span style={tag(CROPS[crop].accent)}>{CROPS[crop].label}</span>
+                      <span style={{ fontSize: 11, color: rb.yearsNeg > 0 ? "#e5484d" : "#6b6457" }}>
+                        Using the {rb.yearsTotal} yield years entered, <strong>{rb.yearsNeg}</strong> would have produced a negative return at current prices and costs.
+                      </span>
+                    </div>
+                    {expectedOutsideRange && (
+                      <div style={{ fontSize: 10, color: "#8a6d1b", background: "#fff8e6", border: "1px solid #e8d89c", borderRadius: 4, padding: "5px 8px", marginBottom: 6 }}>
+                        Note: the selected expected yield falls outside the historical 25th–75th percentile range. The "expected" scenario may be higher or lower than the historical lower/higher year scenarios.
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {scenarios.map((s, i) => (
+                        <div key={i} style={{ flex: "1 1 180px", padding: 14, borderRadius: 7, border: `1.5px solid ${i === 1 ? CROPS[crop].color : "#e0dbd2"}`, background: i === 1 ? CROPS[crop].lightBg : "#fff" }}>
+                          <div style={{ fontSize: 10, fontFamily: MONO, color: s.color, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{s.icon} {s.label}</div>
+                          <div style={{ fontSize: 13, color: "#6b6457" }}>{s.yieldUsed} {CROPS[crop].unit}/ac</div>
+                          <div style={{ fontSize: 24, fontWeight: 700, color: s.netReturn >= 0 ? "#2d7a3a" : "#e5484d", marginTop: 2 }}>{fmtD(s.netReturn)}</div>
+                          <div style={{ fontSize: 10, color: "#8a8175", marginTop: 3 }}>Revenue {fmtD(s.gross)} · Costs {fmtD(s.totalCost)}</div>
+                          {parseFloat(acres[crop]) > 0 && <div style={{ fontSize: 10, color: "#6b6457", marginTop: 3 }}>{acres[crop]} ac → {fmtD(parseFloat(acres[crop]) * s.netReturn)}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Tornado */}
+            <div style={card}>
+              <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 3 }}>What Matters Most?</h2>
+              <p style={{ color: "#8a8175", fontSize: 12, marginBottom: 16 }}>
+                Each bar shows how net return changes when that input swings ±15%. The widest bar is your biggest risk lever.
+              </p>
+              {activeCrops.map(crop => {
+                const td = tornadoData[crop]; if (!td?.length) return null;
+                const baseNet = budgets[crop]?.netReturn || 0;
+                const allVals = td.flatMap(d => [d.low, d.high]);
+                const minV = Math.min(...allVals), maxV = Math.max(...allVals), pad = (maxV - minV) * 0.1, range = maxV - minV + pad * 2;
+                return (
+                  <div key={crop} style={{ marginBottom: 22 }}>
+                    <div style={tag(CROPS[crop].accent)}>{CROPS[crop].label}</div>
+                    <div style={{ marginTop: 6 }}>
+                      {td.map((d, i) => {
+                        const leftPct = ((Math.min(d.low, d.high) - minV + pad) / range) * 100;
+                        const widthPct = (Math.abs(d.high - d.low) / range) * 100;
+                        const top2 = i < 2;
+                        return (
+                          <div key={i} style={{ display: "flex", alignItems: "center", marginBottom: 4 }}>
+                            <div style={{ width: 105, fontSize: 11, textAlign: "right", paddingRight: 8, color: top2 ? "#2d2a24" : "#8a8175", fontWeight: top2 ? 600 : 400, flexShrink: 0 }}>{d.label}</div>
+                            <div style={{ flex: 1, position: "relative", height: 20, background: "#f4f1eb", borderRadius: 3 }}>
+                              <div style={{ position: "absolute", left: `${((baseNet - minV + pad) / range) * 100}%`, top: 0, bottom: 0, width: 1.5, background: "#2d2a24", zIndex: 2 }} />
+                              <div style={{ position: "absolute", left: `${leftPct}%`, width: `${Math.max(widthPct, 0.5)}%`, top: 3, bottom: 3, borderRadius: 2, background: top2 ? `linear-gradient(90deg, #e5484d, ${CROPS[crop].color}, #2d7a3a)` : `linear-gradient(90deg, #dab8b8, #c8c0b4, #b4c8b4)`, opacity: top2 ? 0.9 : 0.55 }} />
+                            </div>
+                            <div style={{ width: 95, fontSize: 10, paddingLeft: 6, fontFamily: MONO, color: "#6b6457", flexShrink: 0 }}>{fmtD(Math.min(d.low, d.high))}–{fmtD(Math.max(d.low, d.high))}</div>
+                          </div>
+                        );
+                      })}
+                      <div style={{ fontSize: 10, color: "#8a8175", marginTop: 4, marginLeft: 113, fontFamily: MONO }}>Black line = base case ({fmtD(baseNet)})</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Side-by-side sensitivity */}
+            {activeCrops.length >= 2 && (
+              <div style={card}>
+                <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Side-by-Side: Net Return at Different Yield Levels</h2>
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead><tr>
+                      <th style={thSt}>Yield Scenario</th>
+                      {activeCrops.map(c => <th key={c} style={{ ...thSt, color: CROPS[c].accent }}>{CROPS[c].label} /ac</th>)}
+                      {activeCrops.some(c => parseFloat(acres[c]) > 0) && <th style={thSt}>Farm Total</th>}
+                    </tr></thead>
+                    <tbody>
+                      {[-20, -10, 0, 10, 20].map(pct => {
+                        let farmTot = 0; let hasFarmAcres = false;
+                        const isCurrent = pct === 0;
+                        return (
+                          <tr key={pct} style={{ background: isCurrent ? "#faf8f4" : "transparent" }}>
+                            <td style={{ ...tdSt, fontWeight: isCurrent ? 700 : 400 }}>{isCurrent ? "Base" : `${pct > 0 ? "+" : ""}${pct}%`}</td>
+                            {activeCrops.map(c => {
+                              const base = getEffectiveYield(c);
+                              const y = Math.round(base * (1 + pct / 100));
+                              const b = calcBudget(c, y, getEffectiveCosts(c), getEffectivePrice(c));
+                              const a = parseFloat(acres[c]);
+                              if (a > 0) { farmTot += a * b.netReturn; hasFarmAcres = true; }
+                              return <td key={c} style={{ ...tdSt, fontWeight: isCurrent ? 700 : 400 }}>{y} → <span style={{ color: b.netReturn >= 0 ? "#2d7a3a" : "#e5484d", fontWeight: 600 }}>{fmtD(b.netReturn)}</span></td>;
+                            })}
+                            {activeCrops.some(c => parseFloat(acres[c]) > 0) && <td style={{ ...tdSt, fontWeight: 600, color: hasFarmAcres ? (farmTot >= 0 ? "#2d7a3a" : "#e5484d") : "#aaa" }}>{hasFarmAcres ? fmtD(farmTot) : "—"}</td>}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════ TAB: YIELD HISTORY ═══════ */}
+        {tab === "history" && (
+          <div style={card}>
+            <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 3 }}>Personalize with Your Yield History</h2>
+            <p style={{ color: "#8a8175", fontSize: 12, marginBottom: 4 }}>
+              Enter years that represent your current operation. More years improve the risk estimates, but the tool works with as few as three.
+            </p>
+            <p style={{ color: "#a89e8c", fontSize: 11, marginBottom: 18 }}>
+              Leave blanks for crops you didn't grow that year. This step is optional — the tool uses budget defaults without it.
+            </p>
+
+            {/* Data quality indicator */}
+            {hasAnyHistory && (() => {
+              const cropYears = activeCrops.map(c => ({ crop: c, n: trends[c]?.n ?? 0 }));
+              const minN = Math.min(...cropYears.map(x => x.n));
+              const maxN = Math.max(...cropYears.map(x => x.n));
+              const uneven = minN !== maxN;
+              const quality = minN >= 15 ? { label: "Strong history", color: "#2d7a3a", msg: "Good candidate for risk analysis. Enough years to estimate variability." }
+                : minN >= 10 ? { label: "Good history", color: "#5a8a4a", msg: "Solid for percentile-based scenarios and trend projection." }
+                : minN >= 5 ? { label: "Useful history", color: "#b8912e", msg: "Enough for basic scenarios. More years would strengthen the risk estimates." }
+                : minN >= 3 ? { label: "Limited history", color: "#e5484d", msg: "Usable for trend projection, but risk scenarios should be interpreted cautiously." }
+                : { label: "Insufficient history for some crops", color: "#e5484d", msg: "At least one active crop has fewer than 3 years of data. Risk scenarios are unavailable for those crops." };
+              const missingCrops = activeCrops.filter(c => !trends[c]);
+              return (
+                <div style={{ padding: "8px 14px", background: `${quality.color}0a`, border: `1px solid ${quality.color}30`, borderRadius: 6, fontSize: 11, marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontWeight: 700, color: quality.color }}>{quality.label}</span>
+                    <span style={{ color: "#6b6457" }}>{quality.msg}</span>
+                  </div>
+                  {uneven && (
+                    <div style={{ fontSize: 10, color: "#6b6457", marginTop: 5, paddingTop: 5, borderTop: "1px dashed " + quality.color + "30" }}>
+                      Years per crop: {cropYears.map(x => `${CROPS[x.crop].label} ${x.n}`).join(" · ")}
+                      {". Quality rating reflects the weakest active crop history."}
+                    </div>
+                  )}
+                  {!uneven && missingCrops.length > 0 && (
+                    <div style={{ fontSize: 10, color: "#6b6457", marginTop: 5 }}>
+                      No history entered for: {missingCrops.map(c => CROPS[c].label).join(", ")}. Those crops use budget defaults.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead><tr>
+                  <th style={{ ...thSt, width: 80 }}>Year</th>
+                  {activeCrops.map(c => <th key={c} style={{ ...thSt, color: CROPS[c].accent }}>{CROPS[c].label} ({CROPS[c].unit}/ac)</th>)}
+                  <th style={{ ...thSt, width: 36 }}></th>
+                </tr></thead>
+                <tbody>
+                  {sortedYears.map(year => (
+                    <tr key={year}>
+                      <td style={tdSt}><strong>{year}</strong></td>
+                      {activeCrops.map(crop => (
+                        <td key={crop} style={tdSt}>
+                          <input type="number" step="1" min="0" value={yields[crop][year] ?? ""}
+                            onChange={e => setYields(p => ({ ...p, [crop]: { ...p[crop], [year]: e.target.value } }))}
+                            placeholder="—" style={{ ...numIn, width: "100%", borderColor: (yields[crop][year] ?? "") !== "" ? CROPS[crop].color : "#dcd6ca" }} />
+                        </td>
+                      ))}
+                      <td style={{ ...tdSt, textAlign: "center" }}>
+                        {histYears.length > 3 && (
+                          <button onClick={() => removeYear(year)} title="Remove year" style={{ border: "none", background: "none", cursor: "pointer", fontSize: 14, color: "#c0b8a8", lineHeight: 1 }}>×</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button onClick={addYear} style={{ ...btnS, fontSize: 11, padding: "7px 16px", marginTop: 10 }}>+ Add earlier year</button>
+
+            {/* Projection method toggle */}
+            {hasAnyHistory && (
+              <div style={{ marginTop: 20, padding: 16, background: "#faf8f4", borderRadius: 6, border: "1px solid #e8e4db" }}>
+                <div style={{ fontSize: 11, fontFamily: MONO, color: "#7a7265", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Projection Method</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+                  {[
+                    { key: "trend", label: "Trend (regression)" },
+                    { key: "avg5", label: "Recent 5-yr avg" },
+                    ...((() => { const maxN = Math.max(...activeCrops.map(c => trends[c]?.n || 0)); return maxN >= 10 ? [{ key: "avg10", label: "Recent 10-yr avg" }] : []; })()),
+                    ...((() => { const maxN = Math.max(...activeCrops.map(c => trends[c]?.n || 0)); return maxN >= 7 ? [{ key: "avgAll", label: "All-year avg" }] : []; })()),
+                  ].map(m => <Pill key={m.key} label={m.label} active={projMethod === m.key} onClick={() => setProjMethod(m.key)} />)}
+                </div>
+
+                {/* Comparison table */}
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                  <thead><tr>
+                    <th style={{ ...thSt, fontSize: 10 }}>Method</th>
+                    {activeCrops.map(c => {
+                      const t = trends[c]; if (!t) return null;
+                      return <th key={c} style={{ ...thSt, fontSize: 10, color: CROPS[c].accent }}>{CROPS[c].label} ({CROPS[c].unit}/ac)</th>;
+                    })}
+                  </tr></thead>
+                  <tbody>
+                    {[
+                      { key: "trend", label: "Trend yield", get: t => t ? { val: Math.round(t.predicted), n: t.n } : null },
+                      { key: "avg5", label: "Recent 5-yr avg", get: t => t ? { val: Math.round(t.avg5), n: t.n5, target: 5 } : null },
+                      ...((() => { const maxN = Math.max(...activeCrops.map(c => trends[c]?.n || 0)); return maxN >= 10 ? [{ key: "avg10", label: "Recent 10-yr avg", get: t => t ? { val: Math.round(t.avg10), n: t.n10, target: 10 } : null }] : []; })()),
+                      ...((() => { const maxN = Math.max(...activeCrops.map(c => trends[c]?.n || 0)); return maxN >= 7 ? [{ key: "avgAll", label: "All-year avg", get: t => t ? { val: Math.round(t.avgAll), n: t.n } : null }] : []; })()),
+                    ].map(m => (
+                      <tr key={m.key} style={{ background: projMethod === m.key ? "#f0ece4" : "transparent" }}>
+                        <td style={{ ...tdSt, fontWeight: projMethod === m.key ? 700 : 400 }}>
+                          {projMethod === m.key ? "▸ " : ""}{m.label}
+                        </td>
+                        {activeCrops.map(c => {
+                          const t = trends[c]; if (!t) return <td key={c} style={tdSt}></td>;
+                          const r = m.get(t);
+                          if (!r) return <td key={c} style={{ ...tdSt, textAlign: "center", color: "#aaa" }}>—</td>;
+                          const shortOfTarget = r.target && r.n < r.target;
+                          return (
+                            <td key={c} style={{ ...tdSt, textAlign: "center", fontFamily: MONO, fontWeight: projMethod === m.key ? 700 : 400, color: projMethod === m.key ? CROPS[c].accent : "#6b6457" }}>
+                              {r.val}
+                              <div style={{ fontSize: 9, fontFamily: MONO, color: shortOfTarget ? "#c0935a" : "#a89e8c", fontWeight: 400 }}>
+                                {shortOfTarget ? `only ${r.n} yrs` : `${r.n} yrs`}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ fontSize: 10, color: "#a89e8c", marginTop: 6 }}>
+                  The selected method sets the yield used in your budget projections. You can still override it manually in the yield row above.
+                </div>
+              </div>
+            )}
+
+            {/* Trend cards */}
+            {hasAnyHistory && (
+              <div style={{ display: "flex", gap: 12, marginTop: 18, flexWrap: "wrap" }}>
+                {activeCrops.map(crop => {
+                  const t = trends[crop]; if (!t) return null;
+                  const methodLabels = { trend: "Trend", avg5: "5-yr avg", avg10: "10-yr avg", avgAll: "All-yr avg" };
+                  const projectedYield = getYield(crop);
+                  return (
+                    <div key={crop} style={{ flex: "1 1 200px", padding: 14, borderRadius: 7, border: `2px solid ${CROPS[crop].color}`, background: CROPS[crop].lightBg }}>
+                      <div style={tag(CROPS[crop].accent)}>{CROPS[crop].label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: CROPS[crop].accent }}>{projectedYield} <span style={{ fontSize: 12, fontWeight: 400 }}>{CROPS[crop].unit}/ac</span></div>
+                      <div style={{ fontSize: 11, color: "#8a8175", marginTop: 2, lineHeight: 1.6 }}>
+                        {t.n} data points · Method: {methodLabels[projMethod]}<br />
+                        Trend: {t.slope > 0 ? "+" : ""}{t.slope.toFixed(1)}/yr · Range: {Math.round(t.p25)}–{Math.round(t.p75)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {hasAnyHistory && (
+              <div style={{ marginTop: 18, height: 200 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart margin={{ top: 8, right: 16, bottom: 4, left: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e8e4db" />
+                    <XAxis dataKey="x" type="number" domain={["dataMin - 1", CURRENT_YEAR + 1]} tick={{ fontSize: 10, fill: "#8a8175" }} />
+                    <YAxis tick={{ fontSize: 10, fill: "#8a8175" }} />
+                    <Tooltip contentStyle={{ fontSize: 11, borderRadius: 5, border: "1px solid #e0dbd2" }} />
+                    {activeCrops.map(crop => {
+                      const t = trends[crop]; if (!t) return null;
+                      const trendLine = [
+                        { x: Math.min(...t.points.map(p => p.x)), y: t.slope * Math.min(...t.points.map(p => p.x)) + t.intercept },
+                        { x: CURRENT_YEAR, y: t.predicted },
+                      ];
+                      return [
+                        <Line key={`${crop}-a`} data={t.points} dataKey="y" type="monotone" stroke={CROPS[crop].color} strokeWidth={2} dot={{ fill: CROPS[crop].color, r: 3.5 }} name={CROPS[crop].label} connectNulls />,
+                        <Line key={`${crop}-t`} data={trendLine} dataKey="y" type="linear" stroke={CROPS[crop].color} strokeWidth={1.5} strokeDasharray="6 4" dot={{ fill: CROPS[crop].color, r: 4.5, strokeWidth: 2, stroke: "#fff" }} name={`${CROPS[crop].label} trend`} />,
+                      ];
+                    })}
+                    <Legend wrapperStyle={{ fontSize: 10 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════ TAB: METHODOLOGY ═══════ */}
+        {tab === "methodology" && (
+          <div>
+            {/* Header */}
+            <div style={{ padding: "18px 22px", background: "linear-gradient(135deg, #2d2a24 0%, #3d3a32 100%)", color: "#fff", borderRadius: "6px 6px 0 0", marginBottom: 0 }}>
+              <div style={{ fontFamily: MONO, fontSize: 10, color: "#d4a843", letterSpacing: "0.12em", fontWeight: 600, marginBottom: 4 }}>FOR REVIEWERS</div>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>Methodology Document</div>
+              <div style={{ fontSize: 12, color: "#c9c2b4", marginTop: 4 }}>How every number in this tool was derived from the NC State enterprise budgets, with what should be verified before release.</div>
+            </div>
+
+            <div style={{ padding: "22px 26px", background: "#fff", borderRadius: "0 0 6px 6px", border: "1px solid #e8e4db", borderTop: "none", fontSize: 13, lineHeight: 1.65, color: "#2d2a24" }}>
+
+              <DocH2 n="1" title="Overview" />
+              <p>The NC Crop Budget Scenario Builder turns NC State's published enterprise budgets into an interactive, personalized planning aid. Rather than asking a farmer to download an Excel workbook and locate the right cells across multiple tabs, the tool lets a user enter a small number of inputs about their own operation and immediately see projected returns, break-even thresholds, risk scenarios, and sensitivity to key assumptions.</p>
+              <p>This page explains exactly which source spreadsheets were used, what numbers were extracted, how the budget math was reproduced, and what was added on top. The goal is full transparency so reviewers can verify the tool faithfully represents the underlying budgets before it goes in front of farmers or Extension agents.</p>
+              <DocCallout>
+                The budget numbers in the tool come from one of three sources: (1) values extracted from the four NC State enterprise budget spreadsheets, (2) standard budget math applied to those numbers, or (3) calculations the user controls. On top of that, the tool adds a layer of <strong>decision aids</strong> — quick scenario steps, warning thresholds, data-quality tiers, and the ±15% tornado swing — that are heuristic conventions, not extracted from the budgets. They are flagged in Section 7 so reviewers can adjust or reject them.
+              </DocCallout>
+
+              <DocH2 n="2" title="Source Materials" />
+              <p>Four spreadsheets prepared by NC State Extension served as the basis:</p>
+              <DocTable headers={["File", "Sheets used", "Author(s)", "What was extracted"]} rows={[
+                ["Corn-Interactive-2026.xlsx", "Corn High, Corn Mod, Corn Low, Corn No Till", "D. Washburn, C. Scanlan", "Corn cost categories, defaults, yield tiers, machinery fixed costs"],
+                ["Tobacco-Interactive-2026.xlsx", "3 harvest method sheets", "D. Washburn et al.", "Reviewed for structure. Not in v1."],
+                ["Sweetpotato-Interactive-2026.xlsx", "Sweetpotato Budget", "ARE Extension", "Reviewed for structure. Not in v1."],
+                ["crop-comparison-tool_2026_with_nep-updates.xlsx", "Crop Comparison, Yield Predictor, NASS Data", "N. Piggott (prices), D. Washburn (costs)", "Soybean & wheat cost categories, prices, yield-trend methodology, NASS county yields"],
+              ]} />
+              <p style={{ marginTop: 10 }}>The v1 tool includes corn, soybeans, and wheat — chosen first because they share a consistent budget structure, prices tie to publicly traded futures plus a basis adjustment, and the Crop Comparison yield predictor was already designed for them.</p>
+
+              <DocH2 n="3" title="Numbers Extracted from the Budgets" />
+              <p>For each crop, the tool stores default cost line items, a default yield, and a price (futures + basis). All values are editable; the defaults serve as the starting point when no farm-specific information has been entered.</p>
+              <DocH3 title="3.1 Corn (Corn Mod sheet)" />
+              <p>The Moderate Yield History budget (140 bu/ac) was chosen as the default tier. Cost items are taken from the Corn Mod sheet; the price ($5.30/bu = $4.50 futures + $0.80 basis) is taken from the Crop Comparison workbook for cross-crop consistency. (Corn Mod itself uses $5.23/bu — the small difference is discussed in Section 9.1.)</p>
+              <DocTable headers={["Category", "Item", "Default ($/ac)"]} rows={[
+                ["Operating", "Corn Seed", "$110.49"], ["Operating", "Nitrogen (32%)", "$70.40"],
+                ["Operating", "DAP (18-46-0)", "$58.96"], ["Operating", "Potash (0-0-60)", "$14.64"],
+                ["Operating", "Lime (prorated)", "$27.06"], ["Operating", "Herbicides", "$25.55"],
+                ["Operating", "Drying (yield-based, $0.20/bu)", "$28.00"], ["Operating", "Hauling (yield-based, $0.60/bu)", "$84.00"],
+                ["Operating", "Tractor/Machinery (variable)", "$76.39"], ["Operating", "Fertilizer Spreading", "$12.00"],
+                ["Operating", "Consulting Services", "$16.00"], ["Operating", "Labor", "$14.38"],
+                ["Operating", "Crop Insurance", "$15.00"], ["Ownership", "Land Rent", "$100.00"],
+                ["Ownership", "Tractor/Machinery (fixed)", "$135.71"],
+                ["Price", "Futures + Basis ($4.50 + $0.80)", "$5.30/bu"], ["Yield", "Default", "140 bu/ac"],
+              ]} />
+              <DocH3 title="3.2 Soybeans (Crop Comparison sheet)" />
+              <p>Defaults come from the Crop Comparison column labeled "Soybean," based on the 2026 Moderate Yield Threshold Budget for Beaufort County (75% coverage, 38 bu approved yield, $10.09 projected price). Crop insurance is the RMA Cost Estimator value of $15/ac.</p>
+              <DocTable headers={["Category", "Item", "Default ($/ac)"]} rows={[
+                ["Operating", "Soybean Seed", "$61.10"], ["Operating", "Phosphate (0-46-0)", "$31.32"],
+                ["Operating", "Potash (0-0-60)", "$28.08"], ["Operating", "Lime (prorated)", "$27.06"],
+                ["Operating", "Herbicides", "$41.07"], ["Operating", "Insecticides", "$19.51"],
+                ["Operating", "Hauling (yield-based, $0.60/bu)", "$30.00"], ["Operating", "Tractor/Machinery (variable)", "$78.11"],
+                ["Operating", "Consulting Services", "$26.00"], ["Operating", "Labor", "$15.51"],
+                ["Operating", "Crop Insurance", "$15.00"], ["Ownership", "Land Rent", "$100.00"],
+                ["Ownership", "Tractor/Machinery (fixed)", "$139.34"],
+                ["Price", "Futures + Basis ($10.64 + $0.30)", "$10.94/bu"], ["Yield", "Default", "50 bu/ac"],
+              ]} />
+              <DocH3 title="3.3 Wheat (Crop Comparison sheet)" />
+              <p>Defaults from the Crop Comparison column "Wheat" — Union County, 75% coverage, 62 bu approved yield, $4.87 projected price, winter wheat, non-irrigated.</p>
+              <DocTable headers={["Category", "Item", "Default ($/ac)"]} rows={[
+                ["Operating", "Wheat Seed", "$52.94"], ["Operating", "Nitrogen (30%)", "$43.95"],
+                ["Operating", "Phosphate (0-46-0)", "$29.52"], ["Operating", "Potash (0-0-60)", "$11.04"],
+                ["Operating", "Lime (prorated)", "$27.06"], ["Operating", "Herbicides", "$25.39"],
+                ["Operating", "Fungicides", "$3.75"], ["Operating", "Hauling (yield-based, $0.15/bu)", "$11.25"],
+                ["Operating", "Tractor/Machinery (variable)", "$77.65"], ["Operating", "Consulting Services", "$15.00"],
+                ["Operating", "Labor", "$14.71"], ["Operating", "Crop Insurance", "$10.00"],
+                ["Ownership", "Land Rent", "$100.00"], ["Ownership", "Tractor/Machinery (fixed)", "$158.84"],
+                ["Price", "Futures + Basis ($4.38 + $0.75)", "$5.13/bu"], ["Yield", "Default", "75 bu/ac"],
+              ]} />
+
+              <DocH2 n="4" title="Budget Math" />
+              <p>The calculation structure follows the published enterprise budgets closely. Interest on operating capital is calculated only on selected interest-bearing operating items, that interest is added to operating costs, and general overhead is then calculated as 7% of total operating costs <em>including</em> interest. The tool separates costs into "Operating" and "Ownership" sections so land rent and fixed machinery are visually separated from variable inputs. The calculation logic matches the source budget formulas; review flags are noted in Section 4.5.</p>
+              <DocH3 title="4.1 The Seven Lines of an Enterprise Budget" />
+              <ol>
+                <li>Gross Receipts = Yield × Price</li>
+                <li>Total Operating Costs = Sum of operating line items + interest (on selected items — see 4.3)</li>
+                <li>Income Above Operating Costs = Gross Receipts − Total Operating Costs</li>
+                <li>Ownership Costs = Land rent + machinery fixed cost</li>
+                <li>General Overhead = 7% × Total Operating Costs (post-interest)</li>
+                <li>Total Costs = Operating + Ownership + Overhead</li>
+                <li>Net Return = Gross Receipts − Total Costs</li>
+              </ol>
+              <DocH3 title="4.2 Yield-Based Cost Items" />
+              <p>Three cost items scale with yield rather than being flat per-acre amounts: drying ($0.20/bu for corn), hauling ($0.60/bu for corn and soybeans, $0.15/bu for wheat), and the implicit base on which interest is calculated. The tool reproduces this behavior.</p>
+              <DocH3 title="4.3 Interest on Operating Capital & General Overhead" />
+              <p>These two formulas are the most technically subtle part of the published budgets, and an early version of this tool got both of them wrong. They have been corrected to match the source spreadsheets exactly (Corn Mod cells D22 and D27):</p>
+              <p><strong>Interest is not calculated on all operating costs.</strong> It applies only to inputs typically financed before harvest: seed, fertilizer, lime, herbicides/insecticides/fungicides, variable machinery costs, and labor. It does NOT apply to drying, hauling, fertilizer spreading, consulting, or crop insurance.</p>
+              <p><strong>General overhead is 7% of operating costs INCLUDING interest.</strong> The formula in the spreadsheet is D27 = F23 (Total Variable Costs), and Total Variable Costs is SUM(F8:F22), which includes the interest line.</p>
+              <DocCode>interest = interestBearingSubtotal × 0.5 × 0.0725{"\n"}opTotal  = operatingSubtotal + interest{"\n"}overhead = opTotal × 0.07</DocCode>
+              <p>The 0.5 multiplier reflects average 6-month loan length; 7.25% matches cell E22; 7% matches cell E27.</p>
+              <DocH3 title="4.4 Break-Even Calculations" />
+              <DocCode>Break-even yield (variable)  = Operating Costs ÷ Price{"\n"}Break-even yield (total)     = Total Costs ÷ Price{"\n"}Break-even price  (variable) = Operating Costs ÷ Yield{"\n"}Break-even price  (total)    = Total Costs ÷ Yield</DocCode>
+              <DocH3 title="4.5 Departures from the Published Budgets in Wording" />
+              <DocCallout>
+                Three small organizational/wording choices depart from the published budgets — flagged so reviewers can confirm or override. None change the underlying math.
+                <ol style={{ marginTop: 10, paddingLeft: 20 }}>
+                  <li><strong>Land rent default.</strong> Derek's individual crop budgets do not include land rent as a line item — only the Crop Comparison workbook does. The tool defaults rent to $100/ac (matching Crop Comparison), editable to $0.</li>
+                  <li><strong>Net Return label.</strong> Published: "Net Returns to Land, Risk, and Management." Tool: "Net Return to Risk &amp; Management" (because land rent is already an explicit cost line). Same number.</li>
+                  <li><strong>Cost category labels.</strong> Tool uses "Income Above Operating Costs" vs. published "Income Above Variable Costs." Same number.</li>
+                </ol>
+              </DocCallout>
+
+              <DocH2 n="5" title="Yield Projection Methods" />
+              <p>If no yield history is entered, the tool uses the budget default. If history is entered, four projection methods are offered, matching the methodology in the New2023-Farm-Yield_Predictor sheet:</p>
+              <ul>
+                <li><strong>Trend yield (linear regression):</strong> OLS regression of yield on year, projected at 2026. Matches the formulas in cells Q18, R18, T18, U18 of the predictor sheet.</li>
+                <li><strong>Recent 5-year / 10-year averages:</strong> arithmetic mean of the most recent N years entered. If fewer years available than the window requires, the tool uses what it has and labels the cell "only X yrs."</li>
+                <li><strong>All-year average:</strong> available with 7+ years entered. Simple arithmetic average of all entered years.</li>
+                <li><strong>Manual override:</strong> typing a value directly in the Expected Yield row overrides any method.</li>
+              </ul>
+
+              <DocH2 n="6" title="Risk and Sensitivity Analysis" />
+              <p>Three forms of risk analysis, all derived from the farmer's own yield history. No probabilistic forecasts, distributions, or Monte Carlo simulations are used in this version.</p>
+              <DocH3 title="6.1 Historical Percentile Scenarios" />
+              <p>With 3+ years of yield history, the tool calculates the 25th and 75th percentiles of actual yields and runs the full budget at each, labeled <em>Historical Lower-Yield (25%)</em>, <em>Selected Expected</em>, and <em>Historical Higher-Yield (75%)</em>. A warning fires if the selected expected yield falls outside the 25–75 range.</p>
+              <DocH3 title="6.2 Years Negative" />
+              <p>For each crop, the tool reports how many entered yield years would have produced a negative return at current prices and costs — phrased as a historical count, not a probability: <em>"Using the 6 yield years entered, 2 would have produced a negative return at current prices and costs."</em> With only 3–6 observations, this is not reliable as a probability estimate, and the tool does not claim it is.</p>
+              <DocH3 title="6.3 Tornado Sensitivity Chart" />
+              <p>For each crop, the tool computes how much net return changes when each input is varied by ±15%. The eight largest swings are displayed as horizontal bars, sorted widest to narrowest.</p>
+              <DocH3 title="6.4 'What Would Have to Change?' Panel" />
+              <p>For each crop: break-even price, break-even yield, maximum land rent before break-even is lost, required cost reduction (if currently losing money), and a 5×5 price-by-yield combination grid with the base case highlighted.</p>
+              <DocH3 title="6.5 Data Quality Indicator" />
+              <p>Quality tier based on the <em>minimum</em> number of years across active crops (the weakest history governs):</p>
+              <DocTable headers={["Years (min)", "Label", "Message"]} rows={[
+                ["0–2", "Insufficient for some crops", "At least one active crop has fewer than 3 years."],
+                ["3–4", "Limited history", "Usable for trend projection; risk scenarios cautiously."],
+                ["5–9", "Useful history", "Enough for basic scenarios."],
+                ["10–14", "Good history", "Solid for percentile-based scenarios."],
+                ["15+", "Strong history", "Good candidate for risk analysis."],
+              ]} />
+
+              <DocH2 n="7" title="Decision Aids Added on Top of the Budgets" />
+              <p>These are reasonable tool conventions, not extracted from the source spreadsheets. Flagged here so reviewers can adjust or reject them.</p>
+              <ul>
+                <li><strong>Quick scenario toggles:</strong> Price ±10%, Yield ±10%, Fertilizer +15%, Fuel/Hauling +15%. Apply a global multiplier across all crops simultaneously.</li>
+                <li><strong>Contextual warning thresholds:</strong> yield more than 35% above/below default; price below total-cost break-even; covers operating but not total costs; land rent exceeding 15% of total cost when net return is negative.</li>
+                <li><strong>Tornado swing range:</strong> ±15% applied to each input to identify the eight inputs with most leverage on net return.</li>
+                <li><strong>Acres & whole-farm totals:</strong> per-crop net return × acres, summed. Reproduces the Crop Comparison Farm Summary concept but updates live.</li>
+                <li><strong>Comparison to NC State default:</strong> when a user has changed any assumption, each crop card shows a small comparison table to keep the published baseline visible.</li>
+                <li><strong>Crop ranking:</strong> with two or more crops active, side-by-side rankings by Net Return, Lowest Break-Even Price, and Operating Margin.</li>
+              </ul>
+
+              <DocH2 n="8" title="Limitations" />
+              <ul>
+                <li><strong>Crops:</strong> only corn, soybeans, and wheat are wired in. Tobacco, sweet potatoes, peanuts, cotton, sorghum follow the same structure but are not yet included.</li>
+                <li><strong>County selector:</strong> considered but removed. Asking for an input that does not change any output is misleading. Will be added back when the underlying calculation uses it.</li>
+                <li><strong>Government program payments:</strong> ARC/PLC and other federal program payments are not included. Net return is to land, risk, and management before any program payments.</li>
+                <li><strong>Crop insurance indemnities:</strong> premiums are included as a cost; expected indemnity is not added back. The published budgets work this way as well.</li>
+                <li><strong>Probabilistic forecasts:</strong> no Monte Carlo, no predicted probabilities of loss. Risk numbers are descriptive: "how many of your historical years would have lost money."</li>
+                <li><strong>Land-use constraints:</strong> the tool assumes acres can be freely shifted between crops. In reality, some ground is suited only to certain crops. The crop ranking should be read as a per-acre comparison, not a whole-farm allocation, when this matters.</li>
+                <li><strong>Multi-year & financial planning:</strong> single-season decision aid only. Cash flow, debt service, and tax effects are out of scope.</li>
+              </ul>
+
+              <DocH2 n="9" title="Verifying the Tool Against the Source Budgets" />
+              <DocH3 title="9.1 Corn at Default Settings" />
+              <p>Activate only corn. Set both Land Rent and Crop Insurance to $0 in the cost adjustments (the Corn Mod sheet does not include either). Leave all other assumptions at default. The entire cost side reproduces the Corn Mod sheet to the penny:</p>
+              <DocTable headers={["Line", "Tool", "Spreadsheet (Corn Mod)", "Match"]} rows={[
+                ["Interest-Bearing Subtotal", "$397.87", "$397.87 (=F18 + F8:F15 + F21)", "Exact"],
+                ["Interest on Operating Capital", "$14.42", "$14.42", "Exact"],
+                ["Total Operating Costs (incl. interest)", "$552.29", "$552.29", "Exact"],
+                ["General Overhead (7% × post-interest)", "$38.66", "$38.66", "Exact"],
+                ["Ownership (machinery only, no rent)", "$135.71", "$135.71", "Exact"],
+                ["Total Costs", "$726.66", "$726.66", "Exact"],
+                ["Revenue", "$742.00", "$732.20", "Differs by price"],
+                ["Net Return", "$15.34", "$5.54", "Differs by price"],
+              ]} />
+              <p style={{ marginTop: 10 }}>The only difference is on the revenue line, and it comes entirely from the price source: the tool uses $5.30/bu (Crop Comparison, for cross-crop consistency); Corn Mod uses $5.23/bu. At 140 bu/ac, that $0.07 produces exactly $9.80 more revenue and net return. The cost calculations are identical. If you prefer the Corn Mod price of $5.23, it's a one-line change.</p>
+              <DocH3 title="9.2 Test Suite" />
+              <p>A standalone test file (<code style={{ background: "#f5f0e6", padding: "2px 5px", borderRadius: 3, fontFamily: MONO, fontSize: 12 }}>budget-tests.js</code>) extracts the real budget functions from this tool and runs 46 assertions covering: corn cost reproduction to the penny, the interest-bearing-items logic, the overhead convention, soybean and wheat default budgets, price/basis reconciliation, break-even consistency, the linear-trend slope on a known series, and the percentile helper. All 46 currently pass. Run with <code style={{ background: "#f5f0e6", padding: "2px 5px", borderRadius: 3, fontFamily: MONO, fontSize: 12 }}>node budget-tests.js</code>.</p>
+
+              <DocH2 n="10" title="Questions for Reviewers" />
+              <p>Before this goes in front of farmers or Extension agents, the specific points where reviewer judgment is needed:</p>
+              <ul>
+                <li><strong>Are the budget categories represented correctly?</strong> Especially the split between operating and ownership costs. Does separating land rent and fixed machinery from variable inputs improve readability, or create confusion against the published budgets?</li>
+                <li><strong>Is the land rent default acceptable?</strong> Tool defaults to $100/ac matching Crop Comparison. Derek's individual budgets don't include rent. Should default be $0?</li>
+                <li><strong>Is "Net Return to Risk &amp; Management" the right label?</strong> Or revert to the published "Net Returns to Land, Risk, and Management"?</li>
+                <li><strong>Is the "What Would Have to Change?" section useful?</strong> Does the break-even framing match how farmers actually think about whether a crop can work?</li>
+                <li><strong>Are the contextual warnings helpful or too strong?</strong> Section 7 lists them.</li>
+                <li><strong>Does the yield-history and projection-method logic feel trustworthy?</strong> Particularly the data-quality message based on the minimum years across crops.</li>
+                <li><strong>What is missing for a farmer to actually use this?</strong> The most important question. Features were chosen from spreadsheets and ag-econ principles, not from real-world farmer feedback. Introductions to producers welcome.</li>
+              </ul>
+
+              <DocH2 n="11" title="Closing Note" />
+              <p>The intent is not to replace the published NC State enterprise budgets — those remain the authoritative source. The intent is to make them easier to use as a decision tool, in the same way the Crop Comparison workbook is a step beyond the individual crop budgets.</p>
+              <p>Every number can be traced back to one of the four source spreadsheets plus the user's own inputs. The calculation logic matches the source budget formulas. The departures from the source files are organizational and naming choices flagged in Section 4.5. The risk and sensitivity features are descriptive summaries of the farmer's own data, not forecasts.</p>
+              <p style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #e8e4db", fontSize: 12, color: "#8a8175", fontStyle: "italic" }}>
+                Contact for questions or corrections: Julianne Treme, Director of Undergraduate Programs, ARE, NC State.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Disclaimer */}
+        <div style={{ padding: 12, background: "#e8e4db", borderRadius: 6, fontSize: 10, color: "#6b6457", lineHeight: 1.6, marginTop: 8 }}>
+          <strong>Disclaimer:</strong> For planning purposes only. Based on 2026 enterprise budgets by Derek Washburn and Nick Piggott, NC State Dept. of Agricultural & Resource Economics.{" "}
+          <a href="https://cals.ncsu.edu/are-extension/business-planning-and-operations/enterprise-budgets/" style={{ color: "#2d2a24" }}>cals.ncsu.edu/are-extension/enterprise-budgets</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BRow({ label, val, bold, sub, pos, hl, accent }) {
+  return (
+    <tr style={{ borderBottom: "1px solid #f0ece4", background: hl ? (pos !== false ? "#f0faf2" : "#fef3f2") : "transparent" }}>
+      <td style={{ padding: "8px 10px", fontWeight: bold ? 700 : 400, fontSize: 12 }}>
+        {label}{sub && <span style={{ marginLeft: 8, fontSize: 10, color: "#8a8175", fontWeight: 400 }}>{sub}</span>}
+      </td>
+      <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: bold ? 700 : 400, fontSize: hl ? 15 : 12, fontFamily: MONO, color: accent || (pos === false ? "#e5484d" : "#2d2a24") }}>{val}</td>
+    </tr>
+  );
+}
+
+// ── Documentation tab helper components ──
+function DocH2({ n, title }) {
+  return (
+    <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 28, marginBottom: 10, color: "#2d2a24", borderBottom: "2px solid #d4a843", paddingBottom: 5 }}>
+      <span style={{ fontFamily: MONO, fontSize: 13, color: "#b8912e", marginRight: 8 }}>§{n}</span>{title}
+    </h2>
+  );
+}
+function DocH3({ title }) {
+  return <h3 style={{ fontSize: 14, fontWeight: 700, marginTop: 18, marginBottom: 6, color: "#3d3a32" }}>{title}</h3>;
+}
+function DocCallout({ children }) {
+  return (
+    <div style={{ background: "#fdf8ec", border: "1px solid #e8d89c", borderLeft: "4px solid #d4a843", borderRadius: 5, padding: "12px 14px", margin: "12px 0", fontSize: 13, lineHeight: 1.6 }}>
+      {children}
+    </div>
+  );
+}
+function DocTable({ headers, rows }) {
+  return (
+    <div style={{ overflowX: "auto", margin: "10px 0 14px" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <thead>
+          <tr style={{ background: "#2d2a24", color: "#fff" }}>
+            {headers.map((h, i) => <th key={i} style={{ padding: "8px 10px", textAlign: "left", fontWeight: 600, fontSize: 11, letterSpacing: "0.03em" }}>{h}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr key={ri} style={{ background: ri % 2 === 0 ? "#fff" : "#faf8f4", borderBottom: "1px solid #f0ece4" }}>
+              {row.map((cell, ci) => <td key={ci} style={{ padding: "7px 10px", verticalAlign: "top" }}>{cell}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+function DocCode({ children }) {
+  return (
+    <pre style={{ background: "#faf8f4", border: "1px solid #e8e4db", borderLeft: "4px solid #d4a843", borderRadius: 4, padding: "10px 14px", margin: "10px 0", fontSize: 12, fontFamily: MONO, color: "#3d3a32", lineHeight: 1.55, overflowX: "auto", whiteSpace: "pre" }}>
+      {children}
+    </pre>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<FarmBudgetTool />);
+</script>
+</body>
+</html>
