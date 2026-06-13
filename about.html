@@ -6,7 +6,7 @@
 <title>About Dr. Tremendous</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500&family=Lora:ital,wght@1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --cream: #f9f2e2;
@@ -54,9 +54,9 @@
   .examples li::before { content: ''; position: absolute; left: 0; top: 26px; width: 10px; height: 10px; border-radius: 50%; background: var(--gold); }
 
   /* Closing pull line */
-  .closer { font-family: 'Playfair Display', serif; font-style: italic; font-size: 24px; line-height: 1.45; color: var(--navy); margin: 48px 0; padding: 32px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); text-align: center; }
+  .closer { font-family: 'Lora', Georgia, serif; font-style: italic; font-weight: 500; font-size: 25px; line-height: 1.7; color: var(--navy); margin: 48px 0 40px; padding: 40px 0 0; border-top: 1px solid var(--rule); text-align: center; }
 
-  .door-line { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--navy-mute); text-align: center; margin-bottom: 40px; }
+  .door-line { font-family: 'Inter', system-ui, sans-serif; font-size: 18px; line-height: 1.75; color: var(--navy-soft); text-align: center; margin-top: 4px; margin-bottom: 56px; }
 
   /* CTA */
   .cta-wrap { text-align: center; padding: 16px 0 72px; }
@@ -64,8 +64,8 @@
   .btn-primary:hover { background: var(--gold-deep); }
 
   /* T-Rex flourish */
-  .rex-flourish { text-align: center; margin: 0 0 8px; }
-  .rex-flourish img { width: 92px; height: auto; opacity: 0.95; }
+  .rex-flourish { text-align: center; margin: 0 0 0; }
+  .rex-flourish img { width: 104px; height: auto; opacity: 0.95; }
 
   footer { margin-top: 0; padding: 48px 0 64px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
   .footer-logo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 20px; }
@@ -78,7 +78,7 @@
     h1 { font-size: 40px; }
     .lede { font-size: 21px; }
     .article p { font-size: 16px; }
-    .closer { font-size: 20px; }
+    .closer { font-size: 22px; }
     .nav-links { gap: 16px; }
     .nav-links a { font-size: 10px; }
     .nav-logo { font-size: 17px; }
@@ -139,7 +139,7 @@
 
     <p>And it turns out that making things students can actually use is the most fun I have had in this job.</p>
 
-    <div class="closer">That is the whole project, really: I have an idea, and now there is almost nothing between the idea and the thing existing.</div>
+    <div class="closer">That is the whole project, really:<br>I have an idea, and now there is almost nothing<br>between the idea and the thing existing.</div>
 
     <div class="rex-flourish">
       <img src="trex.png" alt="">
