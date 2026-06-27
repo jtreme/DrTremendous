@@ -152,6 +152,13 @@
     border-bottom: 1px solid var(--rule);
   }
   #collection .tool-group:first-of-type .group-label { margin-top: 28px; }
+  .tool-group.featured .group-label {
+    color: var(--navy); font-size: 12px;
+    border-bottom: 2px solid var(--gold);
+  }
+  .tool-group.featured .group-label .lede {
+    color: var(--gold-deep); font-weight: 700;
+  }
   .tool {
     background: var(--cream-warm);
     padding: 36px 32px 30px;
@@ -364,6 +371,86 @@
       </div>
     </div>
 
+    <div class="tool-group featured" id="featured">
+      <div class="group-label">Featured Teaching Tools <span class="lede">· Start Here</span></div>
+      <div class="tools-live">
+        <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Advising · Live</div>
+          </div>
+          <div class="tool-title">Paw Plan</div>
+          <div class="tool-desc">
+            A four-year degree planner for ARE &amp; ABM students. Drag courses across semesters, auto-check prerequisites, save your plan, and bring it to advising. Mobile-friendly.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE / ABM Advising</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="multicollinearity.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Visualizer · Live</div>
+          </div>
+          <div class="tool-title">The OLS<br>Sorting Machine</div>
+          <div class="tool-desc">
+            Watch variance in Y get sorted into bins for each predictor. Crank the correlation and draw new samples to see coefficients swing — and flip sign — while R² holds steady. Multicollinearity, made visible.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 455 · Econometrics</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="sound-toy.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Sound Toy · Live</div>
+          </div>
+          <div class="tool-title">The Sound of<br>a Market</div>
+          <div class="tool-desc">
+            Drag the price and hear the market respond. Shortage sounds anxious, surplus sounds heavy, equilibrium resolves to a calm chord — learn to hear disequilibrium before you read the graph.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Supply &amp; Demand</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="drowning-skyline.html" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">The Drowning<br>Skyline</div>
+          <div class="tool-desc">
+            A city of gothic towers rising from a stormy sea. Each tower is a firm; its height is productivity. Raise the waterline and watch the survivors' average rise — not because anyone improved, but because the short towers drowned. Melitz selection, made cinematic.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Firm Selection</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="tool-group">
+      <div class="group-label">Advising &amp; Program</div>
+      <div class="tools-live">
+        <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Advising · Live</div>
+          </div>
+          <div class="tool-title">Paw Plan</div>
+          <div class="tool-desc">
+            A four-year degree planner for ARE &amp; ABM students. Drag courses across semesters, auto-check prerequisites, save your plan, and bring it to advising. Mobile-friendly.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE / ABM Advising</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
     <div class="tool-group">
       <div class="group-label">Econometrics &amp; Stats</div>
       <div class="tools-live">
@@ -501,25 +588,6 @@
     </div>
 
     <div class="tool-group">
-      <div class="group-label">Advising &amp; Program</div>
-      <div class="tools-live">
-        <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Advising · Live</div>
-          </div>
-          <div class="tool-title">Paw Plan</div>
-          <div class="tool-desc">
-            A four-year degree planner for ARE &amp; ABM students. Drag courses across semesters, auto-check prerequisites, save your plan, and bring it to advising. Mobile-friendly.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE / ABM Advising</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <div class="tool-group">
       <div class="group-label">Farm &amp; Extension</div>
       <div class="tools-live">
         <a href="cash-rent-estimator.html" class="tool">
@@ -599,25 +667,6 @@
       </div>
     </div>
 
-    <div class="tool-group">
-      <div class="group-label">Just for Fun</div>
-      <div class="tools-live">
-        <a href="drive-thru-draft.html" target="_blank" rel="noopener" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Game · Live</div>
-          </div>
-          <div class="tool-title">Drive-Thru<br>Draft</div>
-          <div class="tool-desc">
-            Spin five fast-food chains, draft one item each into a five-slot tray, and dodge the sold-out machine. Build the best meal the spinner allows, earn a grade and a label, and share your tray. Pure fun.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">Icebreaker</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-      </div>
-    </div>
-
     <div class="tool-group" id="faculty">
       <div class="group-label">Faculty &amp; Department</div>
       <div class="tools-live">
@@ -631,6 +680,25 @@
           </div>
           <div class="tool-foot">
             <div class="tool-course">Faculty · Teaching Review</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="tool-group">
+      <div class="group-label">Just for Fun</div>
+      <div class="tools-live">
+        <a href="drive-thru-draft.html" target="_blank" rel="noopener" class="tool">
+          <div class="tool-top">
+            <div class="tool-tag">Game · Live</div>
+          </div>
+          <div class="tool-title">Drive-Thru<br>Draft</div>
+          <div class="tool-desc">
+            Spin five fast-food chains, draft one item each into a five-slot tray, and dodge the sold-out machine. Build the best meal the spinner allows, earn a grade and a label, and share your tray. Pure fun.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">Icebreaker</div>
             <div class="tool-launch">Launch</div>
           </div>
         </a>
