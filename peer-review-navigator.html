@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peer Review Navigator · Dr. Tremendous</title>
+<link rel="icon" href="trex.png">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; }
+  #dt-home {
+    position: fixed; top: 14px; right: 16px; z-index: 9999;
+    display: flex; align-items: center; gap: 9px; text-decoration: none;
+    font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 16px;
+    line-height: 1; color: #1a1a1a;
+    background: rgba(255, 255, 255, 0.9); border: 1px solid #d4d0ca;
+    padding: 6px 12px 6px 8px; border-radius: 3px; backdrop-filter: blur(3px);
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    transition: box-shadow 0.18s, transform 0.18s;
+  }
+  #dt-home:hover { box-shadow: 3px 3px 0 #d97706; transform: translate(-1px,-1px); }
+  #dt-home img { height: 25px; width: auto; display: block; }
+  #dt-home .gold { color: #d97706; }
+  @media print { #dt-home { display: none !important; } }
+  @media (max-width: 640px) { #dt-home { font-size: 13px; } #dt-home img { height: 20px; } }
+</style>
+</head>
+<body>
+<a id="dt-home" href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous">
+  <img src="trex.png" alt="">
+  <span>Dr.Treme<span class="gold">ndous</span></span>
+</a>
+<div id="root"></div>
+<script type="text/jsx-source" id="app-src">
+const { useState, useEffect, useCallback, useRef } = React;
+
+// localStorage shim — replaces the Claude-artifact window.storage API.
+const storage = {
+  async get(key) { const v = localStorage.getItem(key); return v === null ? null : { value: v }; },
+  async set(key, value) { localStorage.setItem(key, value); },
+};
+
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const RANKS = [
+  { value: "assistant", label: "Assistant Professor",
+    rules: "Minimum 3 peer reviews before tenure, with at least 1 before reappointment. It is recommended that each review be conducted in a separate academic year (Reg 3.3.1).",
+    regSection: "3.3.1" },
+  { value: "associate", label: "Associate Professor",
+    rules: "First peer review after tenure must occur between the 2nd and 3rd year after tenure is granted. Subsequent reviews aligned with post-tenure review every 5 years. Minimum 2 reviews required before promotion to full professor, each in a separate academic year (Reg 3.3.2).",
+    regSection: "3.3.2" },
+  { value: "full", label: "Full Professor",
+    rules: "Every 5 years, aligned with the post-tenure review cycle. Should occur no later than between the 2nd and 3rd year after each post-tenure review (Reg 3.3.3).",
+    regSection: "3.3.3" },
+  { value: "ntt_new", label: "NTT / Professional Faculty (Years 1–3, ≥0.75 FTE)",
+    rules: "Peer review required each year for the first three years of employment (Reg 3.3.4).",
+    regSection: "3.3.4" },
+  { value: "ntt_established", label: "NTT / Professional Faculty (Year 4+, ≥0.75 FTE)",
+    rules: "Every 3–5 years. Once professor rank is achieved, every 5 years or as necessary for contract renewal, whichever is longer (Reg 3.3.4).",
+    regSection: "3.3.4" },
+];
+
+const ROLES = [
+  { value: "reviewee", label: "Faculty Being Reviewed", icon: "🎓" },
+  { value: "reviewer", label: "Peer Reviewer", icon: "👁️" },
+];
+
+const WORKFLOW_STEPS = [
+  {
+    id: 1, title: "Initiation",
+    desc: "The faculty member determines they are due for a peer review and contacts the Peer Review Coordinator to begin the process. The course to be reviewed is at the discretion of the Department Head.",
+    timeline: "Before semester or early weeks",
+    roles: { reviewee: "Determine whether you are due for a peer review and contact the Peer Review Coordinator to begin the process. The course to be reviewed is at the discretion of the Department Head.", reviewer: null }
+  },
+  {
+    id: 2, title: "Reviewer Assignment",
+    desc: "Two reviewers are selected: one by the reviewee, one by the Coordinator.",
+    timeline: "Weeks 1–2",
+    roles: { reviewee: "Select one peer reviewer. Reviewers should be mutually agreed upon, pending resolution by the department chair or Dean if there is disagreement.", reviewer: "Accept the assignment. Review the guidelines and both rubrics." }
+  },
+  {
+    id: 3, title: "Pre-Observation Meeting",
+    desc: "Reviewers meet with the reviewee to discuss course objectives, methods, and materials.",
+    timeline: "Weeks 2–4",
+    roles: { reviewee: "Meet with both reviewers (in person or via Zoom) to discuss course objectives and the range of methods, materials, and media used to achieve those objectives. Grant reviewers access to the LMS/course website if applicable. You or a reviewer should email the Peer Review Coordinator to confirm that the pre-observation meeting has been completed.", reviewer: "Meet with the reviewee (in person or via Zoom) to learn the course objectives and become aware of the range of methods, materials, and media used to achieve those objectives." }
+  },
+  {
+    id: 4, title: "Classroom Observations",
+    desc: "Each reviewer attends at least 2 classes. At least 1 observation must be joint.",
+    timeline: "Weeks 4–10",
+    roles: { reviewee: "Teach as normal. Provide class schedule to reviewers.", reviewer: "Attend minimum 2 classes each. Coordinate so at least one visit is joint. Complete the Classroom Observation Rubric for EACH visit separately. Space observations to allow the instructor to incorporate feedback." }
+  },
+  {
+    id: 5, title: "Review of Key Materials",
+    desc: "Reviewers evaluate syllabus, exams, assignments, and other course materials.",
+    timeline: "Weeks 4–12 (concurrent with observations)",
+    roles: { reviewee: "Ensure materials are accessible through the LMS/course website if applicable. Respond to any requests for additional information.", reviewer: "Review course materials for appropriateness, accuracy, currency of content, assessment strategies, and level of rigor. Materials include the syllabus, exams, instructional materials (videos, handouts, etc.), project instructions, case studies, homework, and examples of student work. Review electronic interactions between students and the instructor as applicable, including course announcements, discussion forums, and feedback. Complete the Key Materials Rubric once." }
+  },
+  {
+    id: 6, title: "Post-Observation Debrief",
+    desc: "Reviewers meet with the reviewee to discuss conclusions.",
+    timeline: "Weeks 10–13",
+    roles: { reviewee: "Meet with reviewers (in person or via Zoom) to discuss the conclusions of their observations and materials review. Offer additional insights. You or a reviewer should email the Peer Review Coordinator to confirm that the debrief has been completed.", reviewer: "Meet with the reviewee (in person or via Zoom) to discuss the conclusions of your observations and materials review." }
+  },
+  {
+    id: 7, title: "Final Written Report",
+    desc: "Reviewers may submit a joint written report or separate individual reports. Rubrics are always completed individually by each reviewer. All materials are submitted together to the Department Head by the start of the next semester or at the department head's discretion.",
+    timeline: "Weeks 13–16 (due by start of next semester)",
+    roles: { reviewee: "Review and sign the written assessment. Your signature acknowledges that the peer review occurred; it does not indicate agreement with the content. You may submit an optional written response within five (5) business days of receiving the reviewer’s written assessment. The response should address the reviewers’ conclusions or provide additional context and should not refer to other individuals by name or other means of identification. If you choose not to sign acknowledging the review, you forfeit the opportunity to provide a written response.", reviewer: "Complete a written assessment of class observations and learning materials and share it with the instructor. Reviewers may submit a joint final written report or separate individual reports. Submit the signed written assessment, Key Materials Rubric, and all Classroom Observation Rubrics to the Department Head with a copy to the reviewee." }
+  },
+  {
+    id: 8, title: "Record Keeping",
+    desc: "All materials are filed and retained per university policy.",
+    timeline: "After completion",
+    roles: { reviewee: "Retain your copy of the completed evaluations and any resulting summary data. All completed materials are filed in your personnel file. Originals or summary data must be retained for at least six years.", reviewer: "No further action." }
+  },
+];
+
+const MATERIALS_RUBRIC = [
+  {
+    section: "Course Syllabus", items: [
+      "A syllabus includes a general description of the course, course learning objectives, course materials, methods of assessment of student learning, course schedule with clear due dates, office hours, student costs associated with the course (books/materials/travel), clear course policies, information about special hardware/software requirements, academic integrity expectations, and appropriate university policies.",
+      "Participation can be determined for grading and/or financial aid purposes."
+    ], levels: ["Does Not Meet", "Partially Meets", "Meets", "Exceeds"]
+  },
+  {
+    section: "Course Content", items: [
+      "The content covered is at an appropriate level of rigor based on the level of the course.",
+      "The instructional materials represent up-to-date theory and practice in the discipline.",
+      "The instructional materials are appropriate for the level of the course.",
+      "Instructional materials help meet course learning objectives.",
+      "Instructional materials demonstrate diverse content and perspectives.",
+      "Students are required to apply the material in a real-world context."
+    ], levels: ["Does Not Meet", "Partially Meets", "Meets", "Exceeds"]
+  },
+  {
+    section: "Student Assessment", items: [
+      "The assessments are at an appropriate level of rigor based on the level of the course.",
+      "Assessment of student learning is aligned with course learning objectives, conducted throughout the duration of the course, and uses multiple methods.",
+      "A clear rubric or grading rationale is provided for graded assignments.",
+      "Assessments and evaluations are designed and administered to uphold academic integrity.",
+      "Testing parameters such as limited timing and repeat attempts are clearly explained."
+    ], levels: ["Does Not Meet", "Partially Meets", "Meets", "Exceeds"]
+  },
+  {
+    section: "Feedback and Grading", items: [
+      "The course grading policy, including grading scale and weights, is clear in either the syllabus or Moodle.",
+      "A grade book provides timely, accurate grade information.",
+      "Feedback and grades are posted in a timely manner and before subsequent assignments are due.",
+      "Meaningful feedback is provided to students either individually or as a course.",
+      "Penalties assessed to grades are clearly described and enforced."
+    ], levels: ["Does Not Meet", "Partially Meets", "Meets", "Exceeds"]
+  },
+  {
+    section: "Student Interaction & Engagement", items: [
+      { text: "Course design includes opportunities for student-to-student interaction (e.g., think-pair-share, group problem-solving during class, peer review activities, collaborative assignments, structured discussions, team projects).", na: false },
+      { text: "Expectations for student participation and engagement are clearly communicated (e.g., in the syllabus, assignment instructions, discussion prompts, or stated in class).", na: false },
+      { text: "The instructor provides evidence of regular communication with students through course channels (e.g., course announcements, discussion posts, posted feedback summaries). [N/A if not applicable]", na: true },
+      { text: "The LMS or course site, if used, is organized in a way that supports student learning (e.g., clear module structure, consistent formatting, accessible materials). [N/A if not applicable]", na: true }
+    ], levels: ["Does Not Meet", "Partially Meets", "Meets", "Exceeds"]
+  },
+];
+
+const OBSERVATION_RUBRIC = [
+  {
+    section: "Pre-Class Activities & Environment", items: [
+      "Establishes and maintains a positive rapport with students",
+      "Materials/technology are prepared for class",
+      "Was well prepared for class/lab"
+    ], levels: ["No Evidence", "Partial", "Full / Effective"], hasNotObserved: true,
+    overallLevels: ["Needs Improvement", "Adequate", "Good", "Exemplary"]
+  },
+  {
+    section: "Start of Class", items: [
+      "Review of previous instruction, connection to current learning",
+      "Welcomes student comments about prior content/assignments",
+      "Uses an interest approach to generate excitement/curiosity about subject matter",
+      "Provides specific objectives for the class period",
+      "Overviews plans for instruction for the class period"
+    ], levels: ["No Evidence", "Partial", "Full / Effective"], hasNotObserved: true,
+    overallLevels: ["Needs Improvement", "Adequate", "Good", "Exemplary"]
+  },
+  {
+    section: "Throughout the Class", items: [
+      "Knowledgeable about subject matter",
+      "Displays enthusiasm for teaching and subject matter",
+      "Teaches at an appropriate level of rigor",
+      "Clarity in explaining concepts and principles",
+      "Cares for and respects students",
+      "Appropriate inclusion of supplemental teaching tools and visuals",
+      "Logical and appropriately paced progression of content",
+      "Inclusion of challenging and appropriate questions",
+      "Variability of instructional strategies",
+      "Use of teaching tools (PowerPoint, doc cam, live materials, etc.)",
+      "Use of relevant illustrations and examples",
+      "Ability to hold class’s/lab’s attention",
+      "Ability to stimulate discussion and engagement"
+    ], levels: ["No Evidence", "Partial", "Full / Effective"], hasNotObserved: true,
+    overallLevels: ["Needs Improvement", "Adequate", "Good", "Exemplary"]
+  },
+  {
+    section: "Closure of Class", items: [
+      "Review of key points",
+      "Explanation of application of content to labs and/or assignments",
+      "Efficient and thorough use of class time"
+    ], levels: ["No Evidence", "Partial", "Full / Effective"], hasNotObserved: true,
+    overallLevels: ["Needs Improvement", "Adequate", "Good", "Exemplary"]
+  },
+  {
+    section: "Learner Interaction & Engagement", items: [
+      "Encourages students to ask questions and/or contribute to discussion",
+      "Encourages and facilitates respectful class dialog",
+      "Acknowledges student’s contribution to the class"
+    ], levels: ["No Evidence", "Partial", "Full / Effective"], hasNotObserved: true,
+    overallLevels: ["Needs Improvement", "Adequate", "Good", "Exemplary"]
+  },
+];
+
+const EMAIL_TEMPLATES = [
+  {
+    id: "kickoff", title: "Kick-Off Email (Coordinator → All)",
+    fields: ["coordinatorName", "revieweeName", "reviewer1Name", "reviewer2Name", "courseName"],
+    template: (f) => `As the Coordinator of Peer Reviews of Teaching for ARE, I've been asked to organize a peer teaching review for ${f.revieweeName || "[Reviewee Name]"}.
+
+${f.reviewer1Name || "[Reviewer 1]"} and ${f.reviewer2Name || "[Reviewer 2]"} have kindly agreed to serve as peer reviewers.
+
+Please take a moment to review the attached guidelines and two rubrics:
+• One for evaluating course materials (syllabus, exams, assignments, etc.)
+• One for evaluating in-class teaching through classroom observation
+
+The three of you should meet to discuss the course objectives and the range of methods, materials, and media used to achieve those objectives. Reviewers should also be granted access to the LMS/course website if applicable.
+
+Please coordinate soon to schedule observation dates. Observations should be spaced to allow the instructor to incorporate feedback.
+
+Let me know if you have any questions, and thank you all for your support with this process.
+
+Best,
+${f.coordinatorName || "[Coordinator Name]"}`
+  },
+  {
+    id: "pre-obs", title: "Pre-Observation Scheduling (Reviewer → Reviewee)",
+    fields: ["reviewerName", "revieweeName", "courseName"],
+    template: (f) => `Hi ${f.revieweeName || "[Reviewee Name]"},
+
+I'm looking forward to serving as a peer reviewer for ${f.courseName || "[Course Name]"}. I'd like to schedule our pre-observation meeting to discuss your course objectives, teaching methods, and the focus of the review.
+
+Would any of the following times work for you? [Suggest 2-3 options]
+
+I'll also need access to the LMS/course website if applicable. After we meet, one of us will notify the Peer Review Coordinator that the pre-observation meeting is complete.
+
+Thanks,
+${f.reviewerName || "[Reviewer Name]"}`
+  },
+  {
+    id: "confirm-preobs", title: "Pre-Observation Confirmation (→ Coordinator)",
+    fields: ["revieweeName", "courseName", "meetingDate"],
+    template: (f) => `Hi,
+
+Just a quick note to confirm that the pre-observation meeting for ${f.revieweeName || "[Reviewee Name]"}'s peer review of ${f.courseName || "[Course Name]"} was completed on ${f.meetingDate || "[Date]"}. LMS/course website access has been granted if applicable.
+
+We're ready to begin scheduling classroom observations.
+
+Thanks`
+  },
+  {
+    id: "debrief", title: "Post-Observation Debrief Scheduling (Reviewer → Reviewee)",
+    fields: ["reviewerName", "revieweeName"],
+    template: (f) => `Hi ${f.revieweeName || "[Reviewee Name]"},
+
+Now that we've completed our classroom observations and materials review, I'd like to schedule a time to meet and discuss our findings and feedback.
+
+Would any of the following times work? [Suggest 2-3 options]
+
+This is also your opportunity to share any additional context or insights about the course.
+
+Thanks,
+${f.reviewerName || "[Reviewer Name]"}`
+  },
+  {
+    id: "completion", title: "Completion Notice (Reviewer → Dept Head & Coordinator)",
+    fields: ["reviewerName", "revieweeName", "courseName", "headName"],
+    template: (f) => `Dear ${f.headName || "[Department Head Name]"},
+
+The peer review of ${f.revieweeName || "[Reviewee Name]"}'s ${f.courseName || "[Course Name]"} is now complete. Attached please find:
+• The signed final written assessment
+• The completed Key Materials Rubric
+• The completed Classroom Observation Rubrics (one per visit)
+
+The post-observation debrief with ${f.revieweeName || "[Reviewee Name]"} has been conducted, and the written assessment has been shared with and signed by the instructor.
+
+Please let me know if anything else is needed.
+
+Best,
+${f.reviewerName || "[Reviewer Name]"}`
+  },
+];
+
+// ─── Utility functions ──────────────────────────────────────────────────────
+function getNextReviewDate(rank, lastReviewDate) {
+  if (!lastReviewDate) return { status: "unknown", message: "No review date on file" };
+  const last = new Date(lastReviewDate);
+  const now = new Date();
+  const lastYear = last.getFullYear();
+  const yearsSince = now.getFullYear() - lastYear;
+
+  if (rank === "assistant") {
+    return { status: "unknown", message: "Assistant Professor schedules depend on reappointment and tenure timing: minimum 3 reviews before tenure, with at least 1 before reappointment; each review is recommended in a separate academic year." };
+  }
+
+  if (rank === "ntt_new") {
+    const nextDue = new Date(last);
+    nextDue.setFullYear(nextDue.getFullYear() + 1);
+    const monthsUntil = (nextDue - now) / (1000 * 60 * 60 * 24 * 30);
+    if (monthsUntil < 0) return { status: "overdue", message: `Peer review overdue since ${nextDue.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`, nextDue };
+    if (monthsUntil < 12) return { status: "upcoming", message: `Peer review due by ${nextDue.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`, nextDue };
+    return { status: "clear", message: `Next peer review due ${nextDue.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`, nextDue };
+  }
+
+  if (rank === "ntt_established") {
+    if (yearsSince >= 5) return { status: "overdue", message: `Last peer review was in ${lastYear}. Reviews are required every 3–5 years; schedule a review now.` };
+    if (yearsSince >= 3) return { status: "upcoming", message: `Last peer review was in ${lastYear}. You are in the 3–5 year review window.` };
+    return { status: "clear", message: `Last peer review was in ${lastYear}. Review window opens in ${lastYear + 3} and closes by ${lastYear + 5}.` };
+  }
+
+  const nextDue = new Date(last);
+  nextDue.setFullYear(nextDue.getFullYear() + 5);
+  const monthsUntil = (nextDue - now) / (1000 * 60 * 60 * 24 * 30);
+  if (monthsUntil < 0) return { status: "overdue", message: `Overdue since ${nextDue.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`, nextDue };
+  if (monthsUntil < 12) return { status: "upcoming", message: `Due by ${nextDue.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`, nextDue };
+  return { status: "clear", message: `Next due ${nextDue.toLocaleDateString("en-US", { month: "long", year: "numeric" })}`, nextDue };
+}
+
+function statusColor(status) {
+  switch (status) {
+    case "overdue": return "#c0392b";
+    case "upcoming": return "#d4880f";
+    case "clear": return "#27864a";
+    default: return "#7f8c8d";
+  }
+}
+
+function statusLabel(status) {
+  switch (status) {
+    case "overdue": return "OVERDUE";
+    case "upcoming": return "DUE SOON";
+    case "clear": return "ON TRACK";
+    default: return "NO DATA";
+  }
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const S = {
+  app: { fontFamily: "'Source Sans 3', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", maxWidth: 960, margin: "0 auto", padding: "24px 16px", color: "#2B2B2B", minHeight: "100vh" },
+  header: { marginBottom: 28, padding: "0", background: "transparent" },
+  headerBar: { background: "#2B2B2B", padding: "20px 24px 16px", borderTop: "4px solid #CC0000" },
+  headerTitle: { fontSize: 20, fontWeight: 700, letterSpacing: "-0.01em", margin: 0, color: "#fff" },
+  headerSub: { fontSize: 12, color: "#b0b0b0", marginTop: 3, fontWeight: 400, letterSpacing: "0.02em", textTransform: "uppercase" },
+  nav: { display: "flex", gap: 0, marginBottom: 24, borderBottom: "2px solid #E8E5E0", flexWrap: "wrap" },
+  navBtn: (active) => ({
+    flex: "1 1 auto", padding: "12px 14px 10px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: active ? 700 : 500,
+    background: "transparent", color: active ? "#CC0000" : "#666",
+    borderBottom: active ? "3px solid #CC0000" : "3px solid transparent",
+    transition: "all 0.15s", minWidth: 80, whiteSpace: "nowrap", marginBottom: "-2px"
+  }),
+  card: { background: "#fff", borderRadius: 4, border: "1px solid #E8E5E0", padding: "20px 24px", marginBottom: 16 },
+  cardTitle: { fontSize: 16, fontWeight: 700, margin: "0 0 12px", color: "#2B2B2B" },
+  label: { display: "block", fontSize: 13, fontWeight: 600, color: "#444", marginBottom: 4 },
+  select: { width: "100%", padding: "10px 12px", borderRadius: 4, border: "1px solid #D4D0CA", fontSize: 14, background: "#fff", appearance: "auto", marginBottom: 12 },
+  input: { width: "100%", padding: "10px 12px", borderRadius: 4, border: "1px solid #D4D0CA", fontSize: 14, boxSizing: "border-box", marginBottom: 12 },
+  textarea: { width: "100%", padding: "10px 12px", borderRadius: 4, border: "1px solid #D4D0CA", fontSize: 13, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box", minHeight: 60 },
+  btn: (variant = "primary") => ({
+    padding: "10px 20px", border: "none", borderRadius: 4, cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.15s",
+    background: variant === "primary" ? "#CC0000" : variant === "danger" ? "#8B0000" : "#EDEAE6",
+    color: variant === "primary" ? "#fff" : variant === "danger" ? "#fff" : "#333",
+  }),
+  badge: (color) => ({
+    display: "inline-block", padding: "3px 10px", borderRadius: 3, fontSize: 11, fontWeight: 700, letterSpacing: "0.04em",
+    background: color + "14", color: color, border: `1px solid ${color}30`
+  }),
+  stepCard: (active) => ({
+    background: active ? "#FFF8F6" : "#fff", borderRadius: 4, border: active ? "1px solid #CC000040" : "1px solid #E8E5E0",
+    padding: "16px 20px", marginBottom: 0, cursor: "pointer", transition: "all 0.15s",
+    borderLeft: active ? "3px solid #CC0000" : "3px solid transparent"
+  }),
+  rubricRadio: { marginRight: 4, accentColor: "#CC0000" },
+};
+
+// ─── Storage helpers ─────────────────────────────────────────────────────────
+async function loadRoster() {
+  try {
+    const r = await storage.get("peer-review-roster");
+    return r ? JSON.parse(r.value) : [];
+  } catch { return []; }
+}
+async function saveRoster(data) {
+  try { await storage.set("peer-review-roster", JSON.stringify(data)); } catch (e) { console.error("Save failed", e); }
+}
+
+// ─── Components ──────────────────────────────────────────────────────────────
+
+function AmIDue() {
+  const [rank, setRank] = useState("");
+  // Shared
+  const [lastReview, setLastReview] = useState("");
+  // Assistant
+  const [completedReviews, setCompletedReviews] = useState("");
+  const [tenureYear, setTenureYear] = useState("");
+  const [reappointmentDone, setReappointmentDone] = useState("");
+  // Associate
+  const [tenureGrantedYear, setTenureGrantedYear] = useState("");
+  const [reviewsSinceTenure, setReviewsSinceTenure] = useState("");
+  const [planningPromotion, setPlanningPromotion] = useState("");
+  // Full
+  const [lastPostTenureReview, setLastPostTenureReview] = useState("");
+  // NTT
+  const [appointmentYear, setAppointmentYear] = useState("");
+  const [annualReviewsDone, setAnnualReviewsDone] = useState("");
+  const [achievedProfessor, setAchievedProfessor] = useState("");
+  const [hasPriorReview, setHasPriorReview] = useState("");
+
+  const rankInfo = RANKS.find(r => r.value === rank);
+  const now = new Date().getFullYear();
+
+  const resetFields = () => {
+    setLastReview(""); setCompletedReviews(""); setTenureYear(""); setReappointmentDone("");
+    setTenureGrantedYear(""); setReviewsSinceTenure(""); setPlanningPromotion("");
+    setLastPostTenureReview(""); setAppointmentYear(""); setAnnualReviewsDone(""); setAchievedProfessor(""); setHasPriorReview("");
+  };
+
+  // Calculate result based on rank
+  let result = null;
+  let warnings = [];
+
+  if (rank === "assistant" && completedReviews !== "" && tenureYear) {
+    const reviews = parseInt(completedReviews) || 0;
+    const tenYr = parseInt(tenureYear);
+    const yearsUntilTenure = tenYr - now;
+    const reviewsNeeded = Math.max(0, 3 - reviews);
+
+    if (reviews >= 3 && reappointmentDone === "yes") {
+      result = { status: "clear", message: "You have completed the minimum required reviews (3 before tenure, with at least 1 before reappointment)." };
+    } else if (reviewsNeeded > 0 && yearsUntilTenure <= 0) {
+      result = { status: "overdue", message: `Tenure year ${tenYr} has arrived or passed and you have only ${reviews} of the 3 required reviews. Contact the Peer Review Coordinator immediately.` };
+    } else if (reviewsNeeded > 0 && reviewsNeeded > yearsUntilTenure) {
+      result = { status: "overdue", message: `You need ${reviewsNeeded} more review${reviewsNeeded > 1 ? "s" : ""} before tenure in ${tenYr}. With the recommendation to conduct reviews in separate academic years, you should schedule a review immediately.` };
+    } else if (reviewsNeeded > 0 && reviewsNeeded === yearsUntilTenure) {
+      result = { status: "upcoming", message: `You need ${reviewsNeeded} more review${reviewsNeeded > 1 ? "s" : ""} before tenure in ${tenYr}. With reviews recommended in separate academic years, you need to start one this year.` };
+    } else if (reviewsNeeded > 0) {
+      result = { status: "upcoming", message: `You have ${reviews} of 3 required reviews before tenure in ${tenYr}. The regulation recommends conducting each in a separate academic year.` };
+    }
+
+    if (reappointmentDone === "no") {
+      warnings.push("You need at least 1 peer review before reappointment.");
+    }
+
+  } else if (rank === "associate" && tenureGrantedYear) {
+    const tgy = parseInt(tenureGrantedYear);
+    const reviewCount = parseInt(reviewsSinceTenure) || 0;
+    const yearsSinceTenure = now - tgy;
+    const lastReviewYear = lastReview ? new Date(lastReview).getFullYear() : null;
+
+    if (yearsSinceTenure >= 2 && yearsSinceTenure <= 3 && reviewCount === 0) {
+      result = { status: "overdue", message: `Your first peer review after tenure must occur between your 2nd and 3rd year (${tgy + 2}–${tgy + 3}). You are in that window now. Schedule a review immediately.` };
+    } else if (yearsSinceTenure < 2 && reviewCount === 0) {
+      result = { status: "upcoming", message: `Your first peer review after tenure is due between ${tgy + 2} and ${tgy + 3}. Plan ahead.` };
+    } else if (yearsSinceTenure > 3 && reviewCount === 0) {
+      result = { status: "overdue", message: `Your first peer review after tenure was due between ${tgy + 2} and ${tgy + 3}. You are past that window. Schedule a review immediately.` };
+    } else if (lastReviewYear && (now - lastReviewYear) >= 5) {
+      result = { status: "overdue", message: `Your last peer review was in ${lastReviewYear}. Reviews are aligned with post-tenure review every 5 years. You are due now.` };
+    } else if (lastReviewYear && (now - lastReviewYear) >= 4) {
+      result = { status: "upcoming", message: `Your last peer review was in ${lastReviewYear}. Your next is due by ${lastReviewYear + 5}, aligned with your post-tenure review cycle.` };
+    } else if (lastReviewYear) {
+      result = { status: "clear", message: `Your last peer review was in ${lastReviewYear}. Next due by approximately ${lastReviewYear + 5}, aligned with post-tenure review.` };
+    }
+
+    if (planningPromotion === "yes" && reviewCount < 2) {
+      warnings.push(`You need a minimum of 2 peer reviews before promotion to full professor (you have ${reviewCount}), each conducted in a separate academic year.`);
+    }
+
+  } else if (rank === "full") {
+    const lastReviewYear = (hasPriorReview === "yes" && lastReview) ? new Date(lastReview).getFullYear() : null;
+    const ptrYear = lastPostTenureReview ? parseInt(lastPostTenureReview) : null;
+
+    if (ptrYear && !lastReviewYear) {
+      const dueBy = ptrYear + 3;
+      if (now > dueBy) {
+        result = { status: "overdue", message: `Your peer review should have occurred between ${ptrYear + 2} and ${ptrYear + 3} (following your ${ptrYear} post-tenure review). Schedule immediately.` };
+      } else if (now >= ptrYear + 2) {
+        result = { status: "upcoming", message: `Your peer review is due between now and ${dueBy}, following your ${ptrYear} post-tenure review.` };
+      } else {
+        result = { status: "clear", message: `Your peer review is due between ${ptrYear + 2} and ${ptrYear + 3}, following your ${ptrYear} post-tenure review.` };
+      }
+    } else if (lastReviewYear) {
+      const yearsSince = now - lastReviewYear;
+      if (yearsSince >= 5) {
+        result = { status: "overdue", message: `Your last peer review was in ${lastReviewYear}. Reviews are required every 5 years. You are due now.` };
+      } else if (yearsSince >= 4) {
+        result = { status: "upcoming", message: `Your last peer review was in ${lastReviewYear}. Your next is due by ${lastReviewYear + 5}.` };
+      } else {
+        result = { status: "clear", message: `Your last peer review was in ${lastReviewYear}. Next due by approximately ${lastReviewYear + 5}.` };
+      }
+    }
+
+  } else if (rank === "ntt_new" && appointmentYear) {
+    const apptYr = parseInt(appointmentYear);
+    const done = parseInt(annualReviewsDone) || 0;
+    const yearsEmployed = now - apptYr;
+    const needed = Math.min(yearsEmployed, 3) - done;
+
+    if (needed > 0) {
+      result = { status: "overdue", message: `You have completed ${done} of ${Math.min(yearsEmployed, 3)} required peer reviews. Schedule a review for this academic year.` };
+    } else if (yearsEmployed < 3) {
+      result = { status: "upcoming", message: `You have completed ${done} peer review${done !== 1 ? "s" : ""}. Your next peer review should be scheduled for the ${apptYr + done + 1}–${apptYr + done + 2} academic year.` };
+    } else {
+      result = { status: "clear", message: `You have completed your 3 required peer reviews. You may now transition to the 3–5 year review cycle.` };
+    }
+
+  } else if (rank === "ntt_established" && hasPriorReview) {
+    const isProfessor = achievedProfessor === "yes";
+
+    if (hasPriorReview === "no") {
+      result = { status: "upcoming", message: `You have not had a peer review since completing your first three peer reviews. You are in the 3–5 year review window. Schedule a review with the Peer Review Coordinator.${isProfessor ? " At professor rank, reviews are required every 5 years or for contract renewal, whichever is longer." : ""}` };
+    } else if (lastReview) {
+      const lastReviewYear = new Date(lastReview).getFullYear();
+      const yearsSince = now - lastReviewYear;
+
+      if (isProfessor) {
+        if (yearsSince >= 5) {
+          result = { status: "overdue", message: `Your last peer review was in ${lastReviewYear}. At professor rank, reviews are required every 5 years or for contract renewal. You are due now.` };
+        } else if (yearsSince >= 4) {
+          result = { status: "upcoming", message: `Your last peer review was in ${lastReviewYear}. At professor rank, your next is due by ${lastReviewYear + 5} or at contract renewal.` };
+        } else {
+          result = { status: "clear", message: `Your last peer review was in ${lastReviewYear}. At professor rank, next due by ${lastReviewYear + 5} or at contract renewal, whichever is longer.` };
+        }
+      } else {
+        if (yearsSince >= 5) {
+          result = { status: "overdue", message: `Your last peer review was in ${lastReviewYear}. Reviews are required every 3–5 years. You are overdue.` };
+        } else if (yearsSince >= 3) {
+          result = { status: "upcoming", message: `Your last peer review was in ${lastReviewYear}. Reviews are required every 3–5 years. You are in the review window now.` };
+        } else {
+          result = { status: "clear", message: `Your last peer review was in ${lastReviewYear}. Your next review window opens in ${lastReviewYear + 3}.` };
+        }
+      }
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ ...S.card, background: "#2B2B2B", color: "#fff", border: "none" }}>
+        <p style={{ fontSize: 13, color: "#c8c4c0", margin: 0 }}>
+          This tool provides a <strong>planning estimate</strong> based on NC State Regulation 05.20.10. The actual regulation is shown below your result so you can verify. Consult the Peer Review Coordinator or your department head to confirm your official schedule.
+        </p>
+      </div>
+      <div style={S.card}>
+      <h3 style={{ ...S.cardTitle, fontSize: 15 }}>Check Your Status</h3>
+      <label style={S.label}>Faculty Rank</label>
+      <select style={S.select} value={rank} onChange={e => { setRank(e.target.value); resetFields(); }}>
+        <option value="">Select rank…</option>
+        {RANKS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+      </select>
+
+      {/* ── Assistant Professor fields ── */}
+      {rank === "assistant" && (<>
+        <label style={S.label}>How many peer reviews of your teaching have been conducted?</label>
+        <select style={S.select} value={completedReviews} onChange={e => setCompletedReviews(e.target.value)}>
+          <option value="">Select…</option>
+          {[0,1,2,3].map(n => <option key={n} value={n}>{n}{n === 3 ? " or more" : ""}</option>)}
+        </select>
+        <label style={S.label}>Have you had at least 1 review before reappointment?</label>
+        <select style={S.select} value={reappointmentDone} onChange={e => setReappointmentDone(e.target.value)}>
+          <option value="">Select…</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+          <option value="na">Not yet at reappointment stage</option>
+        </select>
+        <label style={S.label}>Expected tenure decision year</label>
+        <input type="number" style={S.input} placeholder="e.g., 2029" value={tenureYear} onChange={e => setTenureYear(e.target.value)} />
+      </>)}
+
+      {/* ── Associate Professor fields ── */}
+      {rank === "associate" && (<>
+        <label style={S.label}>Year tenure was granted</label>
+        <input type="number" style={S.input} placeholder="e.g., 2022" value={tenureGrantedYear} onChange={e => setTenureGrantedYear(e.target.value)} />
+        <label style={S.label}>Number of peer reviews completed since tenure</label>
+        <select style={S.select} value={reviewsSinceTenure} onChange={e => setReviewsSinceTenure(e.target.value)}>
+          <option value="">Select…</option>
+          {[0,1,2,3,4,5].map(n => <option key={n} value={n}>{n}{n >= 5 ? "+" : ""}</option>)}
+        </select>
+        {parseInt(reviewsSinceTenure) > 0 && (<>
+          <label style={S.label}>Date of most recent peer review</label>
+          <input type="date" style={S.input} value={lastReview} onChange={e => setLastReview(e.target.value)} />
+        </>)}
+        <label style={S.label}>Are you planning or preparing for promotion to full professor?</label>
+        <select style={S.select} value={planningPromotion} onChange={e => setPlanningPromotion(e.target.value)}>
+          <option value="">Select…</option>
+          <option value="yes">Yes</option>
+          <option value="no">No / not yet</option>
+        </select>
+      </>)}
+
+      {/* ── Full Professor fields ── */}
+      {rank === "full" && (<>
+        <label style={S.label}>Year of most recent post-tenure review</label>
+        <input type="number" style={S.input} placeholder="e.g., 2023" value={lastPostTenureReview} onChange={e => setLastPostTenureReview(e.target.value)} />
+        <label style={S.label}>Have you had a peer review since your last post-tenure review?</label>
+        <select style={S.select} value={hasPriorReview} onChange={e => setHasPriorReview(e.target.value)}>
+          <option value="">Select…</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+        {hasPriorReview === "yes" && (<>
+          <label style={S.label}>Date of most recent peer review</label>
+          <input type="date" style={S.input} value={lastReview} onChange={e => setLastReview(e.target.value)} />
+        </>)}
+      </>)}
+
+      {/* ── NTT Years 1–3 fields ── */}
+      {rank === "ntt_new" && (<>
+        <label style={S.label}>Year of initial appointment</label>
+        <input type="number" style={S.input} placeholder="e.g., 2024" value={appointmentYear} onChange={e => setAppointmentYear(e.target.value)} />
+        <label style={S.label}>How many peer reviews of your teaching have been conducted?</label>
+        <select style={S.select} value={annualReviewsDone} onChange={e => setAnnualReviewsDone(e.target.value)}>
+          <option value="">Select…</option>
+          {[0,1,2,3].map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+      </>)}
+
+      {/* ── NTT Year 4+ fields ── */}
+      {rank === "ntt_established" && (<>
+        <label style={S.label}>Have you achieved the rank of professor?</label>
+        <select style={S.select} value={achievedProfessor} onChange={e => setAchievedProfessor(e.target.value)}>
+          <option value="">Select…</option>
+          <option value="yes">Yes</option>
+          <option value="no">No</option>
+        </select>
+        <label style={S.label}>Have you had a peer review since completing your first three peer reviews?</label>
+        <select style={S.select} value={hasPriorReview} onChange={e => setHasPriorReview(e.target.value)}>
+          <option value="">Select…</option>
+          <option value="yes">Yes</option>
+          <option value="no">No, this would be my first since the initial three</option>
+        </select>
+        {hasPriorReview === "yes" && (<>
+          <label style={S.label}>Date of most recent peer review</label>
+          <input type="date" style={S.input} value={lastReview} onChange={e => setLastReview(e.target.value)} />
+        </>)}
+      </>)}
+
+      {/* ── Result ── */}
+      {result && (
+        <div style={{ padding: 16, borderRadius: 4, background: statusColor(result.status) + "10", border: `1px solid ${statusColor(result.status)}30`, marginTop: 8 }}>
+          <span style={S.badge(statusColor(result.status))}>{statusLabel(result.status)}</span>
+          <p style={{ margin: "8px 0 0", fontSize: 14, fontWeight: 500 }}>{result.message}</p>
+          {warnings.map((w, i) => (
+            <p key={i} style={{ margin: "6px 0 0", fontSize: 13, color: "#c0392b", fontWeight: 500 }}>{w}</p>
+          ))}
+          {(result.status === "overdue" || result.status === "upcoming") && (
+            <p style={{ margin: "8px 0 0", fontSize: 13, color: "#444" }}>
+              <strong>Next step:</strong> Contact the Peer Review Coordinator to initiate your review, then visit the <em>Workflow</em> tab for the full process.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+
+    {/* ── Show the actual regulation text ── */}
+    {rankInfo && (
+      <div style={{ ...S.card, background: "#FAF8F5" }}>
+        <h3 style={{ fontSize: 13, fontWeight: 700, margin: "0 0 8px", color: "#2B2B2B" }}>Reg 05.20.10, Section {rankInfo.regSection}</h3>
+        <p style={{ fontSize: 13, color: "#555", margin: 0, lineHeight: 1.6 }}>{rankInfo.rules}</p>
+        <p style={{ fontSize: 11, color: "#999", margin: "8px 0 0", fontStyle: "italic" }}>
+          This is a summary. Full regulation text at <span style={{ textDecoration: "underline" }}>policies.ncsu.edu/regulation/reg-05-20-10</span>
+        </p>
+      </div>
+    )}
+    </div>
+  );
+}
+
+function WorkflowTimeline() {
+  const [role, setRole] = useState("reviewee");
+  const [openStep, setOpenStep] = useState(1);
+  const currentRole = ROLES.find(r => r.value === role);
+
+  return (
+    <div>
+      <div style={S.card}>
+        <h2 style={S.cardTitle}>I am a…</h2>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {ROLES.map(r => (
+            <button key={r.value} onClick={() => setRole(r.value)}
+              style={{ ...S.btn(role === r.value ? "primary" : "ghost"), display: "flex", alignItems: "center", gap: 6 }}>
+              <span>{r.icon}</span> {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Committee Chair note - only for reviewers */}
+      {role === "reviewer" && (
+        <div style={{ ...S.card, background: "#FDF6F0", border: "1px solid #E8D5C0" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 6px", color: "#2B2B2B" }}>If you are the review committee chair:</h3>
+          <p style={{ fontSize: 13, color: "#555", margin: 0, lineHeight: 1.6 }}>
+            In addition to the reviewer responsibilities below, the committee chair leads the pre-observation meeting, coordinates the observation schedule with the instructor being reviewed, serves as the primary point of contact for the Peer Review Coordinator, and drafts the final written report if the reviewers submit a joint report.
+          </p>
+        </div>
+      )}
+
+      {/* Semester Timeline Bar */}
+      <div style={{ ...S.card, padding: "16px 20px" }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 12px", color: "#2B2B2B" }}>Semester Timeline</h3>
+        <div style={{ display: "flex", gap: 2, marginBottom: 8 }}>
+          {["Wk 1–2", "Wk 2–4", "Wk 4–10", "Wk 10–13", "Wk 13–16", "After"].map((label, i) => (
+            <div key={i} style={{
+              flex: i === 2 ? 3 : 1, padding: "6px 4px", background: ["#CC0000","#8B6F5E","#7A6B5E","#6B6058","#5C5550","#4D4A46"][i],
+              color: "#fff", fontSize: 10, textAlign: "center", fontWeight: 600,
+              borderRadius: i === 0 ? "6px 0 0 6px" : i === 5 ? "0 6px 6px 0" : 0
+            }}>{label}</div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 2 }}>
+          {["Assign\nReviewers", "Pre-Obs\nMeeting", "Observations & Materials Review", "Debrief", "Final\nReport", "File &\nRetain"].map((label, i) => (
+            <div key={i} style={{ flex: i === 2 ? 3 : 1, fontSize: 9, textAlign: "center", color: "#666", whiteSpace: "pre-line", lineHeight: 1.2 }}>{label}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Steps */}
+      {WORKFLOW_STEPS.filter(step => step.roles[role] !== null).map(step => {
+        const isOpen = openStep === step.id;
+        return (
+          <div key={step.id} style={S.stepCard(isOpen)} onClick={() => setOpenStep(isOpen ? null : step.id)}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%", background: "#CC0000", color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0
+              }}>{step.id}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>{step.title}</div>
+                <div style={{ fontSize: 12, color: "#888" }}>{step.timeline}</div>
+              </div>
+              <span style={{ fontSize: 18, color: "#aaa", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+            </div>
+            {isOpen && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #E8E5E0" }}>
+                <p style={{ fontSize: 13, color: "#555", margin: "0 0 10px" }}>{step.desc}</p>
+                <div style={{ background: "#FDF6F0", borderRadius: 4, padding: "12px 16px" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#CC0000", marginBottom: 4 }}>{currentRole.icon} Your role: {currentRole.label}</div>
+                  <p style={{ fontSize: 13, margin: 0, lineHeight: 1.5 }}>{step.roles[role]}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Quick Rules */}
+      <div style={{ ...S.card, background: "#fffbf0", border: "1px solid #f0e0c0" }}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 8px", color: "#8a6d3b" }}>Quick Reference</h3>
+        <div style={{ fontSize: 13, color: "#6b5630", lineHeight: 1.7 }}>
+          <div>• Each reviewer attends <strong>minimum 2 classes</strong>; at least <strong>1 joint observation</strong></div>
+          <div>• Reviewee picks 1 reviewer; Coordinator picks 1 reviewer</div>
+          <div>• Classroom Observation Rubric: completed <strong>separately for each visit, by each reviewer</strong></div>
+          <div>• Key Materials Rubric: completed <strong>once by each reviewer</strong></div>
+          <div>• Final written report: reviewers choose to submit a <strong>joint report or separate individual reports</strong></div>
+          <div>• Reviewee has <strong>five (5) business days</strong> for an optional written response. Do not refer to other individuals by name or other means of identification</div>
+          <div>• Signed written assessment, Key Materials Rubric, and all Classroom Observation Rubrics submitted to the Department Head with a copy to the reviewee</div>
+          <div>• <strong>Deadline:</strong> All materials due by the start of the next semester (or at the Department Head’s discretion)</div>
+          <div>• Faculty members must be provided access to their completed evaluations and any resulting summary data</div>
+          <div>• Originals or summary data retained <strong>at least six years</strong></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FillableRubric({ type }) {
+  const isObservation = type === "observation";
+  const rubricData = isObservation ? OBSERVATION_RUBRIC : MATERIALS_RUBRIC;
+  const [header, setHeader] = useState({ course: "", instructor: "", date: "", semester: "", reviewer: "", observationNumber: "", jointObservation: "" });
+  const [ratings, setRatings] = useState({});
+  const [comments, setComments] = useState({});
+  const [overalls, setOveralls] = useState({});
+  const [overallComments, setOverallComments] = useState({});
+  const [openSections, setOpenSections] = useState({});
+  const printRef = useRef();
+
+  const setRating = (sectionIdx, itemIdx, value) => {
+    setRatings(prev => ({ ...prev, [`${sectionIdx}-${itemIdx}`]: value }));
+  };
+
+  const handlePrint = () => {
+    const printContent = printRef.current;
+    const w = window.open("", "_blank");
+    w.document.write(`<!DOCTYPE html><html><head><title>${isObservation ? "Classroom Observation" : "Key Materials"} Rubric</title>
+    <style>
+      body { font-family: 'Times New Roman', serif; font-size: 11pt; max-width: 8in; margin: 0.5in auto; color: #000; }
+      h1 { font-size: 16pt; text-align: center; margin-bottom: 4px; }
+      h2 { font-size: 12pt; margin: 16px 0 6px; border-bottom: 1px solid #000; padding-bottom: 2px; }
+      .header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; margin-bottom: 16px; font-size: 11pt; }
+      .header-grid span { border-bottom: 1px solid #999; padding: 2px 0; }
+      .item { margin: 6px 0; }
+      .item-text { font-size: 10pt; }
+      .rating { font-weight: bold; color: #333; font-size: 10pt; }
+      .comment { margin: 4px 0 8px 12px; font-style: italic; font-size: 10pt; color: #444; }
+      .overall { font-weight: bold; margin: 8px 0; font-size: 11pt; }
+      @media print { body { margin: 0.5in; } }
+    </style></head><body>`);
+    w.document.write(`<h1>ARE Peer Review: ${isObservation ? "Classroom Observation" : "Key Materials"} Rubric</h1>`);
+    w.document.write(`<p><strong>Directions:</strong> ${isObservation
+      ? "This form is for classroom observations. Each reviewer completes this form separately for each classroom observation. Comments are required for “No Evidence” or “Partial” implementation levels and are encouraged when the instructor has demonstrated evidence of superior content creation, delivery, or design as well as innovative, creative, or reimagined methods."
+      : "This form is for evaluating course materials and not for classroom observations. Each reviewer completes this form separately. Comments are required for “Does Not Meet Requirements” and “Partially Meets Requirements” implementation levels and are encouraged when the instructor has demonstrated evidence of superior content creation, delivery, or design as well as innovative, creative, or reimagined methods."
+    }</p>`);
+    w.document.write(`<div class="header-grid">
+      <div><strong>Course Number & Title:</strong> <span>${header.course || "_______________"}</span></div>
+      <div><strong>${isObservation ? "Date of Visit" : "Date"}:</strong> <span>${header.date || "_______________"}</span></div>
+      <div><strong>Instructor:</strong> <span>${header.instructor || "_______________"}</span></div>
+      <div><strong>Semester:</strong> <span>${header.semester || "_______________"}</span></div>
+      <div><strong>Reviewer(s):</strong> <span>${header.reviewer || "_______________"}</span></div>
+      ${isObservation ? `<div><strong>Observation #:</strong> <span>${header.observationNumber || "_______________"}</span></div><div><strong>Joint observation?</strong> <span>${header.jointObservation || "Yes / No"}</span></div>` : ""}
+    </div>`);
+    rubricData.forEach((section, si) => {
+      w.document.write(`<h2>${section.section}</h2>`);
+      section.items.forEach((rawItem, ii) => {
+        const itemText = typeof rawItem === "string" ? rawItem : rawItem.text;
+        const r = ratings[`${si}-${ii}`];
+        const c = comments[`${si}-${ii}`];
+        w.document.write(`<div class="item"><span class="item-text">${si + 1}.${ii + 1} ${itemText}</span><br/><span class="rating">Rating: ${r || "_______________"}</span></div>`);
+        if (c) w.document.write(`<div class="comment">Comments: ${c}</div>`);
+      });
+      const ov = overalls[si];
+      const oc = overallComments[si];
+      w.document.write(`<div class="overall">Overall Section Rating: ${ov || "_______________"}</div>`);
+      if (oc) w.document.write(`<div class="comment">${oc}</div>`);
+    });
+    w.document.write(`
+      <div style="margin-top: 36px; border-top: 1px solid #000; padding-top: 16px;">
+        <p style="font-size: 10pt; font-style: italic; margin-bottom: 16px;">The faculty member’s signature acknowledges that the peer review occurred. It does not indicate agreement with the content of the reviewer’s assessment. If the faculty member chooses not to sign, they forfeit the opportunity to provide a written response (Reg 6.3).</p>
+        <p>Reviewer Signature: ________________________________ &nbsp;&nbsp; Date: ______________</p>
+        <p>Instructor Signature: ________________________________ &nbsp;&nbsp; Date: ______________</p>
+      </div>
+    `);
+    w.document.write(`</body></html>`);
+    w.document.close();
+    w.print();
+  };
+
+  const totalItems = rubricData.reduce((sum, s) => sum + s.items.length, 0);
+  const completedItems = Object.keys(ratings).length;
+  const pct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+  return (
+    <div ref={printRef}>
+      <div style={S.card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          <h2 style={{ ...S.cardTitle, margin: 0 }}>{isObservation ? "Classroom Observation" : "Key Materials"} Rubric</h2>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: "#666" }}>{completedItems}/{totalItems} items rated ({pct}%)</span>
+            <button style={S.btn("primary")} onClick={handlePrint}>Print / Save PDF</button>
+          </div>
+        </div>
+        <p style={{ fontSize: 12, color: "#666", margin: "8px 0 0" }}>
+          {isObservation
+            ? "This form is for classroom observations. Each reviewer completes this form separately for each classroom observation. Comments are required for \"No Evidence\" or \"Partial\" implementation levels and are encouraged when the instructor has demonstrated evidence of superior content creation, delivery, or design as well as innovative, creative, or reimagined methods."
+            : "This form is for evaluating course materials and not for classroom observations. Each reviewer completes this form separately. Comments are required for \"Does Not Meet Requirements\" and \"Partially Meets Requirements\" implementation levels and are encouraged when the instructor has demonstrated evidence of superior content creation, delivery, or design as well as innovative, creative, or reimagined methods."
+          }
+        </p>
+      </div>
+
+      {/* Header Fields */}
+      <div style={S.card}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
+          {([
+            ["course", "Course Number & Title"],
+            ["date", isObservation ? "Date of Visit" : "Date"],
+            ["instructor", "Instructor"],
+            ["semester", "Semester"],
+            ["reviewer", "Reviewer(s)"],
+            ...(isObservation ? [["observationNumber", "Observation #"], ["jointObservation", "Joint observation? Yes / No"]] : [])
+          ]).map(([key, label]) => (
+            <div key={key} style={!isObservation && key === "reviewer" ? { gridColumn: "1 / -1" } : {}}>
+              <label style={S.label}>{label}</label>
+              <input style={S.input} value={header[key]} onChange={e => setHeader(prev => ({ ...prev, [key]: e.target.value }))} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Sections */}
+      {rubricData.map((section, si) => {
+        const sectionItemCount = section.items.length;
+        const sectionRatedCount = section.items.filter((_, ii) => ratings[`${si}-${ii}`]).length;
+        const sectionComplete = sectionRatedCount === sectionItemCount;
+        const [collapsed, setCollapsed] = [openSections[si] === false, (val) => setOpenSections(prev => ({ ...prev, [si]: val ? false : true }))];
+
+        return (
+        <div key={si} style={S.card}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", marginBottom: collapsed ? 0 : 12 }}
+               onClick={() => setCollapsed(!collapsed)}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: sectionComplete ? "#27864a" : sectionRatedCount > 0 ? "#d4880f" : "#D4D0CA", flexShrink: 0 }} />
+            <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "#2B2B2B", flex: 1 }}>{section.section}</h3>
+            <span style={{ fontSize: 11, color: "#999", fontWeight: 500 }}>{sectionRatedCount}/{sectionItemCount}</span>
+            <span style={{ fontSize: 16, color: "#aaa", transform: collapsed ? "rotate(-90deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+          </div>
+          {!collapsed && (
+            <>
+            <div style={{ borderTop: "2px solid #CC0000", marginBottom: 16 }} />
+            {section.items.map((rawItem, ii) => {
+            const itemText = typeof rawItem === "string" ? rawItem : rawItem.text;
+            const itemNA = typeof rawItem === "object" && rawItem.na;
+            const key = `${si}-${ii}`;
+            const isRated = !!ratings[key];
+            const needsComment = ratings[key] === "Does Not Meet" || ratings[key] === "Partially Meets" || ratings[key] === "No Evidence" || ratings[key] === "Partial";
+            return (
+              <div key={ii} style={{ padding: "14px 16px", marginBottom: 8, background: isRated ? "#FAFAF8" : "#fff", borderRadius: 4, border: needsComment && !comments[key] ? "1px solid #d4880f40" : "1px solid #F2F0EC" }}>
+                <p style={{ fontSize: 13, margin: "0 0 10px", lineHeight: 1.5 }}>
+                  <span style={{ color: "#CC0000", fontWeight: 700, marginRight: 6 }}>{si + 1}.{ii + 1}</span>{itemText}
+                </p>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: needsComment || comments[key] ? 10 : 0 }}>
+                  {section.hasNotObserved && (
+                    <label style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 4, color: "#888", padding: "4px 8px", background: ratings[key] === "In course, not observed" ? "#F2F0EC" : "transparent", borderRadius: 3, cursor: "pointer" }}>
+                      <input type="radio" name={key} style={S.rubricRadio} checked={ratings[key] === "In course, not observed"} onChange={() => setRating(si, ii, "In course, not observed")} />
+                      In course, not observed
+                    </label>
+                  )}
+                  {(section.hasNA || itemNA) && (
+                    <label style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 4, color: "#888", padding: "4px 8px", background: ratings[key] === "N/A" ? "#F2F0EC" : "transparent", borderRadius: 3, cursor: "pointer" }}>
+                      <input type="radio" name={key} style={S.rubricRadio} checked={ratings[key] === "N/A"} onChange={() => setRating(si, ii, "N/A")} />
+                      N/A
+                    </label>
+                  )}
+                  {section.levels.map(level => (
+                    <label key={level} style={{ fontSize: 11, display: "flex", alignItems: "center", gap: 4, fontWeight: ratings[key] === level ? 700 : 400, padding: "4px 8px", background: ratings[key] === level ? "#FDF6F0" : "transparent", borderRadius: 3, cursor: "pointer" }}>
+                      <input type="radio" name={key} style={S.rubricRadio} checked={ratings[key] === level} onChange={() => setRating(si, ii, level)} />
+                      {level}
+                    </label>
+                  ))}
+                </div>
+                {(needsComment || comments[key]) && (
+                  <div>
+                    {needsComment && !comments[key] && <p style={{ fontSize: 11, color: "#d4880f", margin: "0 0 4px", fontWeight: 600 }}>Comment required for this rating</p>}
+                    <textarea style={{ ...S.textarea, minHeight: 36, fontSize: 12 }} placeholder="Comments…" value={comments[key] || ""} onChange={e => setComments(prev => ({ ...prev, [key]: e.target.value }))} />
+                  </div>
+                )}
+                {!needsComment && !comments[key] && isRated && (
+                  <button style={{ background: "none", border: "none", color: "#999", fontSize: 11, cursor: "pointer", padding: 0, marginTop: 4 }}
+                    onClick={() => setComments(prev => ({ ...prev, [key]: " " }))}>+ Add comment</button>
+                )}
+              </div>
+            );
+          })}
+          {/* Overall Section Rating */}
+          <div style={{ marginTop: 8, paddingTop: 12, borderTop: "2px solid #E8E5E0", background: "#FAF8F5", margin: "8px -24px -20px", padding: "12px 24px 16px", borderRadius: "0 0 4px 4px" }}>
+            <label style={{ ...S.label, fontSize: 14 }}>Overall {section.section} Rating</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+              {(section.overallLevels || section.levels).map(level => (
+                <label key={level} style={{ fontSize: 12, display: "flex", alignItems: "center", gap: 4, fontWeight: overalls[si] === level ? 700 : 400, padding: "4px 8px", background: overalls[si] === level ? "#FDF6F0" : "transparent", borderRadius: 3, cursor: "pointer" }}>
+                  <input type="radio" name={`overall-${si}`} style={S.rubricRadio} checked={overalls[si] === level} onChange={() => setOveralls(prev => ({ ...prev, [si]: level }))} />
+                  {level}
+                </label>
+              ))}
+            </div>
+            <textarea style={{ ...S.textarea, minHeight: 36, fontSize: 12 }} placeholder="Overall section comments…" value={overallComments[si] || ""} onChange={e => setOverallComments(prev => ({ ...prev, [si]: e.target.value }))} />
+          </div>
+          </>
+          )}
+        </div>
+      );
+      })}
+    </div>
+  );
+}
+
+function Rubrics() {
+  const [tab, setTab] = useState("materials");
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "2px solid #E8E5E0" }}>
+        <button style={S.navBtn(tab === "materials")} onClick={() => setTab("materials")}>Key Materials Rubric</button>
+        <button style={S.navBtn(tab === "observation")} onClick={() => setTab("observation")}>Classroom Observation Rubric</button>
+      </div>
+      <FillableRubric type={tab} />
+    </div>
+  );
+}
+
+function EmailTemplates() {
+  const [selected, setSelected] = useState("kickoff");
+  const [fields, setFields] = useState({});
+  const tmpl = EMAIL_TEMPLATES.find(t => t.id === selected);
+  const generated = tmpl.template(fields);
+
+  return (
+    <div>
+      <div style={S.card}>
+        <h2 style={S.cardTitle}>Email Templates</h2>
+        <p style={{ fontSize: 13, color: "#666", marginBottom: 12 }}>Ready-to-use drafts for each stage of the process. Fill in names and copy.</p>
+        <select style={S.select} value={selected} onChange={e => { setSelected(e.target.value); setFields({}); }}>
+          {EMAIL_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+        </select>
+      </div>
+      <div style={S.card}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 12px" }}>{tmpl.title}</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px", marginBottom: 16 }}>
+          {tmpl.fields.map(f => (
+            <div key={f}>
+              <label style={S.label}>{f.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase())}</label>
+              <input style={S.input} placeholder={f.replace(/([A-Z])/g, " $1")} value={fields[f] || ""} onChange={e => setFields(prev => ({ ...prev, [f]: e.target.value }))} />
+            </div>
+          ))}
+        </div>
+        <div style={{ background: "#FAF8F5", borderRadius: 4, padding: 16, whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, fontFamily: "inherit", border: "1px solid #E8E5E0" }}>
+          {generated}
+        </div>
+        <button style={{ ...S.btn("primary"), marginTop: 12 }} onClick={() => { navigator.clipboard.writeText(generated); }}>
+          Copy to Clipboard
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CoordinatorDashboard({ onResetPin }) {
+  const [roster, setRoster] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editIdx, setEditIdx] = useState(null);
+  const [form, setForm] = useState({ name: "", rank: "", lastReview: "", notes: "" });
+
+  useEffect(() => { loadRoster().then(d => { setRoster(d); setLoading(false); }); }, []);
+  const persist = useCallback(async (newRoster) => { setRoster(newRoster); await saveRoster(newRoster); }, []);
+
+  const handleSave = () => {
+    if (!form.name || !form.rank) return;
+    const entry = { ...form, id: editIdx !== null ? roster[editIdx].id : Date.now().toString() };
+    let updated;
+    if (editIdx !== null) {
+      updated = [...roster]; updated[editIdx] = entry;
+    } else {
+      updated = [...roster, entry];
+    }
+    persist(updated);
+    setForm({ name: "", rank: "", lastReview: "", notes: "" });
+    setShowForm(false);
+    setEditIdx(null);
+  };
+
+  const handleDelete = (idx) => {
+    if (!confirm("Remove this faculty member from the roster?")) return;
+    persist(roster.filter((_, i) => i !== idx));
+  };
+
+  const handleEdit = (idx) => {
+    setForm(roster[idx]);
+    setEditIdx(idx);
+    setShowForm(true);
+  };
+
+  const handleExport = () => {
+    const now = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    let text = `ARE Peer Review Status Report, ${now}\n${"=".repeat(60)}\n\n`;
+    const sorted = [...roster].sort((a, b) => {
+      const sa = getNextReviewDate(a.rank, a.lastReview).status;
+      const sb = getNextReviewDate(b.rank, b.lastReview).status;
+      const order = { overdue: 0, upcoming: 1, unknown: 2, clear: 3 };
+      return (order[sa] ?? 4) - (order[sb] ?? 4);
+    });
+    sorted.forEach(f => {
+      const result = getNextReviewDate(f.rank, f.lastReview);
+      const rankLabel = RANKS.find(r => r.value === f.rank)?.label || f.rank;
+      text += `${f.name} (${rankLabel})\n`;
+      text += `  Status: ${statusLabel(result.status)} | ${result.message}\n`;
+      text += `  Last Review: ${f.lastReview ? new Date(f.lastReview).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "None on file"}\n`;
+      if (f.notes) text += `  Notes: ${f.notes}\n`;
+      text += `\n`;
+    });
+    text += `\nGenerated by ARE Peer Review Tracker`;
+    navigator.clipboard.writeText(text);
+    alert("Report copied to clipboard.");
+  };
+
+  if (loading) return <div style={S.card}><p>Loading roster…</p></div>;
+
+  const overdueCount = roster.filter(f => getNextReviewDate(f.rank, f.lastReview).status === "overdue").length;
+  const upcomingCount = roster.filter(f => getNextReviewDate(f.rank, f.lastReview).status === "upcoming").length;
+
+  return (
+    <div>
+      <div style={S.card}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          <h2 style={{ ...S.cardTitle, margin: 0 }}>Coordinator Workspace</h2>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={S.btn("ghost")} onClick={handleExport}>Copy Status Report</button>
+            <button style={S.btn("primary")} onClick={() => { setShowForm(true); setEditIdx(null); setForm({ name: "", rank: "", lastReview: "", notes: "" }); }}>+ Add Faculty</button>
+          </div>
+        </div>
+        {roster.length > 0 && (
+          <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
+            {overdueCount > 0 && <span style={S.badge("#c0392b")}>{overdueCount} Overdue</span>}
+            {upcomingCount > 0 && <span style={S.badge("#d4880f")}>{upcomingCount} Due Soon</span>}
+            <span style={S.badge("#27864a")}>{roster.length - overdueCount - upcomingCount} On Track / No Data</span>
+          </div>
+        )}
+      </div>
+
+      {showForm && (
+        <div style={{ ...S.card, border: "1px solid #CC000040", background: "#FFF8F6" }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 12px" }}>{editIdx !== null ? "Edit" : "Add"} Faculty Member</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 16px" }}>
+            <div>
+              <label style={S.label}>Name</label>
+              <input style={S.input} value={form.name} onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Last, First" />
+            </div>
+            <div>
+              <label style={S.label}>Rank</label>
+              <select style={S.select} value={form.rank} onChange={e => setForm(prev => ({ ...prev, rank: e.target.value }))}>
+                <option value="">Select…</option>
+                {RANKS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={S.label}>Last Completed Review</label>
+              <input type="date" style={S.input} value={form.lastReview} onChange={e => setForm(prev => ({ ...prev, lastReview: e.target.value }))} />
+            </div>
+            <div>
+              <label style={S.label}>Notes (optional)</label>
+              <input style={S.input} value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="e.g., Tenure track year 3" />
+              <p style={{ fontSize: 11, color: "#999", margin: "-8px 0 4px", fontStyle: "italic" }}>Scheduling notes only. Do not store evaluation content or confidential information.</p>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button style={S.btn("primary")} onClick={handleSave}>{editIdx !== null ? "Update" : "Add to Roster"}</button>
+            <button style={S.btn("ghost")} onClick={() => { setShowForm(false); setEditIdx(null); }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {roster.length === 0 ? (
+        <div style={{ ...S.card, textAlign: "center", color: "#888", padding: 40 }}>
+          <p style={{ fontSize: 15 }}>No faculty on the roster yet.</p>
+          <p style={{ fontSize: 13 }}>Add faculty members to start tracking their peer review schedules.</p>
+        </div>
+      ) : (
+        roster.map((f, idx) => {
+          const result = getNextReviewDate(f.rank, f.lastReview);
+          const rankLabel = RANKS.find(r => r.value === f.rank)?.label || f.rank;
+          return (
+            <div key={f.id || idx} style={{ ...S.card, display: "flex", alignItems: "center", gap: 16, padding: "14px 20px" }}>
+              <div style={{
+                width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+                background: statusColor(result.status),
+                boxShadow: result.status === "overdue" ? `0 0 6px ${statusColor(result.status)}60` : "none"
+              }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{f.name}</div>
+                <div style={{ fontSize: 12, color: "#888" }}>
+                  {rankLabel} · Last review: {f.lastReview ? new Date(f.lastReview).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "None on file"}
+                  {f.notes && ` · ${f.notes}`}
+                </div>
+              </div>
+              <span style={S.badge(statusColor(result.status))}>{statusLabel(result.status)}</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                <button onClick={() => handleEdit(idx)} style={{ ...S.btn("ghost"), padding: "6px 10px", fontSize: 12 }}>Edit</button>
+                <button onClick={() => handleDelete(idx)} style={{ ...S.btn("ghost"), padding: "6px 10px", fontSize: 12, color: "#c0392b" }}>✕</button>
+              </div>
+            </div>
+          );
+        })
+      )}
+
+      <div style={{ borderTop: "2px solid #E8E5E0", margin: "24px 0 16px" }} />
+      <EmailTemplates />
+
+      <div style={{ ...S.card, background: "#FAF8F5", border: "1px dashed #ccc" }}>
+        <p style={{ fontSize: 12, color: "#888", margin: 0 }}>
+          <strong>Note:</strong> This roster is for your records as Coordinator. Faculty are responsible for checking their own status using the "Am I Due?" tab. Use "Copy Status Report" to generate a summary for the Department Head when needed.
+        </p>
+        <button style={{ ...S.btn("ghost"), fontSize: 11, marginTop: 8, color: "#999" }} onClick={onResetPin}>Change Workspace PIN</button>
+      </div>
+    </div>
+  );
+}
+
+
+function Guidelines() {
+  const procedureSteps = [
+    "Step 1: Initiation. The faculty member determines they are due for a peer review and contacts the Peer Review Coordinator to begin the process. The course to be reviewed is at the discretion of the Department Head.",
+    "Step 2: Reviewer Assignment. The reviewee selects one peer reviewer; the Peer Review Coordinator selects the second. Reviewers should be mutually agreed upon, pending resolution by the department chair or Dean if there is disagreement. The Coordinator sends an introductory email with these guidelines and both rubrics.",
+    "Step 3: Pre-Observation Meeting. Reviewers meet with the reviewee (in person or via Zoom) to learn the course objectives and become aware of the range of methods, materials, and media used to achieve those objectives. The reviewee grants reviewers access to the LMS/course website if applicable. The reviewee or a reviewer emails the Peer Review Coordinator to confirm that the pre-observation meeting has been completed.",
+    "Step 4: Classroom Observations. Each reviewer attends a minimum of two class sessions. At least one observation must be joint (both reviewers present). Observations should be spaced to allow the instructor to incorporate feedback. Reviewers complete the Classroom Observation Rubric separately for each visit.",
+    "Step 5: Review of Key Materials. Reviewers evaluate course materials for appropriateness, accuracy, currency of content, assessment strategies, and level of rigor. Materials include the syllabus, exams, instructional materials (videos, handouts, etc.), project instructions, case studies, homework, and examples of student work. Reviewers also review electronic interactions between students and the instructor as applicable, including course announcements, discussion forums, and feedback. Reviewers may request additional information from the reviewee as needed. Each reviewer completes the Key Materials Rubric once.",
+    "Step 6: Post-Observation Debrief. Reviewers meet with the reviewee (in person or via Zoom) to discuss the conclusions of their observations and materials review. The reviewee may offer additional insights. The reviewee or a reviewer emails the Peer Review Coordinator to confirm that the debrief has been completed.",
+    "Step 7: Final Written Report. Reviewers complete a written assessment of class observations and learning materials and share the assessment with the instructor. Reviewers may submit a joint final written report or separate individual reports. The signed written assessment, Key Materials Rubric, and all Classroom Observation Rubrics are submitted to the Department Head with a copy to the reviewee.",
+    "Step 8: Record Keeping. All completed materials are filed in the faculty member’s personnel file. Faculty members must be provided access to their completed evaluations and any resulting summary data. Originals or summary data must be retained for at least six years."
+  ];
+
+  return (
+    <div>
+      <div style={S.card}>
+        <h2 style={S.cardTitle}>ARE Peer Review of Teaching Guidelines</h2>
+        <p style={{ fontSize: 13, color: "#666", margin: 0 }}>
+          Department of Agricultural &amp; Resource Economics · NC State University · Updated June 2026 · Consistent with NC State Regulation 05.20.10 (Revised February 3, 2026)
+        </p>
+      </div>
+
+      <div style={S.card}>
+        <h3 style={S.cardTitle}>1. Definition of Peer Review of Teaching</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Peer review of teaching is the evaluation, by colleagues or peers, of all teaching-related activities. It may serve either formative purposes (supporting professional development) or summative purposes (informing personnel decisions) and should encompass a variety of teaching materials, classroom practices, and student interactions.</p>
+
+        <h3 style={S.cardTitle}>2. Purpose</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Teaching is best understood by peers who are familiar with the subject matter and context of a course. Peer review yields information not available through student evaluations alone and should help the instructor understand what students are experiencing, identify avenues for curriculum improvement, and create mentorship opportunities through collaborative discussion about teaching.</p>
+      </div>
+
+      <div style={S.card}>
+        <h3 style={S.cardTitle}>3. Frequency of Peer Reviews</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Peer review of teaching is governed by NC State Regulation 05.20.10. The table below summarizes the minimum intervals at which faculty must be reviewed.</p>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead><tr>{["Rank", "Requirement (Reg 05.20.10)", "Key Details"].map(h => <th key={h} style={{ textAlign: "left", padding: 8, borderBottom: "2px solid #E8E5E0", background: "#FAF8F5" }}>{h}</th>)}</tr></thead>
+            <tbody>
+              <tr><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Assistant Professor</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Minimum 3 peer reviews before tenure, with at least 1 before reappointment.</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>It is recommended that each review be conducted in a separate academic year (Reg 3.3.1).</td></tr>
+              <tr><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Associate Professor</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>First peer review after tenure must occur between the 2nd and 3rd year after tenure is granted. Subsequent reviews aligned with post-tenure review every 5 years.</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Minimum 2 reviews required before promotion to full professor, each in a separate academic year (Reg 3.3.2).</td></tr>
+              <tr><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Full Professor</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Every 5 years, aligned with the post-tenure review cycle.</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Should occur no later than between the 2nd and 3rd year after each post-tenure review (Reg 3.3.3).</td></tr>
+              <tr><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>NTT / Professional Faculty (Years 1–3, ≥0.75 FTE)</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Peer review required each year for the first three years of employment.</td><td style={{ padding: 8, borderBottom: "1px solid #E8E5E0" }}>Reg 3.3.4.</td></tr>
+              <tr><td style={{ padding: 8 }}>NTT / Professional Faculty (Year 4+, ≥0.75 FTE)</td><td style={{ padding: 8 }}>Every 3–5 years. Once professor rank is achieved, every 5 years or as necessary for contract renewal, whichever is longer.</td><td style={{ padding: 8 }}>Reg 3.3.4.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style={{ fontSize: 13, lineHeight: 1.6, marginTop: 12 }}>Faculty are responsible for tracking their own review status. The Peer Review Coordinator does not provide individual notifications. Use the ARE Peer Review app or consult Reg 05.20.10 directly to determine when your next review is due.</p>
+      </div>
+
+      <div style={S.card}>
+        <h3 style={S.cardTitle}>4. Instruments for Peer Review</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Per Regulation 05.20.10, the peer evaluation instrument must address the wide range of strategies, media, and materials used in achieving learning objectives. It must include categories such as instructor organization, instructional strategies, choice of content, mastery of content, presentation skills, instructional materials and media, interaction with students, and additional items appropriate for laboratory, clinic, studio, or field settings. The instrument must also include a section for comments and other observations relevant to the discipline or type of class.</p>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>ARE uses two rubrics:</strong></p>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Key Materials Rubric: evaluates course materials, assessment, feedback and grading, and student interaction and engagement. Each reviewer completes this rubric once.</p>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Classroom Observation Rubric: evaluates in-class teaching. Each reviewer completes this rubric separately for each classroom observation.</p>
+      </div>
+
+      <div style={S.card}>
+        <h3 style={S.cardTitle}>5. Eligible Peer Reviewers</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Two peer reviewers are required. The reviewee selects one; the Peer Review Coordinator selects the other. Reviewers may be colleagues of any rank, mutually agreed upon by the faculty member and the department head or Peer Review Coordinator, pending resolution by the department chair or Dean if there is disagreement. Reviewers may be selected from inside or outside the department. In highly specialized disciplines, it may be necessary to identify colleagues from outside the department who can provide the required insights.</p>
+
+        <h3 style={S.cardTitle}>6. Confidentiality and Access</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Completed peer evaluation instruments and resulting summary data are confidential and become part of the faculty member’s personnel file. Faculty members must be provided access to their own completed evaluations and any summary data resulting from those evaluations.</p>
+      </div>
+
+      <div style={S.card}>
+        <h3 style={S.cardTitle}>7. Procedures for Peer Evaluation</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>Regulation 05.20.10 requires that peer review include more than observation of classroom teaching. The review should include (as applicable) visits to the classroom or course website, review of key media and materials, review of electronic interactions between students and instructor, and review of learning materials such as the syllabus, exams, handouts, electronic materials, and examples of student work. The written assessment is discussed with the instructor by the evaluator, signed by both parties, and submitted to the department head with a copy to the instructor.</p>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}><strong>The ARE peer review process:</strong></p>
+        {procedureSteps.map((step, i) => (
+          <div key={i} style={{ padding: "8px 12px", background: i % 2 ? "#fff" : "#FAF8F5", border: "1px solid #F2F0EC", borderRadius: 4, marginBottom: 6, fontSize: 13, lineHeight: 1.55 }}>{step}</div>
+        ))}
+      </div>
+
+      <div style={S.card}>
+        <h3 style={S.cardTitle}>8. Signatures and Optional Response</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>The written assessment must be signed by the reviewer(s) and the reviewee and submitted to the Department Head with a copy to the reviewee.</p>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>The faculty member’s signature acknowledges that the peer review occurred. It does not indicate agreement with the content of the reviewer’s assessment.</p>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>If the faculty member chooses not to sign acknowledging the review, they forfeit the opportunity to provide a written response (Reg 6.3).</p>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>The reviewee may submit an optional written response within five (5) business days of receiving the reviewer’s written assessment. The response should address the reviewers’ conclusions or provide additional context. The reviewee should not refer to other individuals by name or other means of identification. This response will be included alongside the reviewer’s written assessment in the faculty member’s personnel file.</p>
+
+        <h3 style={S.cardTitle}>9. Deadline</h3>
+        <p style={{ fontSize: 13, lineHeight: 1.6 }}>The final written report, Key Materials Rubric, and Classroom Observation Rubrics are due to the Department Head by the start of the next semester or at the discretion of the Department Head.</p>
+      </div>
+    </div>
+  );
+}
+
+function ReportWritingGuide() {
+  const [openSection, setOpenSection] = useState(0);
+
+  const sections = [
+    {
+      title: "Purpose of the Written Report",
+      content: `The final written report is a narrative assessment that synthesizes your observations and materials review into a cohesive evaluation. It is not a repeat of the rubrics. It interprets and contextualizes what the rubrics capture. The rubrics document what you observed; the report explains what it means and why it matters.
+
+The report becomes part of the faculty member's personnel file and may be used in reappointment, promotion, and tenure decisions. Write with that audience in mind: colleagues and administrators who were not in the room.`
+    },
+    {
+      title: "Report Structure",
+      content: null,
+      structured: [
+        { heading: "Header", detail: "Include the instructor's name, course number and title, semester, and the names of both reviewers. Note the dates of all classroom observations and the pre- and post-observation meeting dates." },
+        { heading: "Course Context", detail: "Briefly describe the course: level, enrollment, format (lecture, lab, seminar), and any relevant context the instructor shared during the pre-observation meeting. This grounds the evaluation for readers who aren't familiar with the course." },
+        { heading: "Classroom Observations", detail: "Summarize your findings across visits. Organize by theme rather than visit-by-visit. For example, discuss instructional clarity, student engagement, and pacing as threads across your observations rather than narrating each class session separately. Reference specific moments as evidence." },
+        { heading: "Course Materials & Assessment", detail: "Summarize your review of the syllabus, assignments, exams, and other materials. Address alignment between learning objectives, content, and assessments. Note strengths and any areas where materials could be strengthened." },
+        { heading: "Strengths", detail: "Identify what the instructor does well. Be specific: 'effective use of real-world agricultural examples to illustrate supply elasticity' is more useful than 'good examples.'" },
+        { heading: "Recommendations", detail: "Offer constructive, actionable suggestions. Frame them as opportunities rather than deficiencies. Where possible, connect recommendations to specific rubric items." },
+        { heading: "Overall Assessment", detail: "Provide a summary evaluation. This should be consistent with your rubric ratings. If your rubrics show mostly 'Meets' with a few areas of strength, the narrative should reflect that, not read as either a glowing endorsement or a corrective document." },
+      ]
+    },
+    {
+      title: "Integrating the Rubrics",
+      content: `Your rubric ratings and your written report should tell the same story. Here's how to connect them:
+
+The rubrics are your evidence base. As you complete them during observations and materials review, use the comment fields to capture specific examples. These become the raw material for your report.
+
+Reference rubric categories by name in the report. For example: "In the area of Student Assessment (Key Materials Rubric), the instructor's exams demonstrate strong alignment with course objectives and appropriate rigor for a 300-level course."
+
+If a rubric section received a "Partially Meets" or "Does Not Meet" rating, the report must address why. Describe what you observed, what the standard is, and what specific changes would move the rating up. This is where the required comments from those ratings become especially important.
+
+If a section received "Exceeds," highlight what made it exceptional. These specifics help the instructor understand what to continue doing and give the department examples of teaching excellence.
+
+Do not simply list every rubric item and its rating. That is what the rubric itself is for. Instead, identify the 3–5 most important themes across both rubrics and develop those in the report.`
+    },
+    {
+      title: "Language & Tone",
+      content: null,
+      examples: [
+        {
+          label: "Be specific, not vague",
+          weak: "The instructor is knowledgeable.",
+          strong: "The instructor demonstrated deep command of trade policy by fielding student questions about recent tariff changes with detailed, accurate responses and connecting them to the theoretical framework covered in prior weeks."
+        },
+        {
+          label: "Frame recommendations constructively",
+          weak: "The instructor doesn't use enough active learning.",
+          strong: "Incorporating structured active learning (such as think-pair-share or brief problem sets during class) could strengthen student engagement, particularly during the more technical portions of the lecture."
+        },
+        {
+          label: "Ground claims in evidence",
+          weak: "Students seemed disengaged.",
+          strong: "During the second observation, approximately half the class was on laptops during the lecture portion, though engagement increased notably during the case study discussion that followed."
+        },
+        {
+          label: "Acknowledge context",
+          weak: "The syllabus was missing information.",
+          strong: "The syllabus covers most required elements thoroughly. Adding explicit information about student costs for the required field trip and expected time commitments for the group project would bring it fully into compliance with university guidelines."
+        },
+      ]
+    },
+    {
+      title: "Joint vs. Separate Reports",
+      content: `Reviewers may submit either a joint report or separate individual reports.
+
+A joint report works well when both reviewers observed similar strengths and areas for growth and can speak with one voice. It reduces duplication and gives the instructor a single coherent document to respond to. If you write jointly, both reviewers must still sign, and the report should note where (if anywhere) the reviewers' assessments diverged.
+
+Separate reports make sense when reviewers had meaningfully different observations, perhaps due to attending different class sessions, different areas of expertise, or different assessments of the same teaching. Separate reports can provide the instructor with a richer range of perspectives.
+
+Either way, both reviewers submit their own individual rubrics (Classroom Observation Rubric for each visit, Key Materials Rubric once each). The rubrics are always individual even when the report is joint.`
+    },
+    {
+      title: "Submission Checklist",
+      content: null,
+      checklist: [
+        "Signed final written report (joint or separate)",
+        "Key Materials Rubric (one per reviewer)",
+        "Classroom Observation Rubric (one per reviewer per visit, minimum 2 visits each)",
+        "All documents signed by both the reviewee and the reviewer(s)",
+        "Share the written assessment with the instructor before or at submission",
+        "Submit everything together to the Department Head (due by start of next semester or at the Department Head’s discretion)",
+        "Instructor has five (5) business days after receiving the reviewer’s written assessment to submit an optional written response",
+      ]
+    },
+  ];
+
+  return (
+    <div>
+      <div style={S.card}>
+        <h2 style={S.cardTitle}>Writing the Final Report</h2>
+        <p style={{ fontSize: 13, color: "#666", margin: 0 }}>
+          A guide for peer reviewers on how to synthesize your rubric findings into a clear, constructive, and evidence-based written assessment.
+        </p>
+      </div>
+
+      {sections.map((section, si) => {
+        const isOpen = openSection === si;
+        return (
+          <div key={si} style={S.stepCard(isOpen)} onClick={() => setOpenSection(isOpen ? null : si)}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>{section.title}</div>
+              </div>
+              <span style={{ fontSize: 18, color: "#aaa", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▾</span>
+            </div>
+            {isOpen && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #E8E5E0" }} onClick={e => e.stopPropagation()}>
+                {section.content && (
+                  <p style={{ fontSize: 13, color: "#333", margin: 0, lineHeight: 1.7, whiteSpace: "pre-line" }}>{section.content}</p>
+                )}
+                {section.structured && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {section.structured.map((item, i) => (
+                      <div key={i} style={{ padding: "10px 14px", background: "#FDF6F0", borderRadius: 4, borderLeft: "3px solid #CC0000" }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#2B2B2B", marginBottom: 4 }}>{item.heading}</div>
+                        <p style={{ fontSize: 13, color: "#444", margin: 0, lineHeight: 1.6 }}>{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {section.examples && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    {section.examples.map((ex, i) => (
+                      <div key={i}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#2B2B2B", marginBottom: 6 }}>{ex.label}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                          <div style={{ padding: "10px 12px", background: "#fff0f0", borderRadius: 4, fontSize: 12, lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: "#c0392b", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Instead of</div>
+                            <span style={{ color: "#666", fontStyle: "italic" }}>{ex.weak}</span>
+                          </div>
+                          <div style={{ padding: "10px 12px", background: "#f0fff4", borderRadius: 4, fontSize: 12, lineHeight: 1.5 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: "#27864a", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Try</div>
+                            <span style={{ color: "#333" }}>{ex.strong}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {section.checklist && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {section.checklist.map((item, i) => (
+                      <label key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, lineHeight: 1.5, cursor: "pointer" }}>
+                        <input type="checkbox" style={{ marginTop: 3, accentColor: "#CC0000" }} />
+                        <span>{item}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── PIN Lock for Dashboard ──────────────────────────────────────────────────
+async function loadPin() {
+  try {
+    const r = await storage.get("peer-review-pin");
+    return r ? r.value : null;
+  } catch { return null; }
+}
+async function savePin(pin) {
+  try { await storage.set("peer-review-pin", pin); } catch (e) { console.error("Pin save failed", e); }
+}
+
+function LockedDashboard() {
+  const [storedPin, setStoredPin] = useState(null);
+  const [input, setInput] = useState("");
+  const [unlocked, setUnlocked] = useState(false);
+  const [error, setError] = useState("");
+  const [isSetup, setIsSetup] = useState(false);
+  const [confirmPin, setConfirmPin] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPin().then(p => {
+      setStoredPin(p);
+      setIsSetup(!p);
+      setLoading(false);
+    });
+  }, []);
+
+  const handleSetPin = () => {
+    if (input.length < 4) { setError("PIN must be at least 4 characters"); return; }
+    if (input !== confirmPin) { setError("PINs don't match"); return; }
+    savePin(input);
+    setStoredPin(input);
+    setUnlocked(true);
+    setIsSetup(false);
+    setError("");
+  };
+
+  const handleUnlock = () => {
+    if (input === storedPin) {
+      setUnlocked(true);
+      setError("");
+    } else {
+      setError("Incorrect PIN");
+      setInput("");
+    }
+  };
+
+  if (loading) return <div style={S.card}><p>Loading…</p></div>;
+
+  if (unlocked) return <CoordinatorDashboard onResetPin={() => {
+    setUnlocked(false);
+    setIsSetup(true);
+    setStoredPin(null);
+    setInput("");
+    setConfirmPin("");
+  }} />;
+
+  return (
+    <div style={{ maxWidth: 360, margin: "40px auto", textAlign: "center" }}>
+      <div style={S.card}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>🔒</div>
+        <h2 style={{ ...S.cardTitle, textAlign: "center" }}>{isSetup ? "Set a Workspace PIN" : "Coordinator Workspace"}</h2>
+        <p style={{ fontSize: 13, color: "#666", marginBottom: 16 }}>
+          {isSetup
+            ? "Create a PIN to protect the coordinator workspace. You'll need this PIN each time you access it."
+            : "Enter your PIN to access the roster and templates."
+          }
+        </p>
+        <input
+          type="password" style={{ ...S.input, textAlign: "center", fontSize: 20, letterSpacing: 8 }}
+          placeholder={isSetup ? "Create PIN" : "Enter PIN"}
+          value={input} onChange={e => { setInput(e.target.value); setError(""); }}
+          onKeyDown={e => e.key === "Enter" && (isSetup ? (confirmPin ? handleSetPin() : document.getElementById("confirm-pin")?.focus()) : handleUnlock())}
+        />
+        {isSetup && (
+          <input
+            id="confirm-pin" type="password" style={{ ...S.input, textAlign: "center", fontSize: 20, letterSpacing: 8 }}
+            placeholder="Confirm PIN" value={confirmPin}
+            onChange={e => { setConfirmPin(e.target.value); setError(""); }}
+            onKeyDown={e => e.key === "Enter" && handleSetPin()}
+          />
+        )}
+        {error && <p style={{ color: "#c0392b", fontSize: 13, margin: "0 0 8px" }}>{error}</p>}
+        <button style={{ ...S.btn("primary"), width: "100%" }} onClick={isSetup ? handleSetPin : handleUnlock}>
+          {isSetup ? "Set PIN & Enter" : "Unlock"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ────────────────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState("due");
+  const tabs = [
+    { value: "due", label: "Am I Due?" },
+    { value: "workflow", label: "Workflow" },
+    { value: "guidelines", label: "Guidelines" },
+    { value: "rubrics", label: "Rubrics" },
+    { value: "report", label: "Writing the Report" },
+  ];
+
+  return (
+    <div style={S.app}>
+      <div style={S.header}>
+        <div style={S.headerBar}>
+          <h1 style={S.headerTitle}>ARE Peer Review of Teaching</h1>
+          <p style={S.headerSub}>Department of Agricultural & Resource Economics · NC State · Reg 05.20.10</p>
+        </div>
+      </div>
+      <nav style={S.nav}>
+        {tabs.map(t => <button key={t.value} style={S.navBtn(tab === t.value)} onClick={() => setTab(t.value)}>{t.label}</button>)}
+      </nav>
+      {tab === "due" && <AmIDue />}
+      {tab === "workflow" && <WorkflowTimeline />}
+      {tab === "guidelines" && <Guidelines />}
+      {tab === "rubrics" && <Rubrics />}
+      {tab === "report" && <ReportWritingGuide />}
+      {tab === "dashboard" && <LockedDashboard />}
+      {tab !== "dashboard" && (
+        <div style={{ textAlign: "center", marginTop: 32, paddingTop: 16, borderTop: "1px solid #E8E5E0" }}>
+          <button onClick={() => setTab("dashboard")} style={{ background: "none", border: "none", color: "#888", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>
+            Coordinator Access
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+<script>
+  (function () {
+    var src = document.getElementById("app-src").textContent;
+    try {
+      var out = Babel.transform(src, { presets: [["react", { runtime: "classic" }]] }).code;
+      (0, eval)(out);
+    } catch (e) {
+      document.getElementById("root").innerHTML =
+        '<pre style="padding:24px;color:#b7433e;font-family:monospace;white-space:pre-wrap">' +
+        "Failed to start: " + (e && e.message ? e.message : e) + "</pre>";
+      throw e;
+    }
+  })();
+</script>
+</body>
+</html>

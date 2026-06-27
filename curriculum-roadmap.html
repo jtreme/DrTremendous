@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARE/ABM Curriculum Renewal Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js" crossorigin></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#f8f7f5;color:#1a1a1a;-webkit-font-smoothing:antialiased}
+#root{max-width:1200px;margin:0 auto;padding:0 24px 80px}
+button{font-family:inherit}
+input[type="text"]{font-family:inherit}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .25s ease-out}
+@media(max-width:900px){.hero-stats{flex-direction:column !important}.kanban-cols{grid-template-columns:1fr !important;max-height:none !important}}
+
+/* Kanban */
+.kanban-col{border-radius:10px;padding:10px;min-height:120px;transition:background .15s}
+.kanban-col.drag-over{background:rgba(30,42,74,0.06) !important}
+.kanban-card{background:white;border-radius:8px;border:1px solid #e8e5e0;padding:10px 12px;margin-bottom:6px;cursor:grab;transition:box-shadow .12s,opacity .12s;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.06),0 2px 6px rgba(0,0,0,.04)}
+.kanban-card:active{cursor:grabbing}
+.kanban-card.dragging{opacity:.4;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.kanban-card:hover{box-shadow:0 2px 8px rgba(0,0,0,.1),0 4px 12px rgba(0,0,0,.06)}
+.drop-indicator{height:3px;background:#d97706;border-radius:2px;margin:3px 0;transition:opacity .1s}
+#dt-home{position:fixed;top:14px;right:16px;z-index:9999;display:flex;align-items:center;gap:9px;text-decoration:none;font-family:'Source Serif 4',Georgia,serif;font-weight:700;font-size:16px;line-height:1;color:#1a1a1a;background:rgba(255,255,255,0.92);border:1px solid #d4d0ca;padding:6px 12px 6px 8px;border-radius:3px;box-shadow:0 1px 4px rgba(0,0,0,.1);transition:box-shadow .18s,transform .18s}
+#dt-home:hover{box-shadow:3px 3px 0 #d97706;transform:translate(-1px,-1px)}
+#dt-home img{height:25px;width:auto;display:block}
+#dt-home .gold{color:#d97706}
+@media(max-width:640px){#dt-home{font-size:13px}#dt-home img{height:20px}}
+</style>
+</head>
+<body>
+<a id="dt-home" href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous">
+  <img src="trex.png" alt="">
+  <span>Dr.Treme<span class="gold">ndous</span></span>
+</a>
+<div id="root"></div>
+<script type="text/babel">
+
+const DEFAULT_ITEMS = [
+  {id:1,title:"CODA admission requirements redesigned",cat:"degree-audit",status:"completed",action:"completed",pri:"high",desc:"Minimum and preferred criteria formalized for Change of Degree Application.",target:"Completed",notes:"Live in current cycle. 8 admits from 55 applicants, Summer 1 2026."},
+  {id:2,title:"Inactive certificate programs closed",cat:"degree-audit",status:"completed",action:"completed",pri:"medium",desc:"Closed 32AGPCTA and 32ABCTU. Students transferred to 32ABMCTU.",target:"Completed",notes:""},
+  {id:4,title:"Degree audit display list corrections",cat:"degree-audit",status:"completed",action:"completed",pri:"medium",desc:"Removed ARE 433 and ARE 490 from elective display lists. Corrected credit hour errors.",target:"Completed",notes:""},
+  {id:5,title:"Course component types corrected in CIM",cat:"standards",status:"completed",action:"completed",pri:"low",desc:"ARE 490 reclassified as SEM, ARE 492 as INT, ARE 494 as FWK.",target:"Completed",notes:""},
+  {id:7,title:"ARE 255 approved through CIM",cat:"new-courses",status:"completed",action:"completed",pri:"high",desc:"Permanent course number for Spreadsheet Analytics for Agribusiness, replacing ARE 295 special topics.",target:"Completed",notes:"Needs staffing for Spring 2027 launch."},
+  {id:15,title:"Proctoring requirements standardized",cat:"standards",status:"completed",action:"completed",pri:"medium",desc:"In-person final exam requirement established for asynchronous courses through DELTA.",target:"Completed",notes:""},
+  {id:8,title:"Minimum C- in ARE 201 for progression to 301, 336, and 304",cat:"prerequisites",status:"drafting",action:"vote",pri:"high",desc:"Establish ARE 201 as a prerequisite gate. Students must earn C- or better before enrolling in ARE 301, ARE 336, or ARE 304.",target:"Fall 2026",notes:"Student outcome data supports this."},
+  {id:9,title:"MA 114 as prerequisite for ARE 336",cat:"prerequisites",status:"drafting",action:"vote",pri:"high",desc:"Add MA 114 (Introduction to Finite Mathematics) as a formal prerequisite for ARE 336.",target:"Fall 2026",notes:"Discussed in ARE 336 curriculum review with Wang, Fell, Guiteras."},
+  {id:24,title:"ARE 304 as prerequisite for all 400-level courses",cat:"prerequisites",status:"drafting",action:"vote",pri:"high",desc:"Require ARE 304 before enrollment in any 400-level ARE course.",target:"Fall 2026",notes:""},
+  {id:27,title:"Minimum C- in ARE 304 for progression to 400-level",cat:"prerequisites",status:"drafting",action:"vote",pri:"high",desc:"Require C- or better in ARE 304 to proceed to 400-level ARE courses. Two-gate sequence with ARE 201.",target:"Fall 2026",notes:""},
+  {id:26,title:"ACC 210 as prerequisite for ARE 321",cat:"prerequisites",status:"drafting",action:"vote",pri:"medium",desc:"Add ACC 210 as a prerequisite for ARE 321, aligning with business school accounting requirements.",target:"Fall 2026",notes:""},
+  {id:25,title:"Remove BUS 321 as substitute for ARE 321",cat:"degree-audit",status:"not-started",action:"vote",pri:"medium",desc:"Eliminate BUS 321 as an accepted substitute or cross-listed option for ARE 321.",target:"Fall 2026",notes:""},
+  {id:29,title:"Remove EC 205 from all ARE prerequisite lists",cat:"prerequisites",status:"not-started",action:"vote",pri:"high",desc:"EC 205 is not equivalent to ARE 201. Remove from all course descriptions and prerequisite lists.",target:"Fall 2026",notes:"Batch CIM update touching many courses."},
+  {id:30,title:"Accept EC 201 as prerequisite for ARE 270",cat:"prerequisites",status:"not-started",action:"vote",pri:"low",desc:"Add EC 201 as an accepted prerequisite for ARE 270.",target:"Fall 2026",notes:""},
+  {id:3,title:"Restrict entrepreneurship minor to non-majors",cat:"degree-audit",status:"drafting",action:"vote",pri:"high",desc:"ABM majors should not be eligible to earn the minor using the same credits as the major.",target:"Fall 2026",notes:"Proposed to David Crouse."},
+  {id:21,title:"Elevate ARE 395 to 400-level course number",cat:"new-courses",status:"not-started",action:"vote",pri:"medium",desc:"Assign ARE 395 a permanent 400-level course number.",target:"Fall 2026",notes:""},
+  {id:19,title:"Restructure entrepreneurship minor electives and requirements",cat:"degree-audit",status:"drafting",action:"discussion",pri:"high",desc:"Choose specific electives, change options, remove 400-level requirement, replace ARE 270 with ARE 304, add courses outside ARE.",target:"Fall 2026",notes:"Content and structure side of the minor overhaul."},
+  {id:18,title:"Design entrepreneurship concentration for ABM majors",cat:"concentrations",status:"drafting",action:"discussion",pri:"high",desc:"Create formal Entrepreneurship concentration within ABM major.",target:"2026-2027",notes:"Actively in progress."},
+  {id:28,title:"Revise restricted and technical electives list",cat:"degree-audit",status:"not-started",action:"discussion",pri:"medium",desc:"Review and update the restricted and technical electives list for the ABM major.",target:"Fall 2026",notes:""},
+  {id:22,title:"Redesign ARE 412 and ARE 413 course structure",cat:"standards",status:"not-started",action:"discussion",pri:"medium",desc:"Review and redesign the content and structure of ARE 412 and ARE 413.",target:"2026-2027",notes:""},
+  {id:23,title:"Explore new course on team-based professional skills",cat:"new-courses",status:"not-started",action:"discussion",pri:"low",desc:"Assess demand and feasibility of a course focused on teamwork and professional group dynamics.",target:"TBD",notes:"Exploratory."},
+  {id:31,title:"Map and expand skills emphasis across the major",cat:"standards",status:"not-started",action:"discussion",pri:"high",desc:"Present the course objectives map. Identify where presentations, oral, written, and data skills need to increase.",target:"Fall 2026",notes:"Requires the Governance Dashboard as foundation."},
+  {id:17,title:"Develop career-aligned major concentrations",cat:"concentrations",status:"not-started",action:"discussion",pri:"high",desc:"Design concentrations in analytics, marketing, management, and law/policy.",target:"2027-2028",notes:""},
+  {id:11,title:"Prerequisite chain documentation and enforcement",cat:"prerequisites",status:"drafting",action:"info",pri:"high",desc:"Document and enforce: ARE 201 \u2192 336 \u2192 EC 202 & 301 \u2192 433.",target:"Fall 2026",notes:"Students enrolling in courses they are not prepared for."},
+  {id:6,title:"Publish semester-by-semester degree plan",cat:"degree-audit",status:"drafting",action:"info",pri:"medium",desc:"Standard 8-semester plan for advising use. Built but not yet published.",target:"Fall 2026",notes:""},
+  {id:12,title:"Establish shared learning outcomes across multi-section courses",cat:"standards",status:"not-started",action:"drafting",pri:"high",desc:"ARE 301 and 304 have multiple instructors teaching divergent content. Write common objectives.",target:"Fall 2026",notes:"Collecting syllabi from Raff, Greenlee, Vukina."},
+  {id:10,title:"Convert remaining special topics to permanent course numbers",cat:"new-courses",status:"not-started",action:"drafting",pri:"medium",desc:"Identify special topics sections needing permanent catalog numbers.",target:"2026-2027",notes:""},
+  {id:13,title:"Build and publish multi-semester course rotation schedule",cat:"standards",status:"not-started",action:"drafting",pri:"medium",desc:"Students and advisors need to know which courses run which semesters.",target:"Fall 2026",notes:""},
+  {id:14,title:"Reserve in-person seats for ARE majors",cat:"enrollment",status:"not-started",action:"drafting",pri:"medium",desc:"Enrollment priority so ARE majors are not shut out of required sections.",target:"Fall 2026",notes:""},
+  {id:16,title:"Rewrite catalog course descriptions",cat:"standards",status:"not-started",action:"drafting",pri:"low",desc:"Current descriptions do not match what is actually taught.",target:"2026-2027",notes:"Can batch through CIM."},
+  {id:20,title:"Complete degree audit overhaul",cat:"degree-audit",status:"not-started",action:"drafting",pri:"high",desc:"Every requirement, elective list, and prerequisite chain accurately reflected.",target:"2027",notes:"Depends on prerequisite and concentration decisions."},
+];
+
+const RED="#1e2a4a",DK="#1a1a1a",MD="#57534e",LT="#a8a29e",BD="#d4d0ca",BG="#f5f4f2",CARD="#ffffff",SK="are-roadmap-v4";
+const ST={completed:{l:"Completed",bg:"#dcfce7",fg:"#166534",dt:"#22c55e"},
+  "in-cim":{l:"In CIM",bg:"#dbeafe",fg:"#1e40af",dt:"#3b82f6"},
+  drafting:{l:"Drafting",bg:"#fef3c7",fg:"#92400e",dt:"#f59e0b"},
+  "not-started":{l:"Not Started",bg:BG,fg:"#78716c",dt:"#d6d3d1"},
+  blocked:{l:"Blocked",bg:"#fee2e2",fg:"#991b1b",dt:"#ef4444"}};
+const COLS=[
+  {key:"vote",l:"Needs Vote",bg:"#fef2f2",hd:"#dc2626"},
+  {key:"discussion",l:"Needs Discussion",bg:"#fffbeb",hd:"#92400e"},
+  {key:"info",l:"Updates",bg:"#eff6ff",hd:"#1e40af"},
+  {key:"drafting",l:"In Preparation",bg:BG,hd:"#78716c"},
+  {key:"completed",l:"Completed",bg:"#f0fdf4",hd:"#166534"},
+];
+const PR={high:{l:"High",c:"#dc2626"},medium:{l:"Med",c:"#d97706"},low:{l:"Low",c:"#d6d3d1"}};
+const CT={prerequisites:{l:"Prerequisites"},"new-courses":{l:"New Courses"},
+  "degree-audit":{l:"Degree Audit"},concentrations:{l:"Concentrations"},
+  enrollment:{l:"Enrollment"},standards:{l:"Standards"}};
+const CT_K=Object.keys(CT);
+
+function ld(){try{var r=localStorage.getItem(SK);if(r)return JSON.parse(r)}catch(e){}return JSON.parse(JSON.stringify(DEFAULT_ITEMS))}
+function sv(d){try{localStorage.setItem(SK,JSON.stringify(d))}catch(e){}}
+
+const {useState,useMemo,useCallback,useEffect,useRef}=React;
+
+function Dot({p}){return <span style={{width:8,height:8,borderRadius:"50%",background:PR[p].c,display:"inline-block",flexShrink:0}} />}
+
+/* ── Hero ── */
+function Hero({items}){
+  var done=items.filter(function(i){return i.status==="completed"}).length;
+  var votes=items.filter(function(i){return i.action==="vote"}).length;
+  var disc=items.filter(function(i){return i.action==="discussion"}).length;
+  var pct=Math.round((done/items.length)*100);
+  return(
+    <div style={{background:RED,padding:"40px 32px 0",marginLeft:-24,marginRight:-24,marginBottom:0}}>
+      <div style={{maxWidth:1200,margin:"0 auto"}}>
+        <div style={{fontSize:11,fontWeight:600,letterSpacing:2.5,color:"rgba(255,255,255,0.55)",textTransform:"uppercase",marginBottom:8}}>
+          Department of Agricultural &amp; Resource Economics &middot; NC State University
+        </div>
+        <h1 style={{fontFamily:"'Source Serif 4',Georgia,serif",fontSize:34,fontWeight:800,color:"white",lineHeight:1.15,marginBottom:10}}>
+          Curriculum Renewal Roadmap
+        </h1>
+        <p style={{fontSize:14.5,color:"rgba(255,255,255,0.82)",lineHeight:1.55,maxWidth:640,marginBottom:28}}>
+          Aligning prerequisites, degree audits, course standards, and career pathways so students move through the major with clearer expectations and fewer senior-year surprises.
+        </p>
+        <div className="hero-stats" style={{display:"flex",gap:12,transform:"translateY(24px)"}}>
+          {[[done+"/"+items.length,"Changes completed",pct+"%","#166534","#dcfce7","#22c55e"],
+            [votes,"Need committee vote","action items","#991b1b","#fee2e2","#ef4444"],
+            [disc,"Need discussion","agenda items","#92400e","#fef3c7","#f59e0b"]
+          ].map(function(s,i){
+            return(
+              <div key={i} style={{flex:1,background:s[4],borderRadius:10,padding:"18px 20px",boxShadow:"0 2px 12px rgba(0,0,0,0.08)",border:"1px solid rgba(0,0,0,0.04)",borderLeft:"4px solid "+s[5]}}>
+                <div style={{fontSize:32,fontWeight:800,color:s[3],lineHeight:1,marginBottom:4,fontFamily:"'Source Serif 4',Georgia,serif"}}>{s[0]}</div>
+                <div style={{fontSize:13,fontWeight:600,color:s[3]}}>{s[1]}</div>
+                <div style={{fontSize:11,color:s[3],opacity:.6,marginTop:2}}>{s[2]}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Timeline ── */
+function Timeline({items}){
+  var lanes={"Completed":[],"Fall 2026":[],"2026\u20132027":[],"Spring 2027":[],"2027\u20132028":[],"Later":[]};
+  items.forEach(function(it){
+    if(it.status==="completed"){lanes["Completed"].push(it);return}
+    if(it.target==="Fall 2026")lanes["Fall 2026"].push(it);
+    else if(it.target==="2026-2027")lanes["2026\u20132027"].push(it);
+    else if(it.target==="Spring 2027")lanes["Spring 2027"].push(it);
+    else if(it.target==="2027-2028"||it.target==="2027")lanes["2027\u20132028"].push(it);
+    else lanes["Later"].push(it);
+  });
+  var keys=Object.keys(lanes);
+  return(
+    <div style={{marginBottom:28,paddingTop:36}}>
+      <div style={{position:"relative",height:56,marginBottom:16}}>
+        <div style={{position:"absolute",top:18,left:0,right:0,height:3,background:BD,borderRadius:2}} />
+        <div style={{display:"flex",justifyContent:"space-between",position:"relative",zIndex:1}}>
+          {keys.map(function(k,i){
+            var n=lanes[k].length;var isC=i===0;var col=isC?"#166534":RED;var bg2=isC?"#dcfce7":"#fee2e2";
+            return(
+              <div key={k} style={{display:"flex",flexDirection:"column",alignItems:"center",flex:1}}>
+                <div style={{width:n>0?38:24,height:n>0?38:24,borderRadius:"50%",background:n>0?bg2:"white",border:n>0?"3px solid "+col:"2px solid "+BD,display:"flex",alignItems:"center",justifyContent:"center",fontSize:n>0?15:11,fontWeight:700,color:n>0?col:LT,transition:"all .2s"}}>
+                  {n>0?n:"\u2014"}
+                </div>
+                <div style={{marginTop:6,fontSize:11,fontWeight:600,color:n>0?DK:LT,textAlign:"center"}}>{k}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Kanban Board (edit mode) ── */
+function KanbanBoard({items,setItems,dragEnabled}){
+  var _drag=useState(null),dragId=_drag[0],setDragId=_drag[1];
+  var _over=useState(null),overCol=_over[0],setOverCol=_over[1];
+  var _dropIdx=useState(null),dropIdx=_dropIdx[0],setDropIdx=_dropIdx[1];
+  var _exp=useState(null),expId=_exp[0],setExpId=_exp[1];
+
+  var groups=useMemo(function(){
+    var g={};COLS.forEach(function(c){g[c.key]=[]});
+    items.forEach(function(it){(g[it.action]||g.drafting).push(it)});
+    return g;
+  },[items]);
+
+  function handleDragStart(e,id){
+    if(!dragEnabled)return;
+    setDragId(id);
+    e.dataTransfer.effectAllowed="move";
+    e.dataTransfer.setData("text/plain",String(id));
+    setTimeout(function(){
+      var el=document.getElementById("kcard-"+id);
+      if(el)el.classList.add("dragging");
+    },0);
+  }
+  function handleDragEnd(){
+    setDragId(null);setOverCol(null);setDropIdx(null);
+    document.querySelectorAll(".dragging").forEach(function(el){el.classList.remove("dragging")});
+  }
+  function handleColDragOver(e,colKey){
+    if(!dragEnabled)return;
+    e.preventDefault();e.dataTransfer.dropEffect="move";
+    setOverCol(colKey);
+    var col=e.currentTarget;
+    var cards=col.querySelectorAll("[data-kanban-card]");
+    var mouseY=e.clientY;
+    var idx=cards.length;
+    for(var i=0;i<cards.length;i++){
+      var rect=cards[i].getBoundingClientRect();
+      if(mouseY<rect.top+rect.height/2){idx=i;break;}
+    }
+    setDropIdx(idx);
+  }
+  function handleColDragLeave(e){
+    if(!e.currentTarget.contains(e.relatedTarget)){setOverCol(null);setDropIdx(null);}
+  }
+  function handleDrop(e,colKey){
+    e.preventDefault();
+    if(!dragEnabled){handleDragEnd();return;}
+    var id=parseInt(e.dataTransfer.getData("text/plain"),10)||dragId;
+    if(!id){handleDragEnd();return;}
+    setItems(function(prev){
+      var item=null;var rest=[];
+      for(var i=0;i<prev.length;i++){
+        if(prev[i].id===id){
+          item=Object.assign({},prev[i]);
+          item.action=colKey;
+          // Set status on move into/out of completed
+          if(colKey==="completed")item.status="completed";
+          else if(item.status==="completed")item.status="drafting";
+        }
+        else rest.push(prev[i]);
+      }
+      if(!item)return prev;
+      var colItems=[];
+      rest.forEach(function(it){if(it.action===colKey)colItems.push(it)});
+      var insertAt=dropIdx!==null?Math.min(dropIdx,colItems.length):colItems.length;
+      colItems.splice(insertAt,0,item);
+      var result=[];var ci=0;
+      for(var j=0;j<prev.length;j++){
+        if(prev[j].action===colKey||(prev[j].id===id)){
+          if(ci<colItems.length){result.push(colItems[ci]);ci++;}
+        } else result.push(prev[j]);
+      }
+      while(ci<colItems.length){result.push(colItems[ci]);ci++;}
+      return result;
+    });
+    handleDragEnd();
+  }
+
+  function updateNotes(id,val){
+    setItems(function(prev){return prev.map(function(i){
+      if(i.id!==id)return i;var c={};for(var k in i)c[k]=i[k];c.notes=val;return c;
+    })});
+  }
+
+  return(
+    <div>
+      {!dragEnabled&&<div style={{padding:"8px 14px",background:"#fef3c7",border:"1px solid #fbbf24",borderRadius:8,fontSize:12,color:"#92400e",marginBottom:12,fontWeight:500}}>
+        Clear search to rearrange the board.
+      </div>}
+      <div className="kanban-cols" style={{display:"grid",gridTemplateColumns:"repeat("+COLS.length+",1fr)",gap:12,alignItems:"start"}}>
+        {COLS.map(function(col){
+          var list=groups[col.key]||[];
+          var isOver=overCol===col.key&&dragEnabled;
+          return(
+            <div key={col.key}
+              className={"kanban-col"+(isOver?" drag-over":"")}
+              style={{background:col.bg,border:"1px solid "+BD,padding:12}}
+              onDragOver={function(e){handleColDragOver(e,col.key)}}
+              onDragLeave={handleColDragLeave}
+              onDrop={function(e){handleDrop(e,col.key)}}
+            >
+              <div style={{fontSize:13,fontWeight:700,color:col.hd,marginBottom:10,padding:"6px 6px 8px",borderBottom:"2px solid "+col.hd,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span>{col.l}</span>
+                <span style={{fontSize:18,fontWeight:800,opacity:.5}}>{list.length}</span>
+              </div>
+              <div style={{minHeight:50}}>
+                {list.length===0&&<div style={{fontSize:11,color:LT,fontStyle:"italic",padding:"12px 4px",textAlign:"center"}}>No items</div>}
+                {list.map(function(it,idx){
+                  var showInd=isOver&&dragId&&dragId!==it.id&&dropIdx===idx;
+                  var isExp=expId===it.id;
+                  var s=ST[it.status]||ST["not-started"];
+                  return(
+                    <React.Fragment key={it.id}>
+                      {showInd&&<div className="drop-indicator" />}
+                      <div
+                        id={"kcard-"+it.id}
+                        className="kanban-card"
+                        data-kanban-card="true"
+                        draggable={dragEnabled?"true":"false"}
+                        onDragStart={function(e){handleDragStart(e,it.id)}}
+                        onDragEnd={handleDragEnd}
+                        onClick={function(){setExpId(isExp?null:it.id)}}
+                        style={{cursor:dragEnabled?"grab":"pointer"}}
+                      >
+                        <div style={{display:"flex",alignItems:"flex-start",gap:7}}>
+                          <Dot p={it.pri} />
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12,fontWeight:600,lineHeight:1.35,color:DK,marginBottom:5}}>{it.title}</div>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:4,alignItems:"center"}}>
+                              <span style={{fontSize:10,color:LT}}>{CT[it.cat]?CT[it.cat].l:""}</span>
+                              {it.target&&it.target!=="Completed"&&<React.Fragment>
+                                <span style={{fontSize:10,color:BD}}>&middot;</span>
+                                <span style={{fontSize:10,color:MD,fontWeight:500}}>{it.target}</span>
+                              </React.Fragment>}
+                            </div>
+                            <div style={{marginTop:5,display:"flex",gap:4,alignItems:"center"}}>
+                              <span style={{display:"inline-flex",alignItems:"center",gap:3,padding:"1px 7px",borderRadius:10,background:s.bg,color:s.fg,fontSize:9,fontWeight:600}}>
+                                <span style={{width:5,height:5,borderRadius:"50%",background:s.dt}} />{s.l}
+                              </span>
+                              <span style={{display:"inline-flex",alignItems:"center",gap:3,padding:"1px 7px",borderRadius:10,background:PR[it.pri].c==="$d6d3d1"?"#f5f4f2":"rgba(0,0,0,.04)",fontSize:9,fontWeight:600,color:PR[it.pri].c}}>
+                                {PR[it.pri].l} priority
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Expanded notes area */}
+                        {isExp&&(
+                          <div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+BD}} onClick={function(e){e.stopPropagation()}}>
+                            <div style={{fontSize:11,color:MD,lineHeight:1.5,marginBottom:6}}>{it.desc}</div>
+                            <textarea
+                              value={it.notes||""}
+                              onChange={function(e){updateNotes(it.id,e.target.value)}}
+                              placeholder="Add notes..."
+                              style={{width:"100%",minHeight:40,padding:"6px 8px",fontSize:11,border:"1px solid "+BD,borderRadius:6,resize:"vertical",fontFamily:"inherit",color:DK,background:"#fafaf8",lineHeight:1.5}}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+                {isOver&&dropIdx===list.length&&<div className="drop-indicator" />}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Presentation list (read-only cards grouped by action) ── */
+function PresentationList({items,expandedId,setExpandedId}){
+  var groups=useMemo(function(){
+    var g={};COLS.forEach(function(c){g[c.key]=[]});
+    items.forEach(function(it){(g[it.action]||g.drafting).push(it)});
+    return g;
+  },[items]);
+
+  return(
+    <div>
+      {COLS.map(function(col){
+        var list=groups[col.key];
+        if(!list||list.length===0)return null;
+        return(
+          <div key={col.key}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,marginTop:24}}>
+              <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:8,background:col.hd,color:"white",fontSize:13,fontWeight:700}}>
+                {col.l}
+              </div>
+              <span style={{fontSize:13,color:LT}}>{list.length} item{list.length!==1?"s":""}</span>
+              <div style={{flex:1,height:1,background:BD}} />
+            </div>
+            {list.map(function(it){
+              var open=expandedId===it.id;
+              var s=ST[it.status]||ST["not-started"];
+              return(
+                <div key={it.id} className="fade-in" style={{background:CARD,borderRadius:10,border:"1px solid #e8e5e0",borderLeft:"4px solid "+col.hd,marginBottom:8,overflow:"hidden",boxShadow:open?"0 2px 10px rgba(0,0,0,.08),0 4px 14px rgba(0,0,0,.05)":"0 1px 3px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.03)",transition:"box-shadow .15s"}}>
+                  <button onClick={function(){setExpandedId(open?null:it.id)}} aria-expanded={open} style={{display:"flex",width:"100%",textAlign:"left",background:"none",border:"none",cursor:"pointer",padding:"14px 18px",alignItems:"center",gap:10}}>
+                    <Dot p={it.pri} />
+                    <span style={{flex:1,fontWeight:500,fontSize:14,lineHeight:1.4,color:DK}}>{it.title}</span>
+                    <span style={{fontSize:11,color:LT,marginRight:4,minWidth:70}}>{CT[it.cat]?CT[it.cat].l:""}</span>
+                    <span style={{display:"inline-flex",alignItems:"center",gap:4,padding:"3px 10px",borderRadius:16,background:s.bg,color:s.fg,fontSize:11,fontWeight:600}}>
+                      <span style={{width:6,height:6,borderRadius:"50%",background:s.dt}} />{s.l}
+                    </span>
+                    <span style={{fontSize:13,color:LT,transition:"transform .15s",transform:open?"rotate(90deg)":"rotate(0)",marginLeft:4}}>&#9656;</span>
+                  </button>
+                  {open&&(
+                    <div style={{padding:"0 18px 16px 36px"}}>
+                      <p style={{fontSize:13,color:MD,lineHeight:1.65,maxWidth:680}}>{it.desc}</p>
+                      {it.target&&it.target!=="Completed"&&<div style={{fontSize:12,color:LT,marginTop:8}}><strong style={{color:MD}}>Target:</strong> {it.target}</div>}
+                      {it.notes&&<p style={{fontSize:12,color:LT,marginTop:6,borderLeft:"3px solid "+BD,paddingLeft:10,lineHeight:1.5,fontStyle:"italic"}}>{it.notes}</p>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── App ── */
+function App(){
+  var _i=useState(ld),items=_i[0],setItems=_i[1];
+  var _ed=useState(false),editing=_ed[0],setEditing=_ed[1];
+  var _e=useState(null),expId=_e[0],setExpId=_e[1];
+  var _q=useState(""),q=_q[0],setQ=_q[1];
+
+  useEffect(function(){sv(items)},[items]);
+
+  var filtered=useMemo(function(){
+    if(!q.trim())return items;
+    var s=q.toLowerCase().trim();
+    return items.filter(function(it){
+      return it.title.toLowerCase().indexOf(s)>=0||it.desc.toLowerCase().indexOf(s)>=0||(it.notes||"").toLowerCase().indexOf(s)>=0;
+    });
+  },[items,q]);
+
+  function handleReset(){if(confirm("Reset all items to defaults?"))setItems(JSON.parse(JSON.stringify(DEFAULT_ITEMS)))}
+
+  return(
+    <div>
+      <Hero items={items} />
+      <div style={{paddingTop:36}}>
+        <Timeline items={items} />
+
+        {/* Controls */}
+        <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:10,marginBottom:20}}>
+          {/* Edit toggle */}
+          <button onClick={function(){setEditing(!editing)}} style={{padding:"8px 16px",fontSize:12,fontWeight:600,border:"1px solid "+(editing?"#dc2626":BD),borderRadius:8,cursor:"pointer",background:editing?"#fee2e2":"white",color:editing?"#dc2626":MD,transition:"all .15s"}}>
+            {editing?"Editing Board":"Edit Board"}
+          </button>
+          <input type="text" value={q} onChange={function(e){setQ(e.target.value)}} placeholder="Search items…" style={{flex:1,minWidth:180,padding:"8px 14px",borderRadius:8,border:"1px solid "+BD,fontSize:13,outline:"none",background:CARD}} />
+          {/* Priority legend */}
+          <div style={{display:"flex",alignItems:"center",gap:8,fontSize:11,color:LT}}>
+            <span style={{fontWeight:600}}>Priority:</span>
+            {[["high","High"],["medium","Med"],["low","Low"]].map(function(p){
+              return <span key={p[0]} style={{display:"flex",alignItems:"center",gap:3}}><span style={{width:7,height:7,borderRadius:"50%",background:PR[p[0]].c,display:"inline-block"}} />{p[1]}</span>
+            })}
+          </div>
+        </div>
+
+        {/* Main content */}
+        {editing?(
+          <KanbanBoard items={filtered} setItems={setItems} dragEnabled={!q.trim()} />
+        ):(
+          <PresentationList items={filtered} expandedId={expId} setExpandedId={setExpId} />
+        )}
+
+        {/* Footer */}
+        <div style={{marginTop:28,display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:LT}}>
+          <span>{items.length} total items &middot; {editing?"Drag cards between columns to reassign \u00b7 Drag within a column to reorder":"Presentation mode"}</span>
+          <button onClick={handleReset} style={{fontSize:11,color:LT,background:"none",border:"1px solid "+BD,borderRadius:4,padding:"4px 10px",cursor:"pointer"}}>Reset to defaults</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
