@@ -74,7 +74,7 @@
       max-width: 720px;
     }
 
-    .scenario-banner {
+    .task-banner {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       gap: 16px;
@@ -88,7 +88,7 @@
       box-shadow: var(--shadow), 0 0 30px rgba(241, 195, 106, 0.08);
     }
 
-    .scenario-tag {
+    .task-tag {
       background: linear-gradient(135deg, rgba(241, 195, 106, 0.98), rgba(57, 217, 160, 0.9));
       color: #111718;
       font-size: 11px;
@@ -101,13 +101,13 @@
       box-shadow: 0 8px 22px rgba(57, 217, 160, 0.18);
     }
 
-    .scenario-text {
+    .task-text {
       color: var(--muted);
       font-size: 14px;
       line-height: 1.5;
     }
 
-    .scenario-text strong {
+    .task-text strong {
       color: var(--ink);
     }
 
@@ -120,7 +120,7 @@
 
     .task-strip {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-columns: 1fr;
       gap: 16px;
       margin-bottom: 18px;
     }
@@ -882,7 +882,7 @@
         grid-template-columns: 1fr;
       }
 
-      .scenario-banner {
+      .task-banner {
         grid-template-columns: 1fr;
         gap: 10px;
         justify-items: start;
@@ -927,24 +927,16 @@
       </p>
     </header>
 
-    <section class="scenario-banner" aria-label="Scenario">
-      <span class="scenario-tag">The Scenario</span>
-      <p class="scenario-text">
-        <strong>A state considers raising the minimum wage for agricultural labor.</strong>
-        Keep two markets in view: the farm labor market first, then possible spillovers into food prices.
-        Every claim below is about this same scenario.
+    <section class="task-banner" aria-label="Your task">
+      <span class="task-tag">Your Task</span>
+      <p class="task-text">
+        <strong>For each claim, classify every stakeholder</strong> as benefiting, bearing pressure,
+        facing mixed incentives, needing more evidence, or missing from the claim. Then use the reveal
+        to explain what would have to be true for your answer to hold.
       </p>
     </section>
 
     <section class="task-strip" aria-label="Activity instructions">
-      <div class="task-card">
-        <h2>Your task</h2>
-        <p>
-          For each policy claim, classify every stakeholder as benefiting, bearing pressure,
-          facing mixed incentives, needing more evidence, or missing from the claim. Then use the reveal
-          to explain what would have to be true for your answer to hold.
-        </p>
-      </div>
       <div class="task-card">
         <h2>Remember the labor market</h2>
         <p>
