@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Treme Quiz Bowl Jeopardy</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --red: #8f1a1a; --red-hover: #b52222; --red-dark: #5a0e0e;
+    --gold: #e8d080; --gold-dark: #c4a832;
+    --white: #ffffff; --green: #2d7a3a; --wrong-red: #3a0a0a;
+  }
+  body { background: #1a0505; color: var(--white); font-family: 'Barlow', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+  #header { background: var(--red-dark); border-bottom: 3px solid var(--gold); padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  #header h1 { font-family: 'Anton', sans-serif; font-size: 26px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
+  .round-selector { display: flex; gap: 8px; }
+  .round-btn { font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 13px; padding: 6px 14px; border-radius: 4px; border: 2px solid var(--gold); background: transparent; color: var(--gold); cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 1px; }
+  .round-btn.active, .round-btn:hover { background: var(--gold); color: var(--red-dark); }
+  .round-btn.tiebreaker { border-color: #ff8844; color: #ff8844; }
+  .round-btn.tiebreaker.active, .round-btn.tiebreaker:hover { background: #ff8844; color: #1a0505; }
+
+  .scoreboard { display: flex; gap: 16px; }
+  .team-block { text-align: center; }
+  .team-block input { background: transparent; border: none; border-bottom: 1px solid var(--gold-dark); color: var(--gold); font-family: 'Barlow', sans-serif; font-size: 18px; font-weight: 600; text-align: center; width: 110px; letter-spacing: 1px; text-transform: uppercase; outline: none; }
+  .team-block .score { font-family: 'Anton', sans-serif; font-size: 36px; color: var(--white); line-height: 1.1; cursor: pointer; }
+
+  #board-wrap { flex: 1; padding: 10px 12px 8px; display: flex; flex-direction: column; overflow: hidden; }
+  #grid { display: grid; gap: 6px; flex: 1; overflow: hidden; }
+  #grid.normal { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(6, 1fr); }
+  #grid.tiebreak { grid-template-columns: repeat(8, minmax(0, 1fr)); grid-template-rows: repeat(2, 1fr); }
+
+  .cat-header { background: var(--red); border: 2px solid var(--gold-dark); border-radius: 4px; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px 4px; font-family: 'Anton', sans-serif; font-size: 26px; letter-spacing: 1.5px; color: var(--gold); text-transform: uppercase; }
+  .cell { background: var(--red); border: 2px solid var(--gold-dark); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: 'Anton', sans-serif; font-size: 38px; color: var(--gold); cursor: pointer; transition: background 0.12s, transform 0.1s; user-select: none; }
+  .cell:hover { background: var(--red-hover); transform: scale(1.03); }
+  .cell.used { background: #2a0808; border-color: #4a1010; color: #4a1010; cursor: default; font-size: 20px; }
+  .cell.used:hover { transform: none; background: #2a0808; }
+  .cell.tiebreak-cell { font-size: 22px; }
+
+  #footer { padding: 6px 12px; display: flex; justify-content: flex-end; flex-shrink: 0; }
+  .reset-btn { background: none; border: none; color: rgba(255,255,255,0.35); font-size: 12px; cursor: pointer; font-family: 'Barlow', sans-serif; text-decoration: underline; }
+  .reset-btn:hover { color: rgba(255,255,255,0.7); }
+
+  #modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; align-items: center; justify-content: center; padding: 40px; }
+  #modal-bg.open { display: flex; }
+  #modal { background: var(--red-dark); border: 3px solid var(--gold); border-radius: 8px; width: 100%; max-width: 860px; padding: 28px 48px; text-align: center; position: relative; }
+  #m-cat { font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 3px; text-transform: uppercase; color: var(--gold-dark); margin-bottom: 6px; }
+  #m-pts { font-family: 'Anton', sans-serif; font-size: 46px; color: var(--gold); line-height: 1; margin-bottom: 16px; }
+  #m-clue { font-family: 'Barlow', sans-serif; font-size: 34px; font-weight: 600; line-height: 1.5; color: var(--white); margin: 24px 0 24px; min-height: 60px; }
+  #m-answer { display: none; background: rgba(232,208,128,0.15); border: 3px solid var(--gold); border-radius: 8px; padding: 20px 32px; font-size: 30px; font-weight: 600; color: var(--white); margin: 24px 0 36px; }
+  #m-answer.visible { display: block; }
+  #m-choices { display: none; text-align: left; margin-bottom: 16px; }
+  #m-choices.visible { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .choice-item { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 10px 16px; font-size: 20px; font-weight: 600; color: var(--white); }
+
+  #timer-ring-wrap { display: none; justify-content: center; margin: 20px 0; }
+  #timer-ring-wrap.visible { display: flex; }
+  #timer-svg { width: 120px; height: 120px; }
+  #timer-track { fill: none; stroke: rgba(255,255,255,0.15); stroke-width: 8; }
+  #timer-arc { fill: none; stroke: var(--gold); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 345; stroke-dashoffset: 0; transform: rotate(-90deg); transform-origin: 60px 60px; transition: stroke-dashoffset 0.9s linear, stroke 0.3s; }
+  #timer-num { font-family: 'Anton', sans-serif; font-size: 38px; fill: var(--white); dominant-baseline: middle; text-anchor: middle; }
+
+  #steal-banner { display: none; background: rgba(255,200,50,0.12); border: 1px solid var(--gold-dark); border-radius: 6px; padding: 8px 20px; font-size: 16px; font-weight: 600; color: var(--gold); margin-bottom: 12px; letter-spacing: 1px; }
+  #steal-banner.visible { display: block; }
+
+  .btn-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .mbtn { font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; color: #fff !important; transition: opacity 0.15s; }
+  .mbtn:hover { opacity: 0.85; }
+  .mbtn:disabled { opacity: 0.35; cursor: default; }
+  .mbtn-reveal  { background: rgba(255,255,255,0.2); }
+  .mbtn-close   { background: rgba(255,255,255,0.2); }
+  .mbtn-buzz    { background: #b87d00; font-size: 15px; padding: 11px 26px; }
+  .mbtn-correct { background: var(--green); }
+  .mbtn-wrong   { background: var(--wrong-red); border: 1px solid rgba(255,255,255,0.25) !important; }
+  .mbtn-nosteal { background: rgba(255,255,255,0.15); }
+  .mbtn-explain { background: #4a2a7a; }
+
+  .award-row { display: none; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .award-row.visible { display: flex; }
+  .award-label { font-size: 13px; color: rgba(255,255,255,0.6); letter-spacing: 1px; text-transform: uppercase; width: 100%; text-align: center; margin-bottom: 4px; }
+  .award-btn { font-family: 'Barlow', sans-serif; font-weight: 600; font-size: 14px; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; cursor: pointer; }
+  .award-btn:hover { background: rgba(255,255,255,0.25); }
+
+  .hint { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 12px; }
+
+  #peek-wrap { position: absolute; bottom: 8px; right: 12px; text-align: right; }
+  #peek-btn { font-family: 'Barlow', sans-serif; font-size: 11px; font-weight: 600; background: none; border: none; color: rgba(255,255,255,0.22); cursor: pointer; text-transform: uppercase; letter-spacing: 1px; padding: 2px 4px; }
+  #peek-btn:hover { color: rgba(255,255,255,0.55); }
+  #peek-answer { display: none; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 3px; max-width: 220px; text-align: right; line-height: 1.4; }
+  #peek-answer.visible { display: block; }
+
+  /* EXPLAIN PANEL */
+  #explain-panel { position: fixed; top: 0; right: -440px; width: 420px; height: 100vh; background: #1a0a2a; border-left: 2px solid var(--gold); z-index: 300; display: flex; flex-direction: column; transition: right 0.35s ease; }
+  #explain-panel.open { right: 0; }
+  #explain-header { background: #2a1040; border-bottom: 1px solid var(--gold); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; font-family: 'Anton', sans-serif; font-size: 15px; letter-spacing: 2px; color: var(--gold); flex-shrink: 0; }
+  #explain-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 18px; cursor: pointer; }
+  #explain-close:hover { color: white; }
+  #explain-body { padding: 20px 18px; font-family: 'Barlow', sans-serif; font-size: 15px; line-height: 1.75; color: rgba(255,255,255,0.88); overflow-y: auto; flex: 1; }
+  .explain-q { font-size: 12px; color: var(--gold); font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  .explain-a { font-size: 13px; color: #7dd87d; font-weight: 600; margin-bottom: 14px; }
+  .explain-text { font-size: 15px; line-height: 1.75; color: rgba(255,255,255,0.88); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div style="display:flex;align-items:center;gap:12px;flex-shrink:0">
+    <a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
+       style="display:flex;align-items:center;gap:7px;text-decoration:none;color:var(--gold)">
+      <img src="trex.png" alt="" style="height:30px;width:auto;display:block">
+      <span style="font-family:'Barlow',sans-serif;font-weight:600;font-size:13px;letter-spacing:1px;white-space:nowrap">Dr.Tremendous</span>
+    </a>
+    <h1 style="white-space:nowrap">Treme Quiz Bowl Jeopardy</h1>
+  </div>
+  <div class="round-selector">
+    <button class="round-btn active" onclick="switchRound(0)">Round 1</button>
+    <button class="round-btn" onclick="switchRound(1)">Round 2</button>
+    <button class="round-btn" onclick="switchRound(2)">Round 3</button>
+    <button class="round-btn" onclick="switchRound(3)">Round 4</button>
+    <button class="round-btn" onclick="switchRound(4)">Round 5</button>
+    <button class="round-btn" onclick="switchRound(5)">Round 6</button>
+    <button class="round-btn" onclick="switchRound(6)">Round 7</button>
+    <button class="round-btn" onclick="switchRound(7)">Round 8</button>
+    <button class="round-btn" onclick="switchRound(8)">Round 9</button>
+    <button class="round-btn" onclick="switchRound(9)">Round 10</button>
+    <button class="round-btn" onclick="switchRound(10)">Round 11</button>
+    <button class="round-btn" onclick="switchRound(11)">Round 12</button>
+    <button class="round-btn" onclick="switchRound(12)">Potpourri</button>
+    <button class="round-btn tiebreaker" onclick="switchRound(13)">Tiebreaker</button>
+  </div>
+  <div class="scoreboard" id="scoreboard"></div>
+</div>
+
+<div id="board-wrap"><div id="grid" class="normal"></div></div>
+<div id="footer"><button class="reset-btn" onclick="resetRound()">Reset current round</button></div>
+
+<div id="modal-bg">
+  <div id="modal">
+    <div id="m-cat"></div>
+    <div id="m-pts"></div>
+    <div id="m-clue"></div>
+    <div id="m-choices"></div>
+    <div id="m-answer"></div>
+    <div id="steal-banner"></div>
+    <div id="timer-ring-wrap">
+      <svg id="timer-svg" viewBox="0 0 120 120">
+        <circle id="timer-track" cx="60" cy="60" r="55"/>
+        <circle id="timer-arc"   cx="60" cy="60" r="55"/>
+        <text   id="timer-num"   x="60"  y="60">13</text>
+      </svg>
+    </div>
+    <div class="btn-row">
+      <button class="mbtn mbtn-reveal"  id="btn-reveal"  onclick="revealAnswer()" style="display:none">Reveal Answer</button>
+      <button class="mbtn mbtn-buzz"    id="btn-buzz"    onclick="startBuzz()" style="display:none">⏱ Buzz In</button>
+      <button class="mbtn mbtn-nosteal" id="btn-noanswer" onclick="markQuestionDead(false)" style="display:none">No Answer</button>
+      <button class="mbtn mbtn-correct" id="btn-correct" onclick="showAward(true)"  style="display:none">Correct ✓</button>
+      <button class="mbtn mbtn-wrong"   id="btn-wrong"   onclick="handleWrong()"    style="display:none">Wrong ✗</button>
+      <button class="mbtn mbtn-nosteal" id="btn-nosteal" onclick="markQuestionDead(true)" style="display:none">No Steal</button>
+      <button class="mbtn mbtn-explain" id="btn-explain" onclick="showExplanation()" style="display:none">✦ Explain</button>
+      <button class="mbtn mbtn-close"   onclick="closeModal()">Close</button>
+    </div>
+    <div class="award-row" id="award-row"></div>
+    <div class="hint">Press ESC to close</div>
+    <div id="peek-wrap">
+      <button id="peek-btn" onclick="togglePeek()">👁 peek</button>
+      <div id="peek-answer"></div>
+    </div>
+  </div>
+</div>
+
+<div id="explain-panel">
+  <div id="explain-header">
+    <span>✦ Explanation</span>
+    <button id="explain-close" onclick="closeExplain()">✕</button>
+  </div>
+  <div id="explain-body"></div>
+</div>
+
+<script>
+const categories = ["Micro","Macro","Management","Marketing","Quantitative","Policy","Finance","Potpourri"];
+const points = [5,10,15,20,25];
+const CIRC = 2 * Math.PI * 55;
+
+// ─── ROUND DATA ───────────────────────────────────────────────────────────────
+const rounds = [
+
+  // ── ROUND 1 ──
+  {
+    "Micro":[
+      {clue:"A minimum price established by law is often called this.",answer:"A price floor",explain:"A price floor is a government-imposed minimum price below which a good cannot legally be sold. It is typically set above the equilibrium price to support producers — the classic example is minimum wage in labor markets. When the floor is above equilibrium, it creates a surplus because quantity supplied exceeds quantity demanded."},
+      {clue:"The highest valued alternative that must be sacrificed as a result of choosing a particular option is called this.",answer:"Opportunity cost",explain:"Opportunity cost is the value of the next-best alternative you give up when making a decision. It captures the idea that resources are scarce and every choice involves a tradeoff. For example, going to college has an opportunity cost of the wages you could have earned working full-time instead."},
+      {clue:"What is a graphical representation showing various combinations of two goods that provide the same level of satisfaction to a consumer?",answer:"Indifference curve",choices:["A. Production possibilities frontier","B. Budget constraint line","C. Indifference curve","D. Demand curve"],explain:"An indifference curve maps all combinations of two goods that yield the same total utility to a consumer, so they are indifferent between any point on the curve. Curves further from the origin represent higher utility. The slope of the curve is the marginal rate of substitution — the rate at which the consumer is willing to trade one good for the other."},
+      {clue:"The result of dividing total fixed cost by the level of output is called this.",answer:"Average fixed cost",explain:"Average fixed cost (AFC) is total fixed cost divided by quantity produced. Because fixed costs do not change with output, AFC continuously falls as output rises — this is called the spreading effect. AFC never reaches zero but approaches it asymptotically as production increases."},
+      {clue:"What is the difference between long run average variable cost and long run average total cost?",answer:"There is no difference — everything is variable in the long run",explain:"In the long run, all inputs — including capital, plant size, and equipment — can be adjusted. This means there are no fixed costs in the long run, so average variable cost and average total cost are identical. The long-run average cost curve is often depicted as an envelope of short-run average total cost curves."}
+    ],
+    "Macro":[
+      {clue:"What index is commonly used to measure the inflation rate for US consumers?",answer:"Consumer Price Index (CPI)",explain:"The Consumer Price Index measures the average change over time in the prices paid by urban consumers for a market basket of goods and services. It is calculated by the Bureau of Labor Statistics and is the most widely used measure of inflation affecting households. The CPI is used to adjust Social Security payments, tax brackets, and many wage contracts."},
+      {clue:"How does GDP account for goods and services whose values are not established by markets, such as household work or volunteer services?",answer:"They are generally ignored — not part of GDP",explain:"GDP measures market transactions, so non-market activities like unpaid household work, volunteer services, and the underground economy are excluded. This is a known limitation of GDP as a welfare measure — two countries with identical GDPs could have very different standards of living if one relies heavily on non-market production."},
+      {clue:"The government borrows money to increase spending, which drives up interest rates and reduces private investment. This effect is known as:",answer:"Crowding-out effect",choices:["A. Crowding-out effect","B. Fiscal drag","C. Ricardian equivalence","D. Demand-pull inflation"],explain:"Crowding out occurs when government borrowing increases the demand for loanable funds, pushing interest rates up and making it more expensive for private firms to borrow and invest. This partially offsets the stimulative effect of fiscal policy. The degree of crowding out depends on how sensitive investment is to interest rates and the slope of the LM curve."},
+      {clue:"What are the two tools of fiscal policy?",answer:"Taxation and government expenditure",explain:"Fiscal policy refers to the government's use of spending and taxation to influence the economy. Increasing government spending or cutting taxes is expansionary fiscal policy — it raises aggregate demand. Decreasing spending or raising taxes is contractionary. These tools are managed by Congress and the President, distinguishing fiscal from monetary policy."},
+      {clue:"Name the four components of aggregate demand.",answer:"Consumption, investment, government spending, net exports",explain:"Aggregate demand (AD) is the total demand for all goods and services in an economy: AD = C + I + G + NX. Consumption (C) is the largest component, driven by household income. Investment (I) includes business spending on capital. Government spending (G) excludes transfer payments. Net exports (NX) is exports minus imports."}
+    ],
+    "Management":[
+      {clue:"Which function of management involves setting objectives and outlining how to achieve them?",answer:"Planning",explain:"Planning is the first and foundational function of management, involving setting organizational goals and determining the best course of action to achieve them. It requires analyzing the current situation, forecasting future conditions, and allocating resources strategically. Without planning, the other management functions — organizing, leading, and controlling — lack direction."},
+      {clue:"Which leadership style inspires and motivates employees to innovate and create change?",answer:"Transformational leadership",choices:["A. Transactional leadership","B. Autocratic leadership","C. Transformational leadership","D. Laissez-faire leadership"],explain:"Transformational leaders inspire followers by articulating a compelling vision and appealing to higher ideals rather than just offering rewards. They encourage creativity, challenge the status quo, and develop their followers' potential. Research consistently shows transformational leadership is associated with higher employee satisfaction and organizational performance compared to transactional approaches."},
+      {clue:"What management tool involves breaking down goals into specific, measurable, achievable, relevant, and time-bound steps?",answer:"SMART goals",explain:"SMART is an acronym for Specific, Measurable, Achievable, Relevant, and Time-bound. The framework turns vague ambitions into actionable targets — for example, 'increase sales by 10% in Q3' is SMART while 'do better in sales' is not. SMART goals improve accountability, focus effort, and make progress easier to track and evaluate."},
+      {clue:"What type of inventory management method focuses on keeping raw material inventory to a minimum and receiving supplies only when needed?",answer:"Just-in-time (JIT) inventory",choices:["A. First-in, first-out (FIFO)","B. Just-in-time (JIT) inventory","C. Last-in, first-out (LIFO)","D. Economic order quantity (EOQ)"],explain:"Just-in-time inventory management, pioneered by Toyota, aims to reduce carrying costs by receiving goods only as they are needed in the production process. This minimizes warehouse space and reduces waste, but it requires highly reliable suppliers and tight coordination. JIT systems are vulnerable to supply chain disruptions, as seen during the COVID-19 pandemic."},
+      {clue:"Which management theory classifies needs into five levels, including physiological, safety, social, esteem, and self-actualization?",answer:"Maslow's Hierarchy of Needs",choices:["A. Theory X","B. Maslow's Hierarchy of Needs","C. Herzberg's Two-Factor Theory","D. McGregor's Theory Y"],explain:"Abraham Maslow's 1943 theory proposes that human needs are arranged in a pyramid: physiological needs (food, shelter) must be met before safety needs, which precede social belonging, then esteem, and finally self-actualization. In management, it suggests employees must have basic needs met before higher-order motivators like recognition or meaningful work will drive performance."}
+    ],
+    "Marketing":[
+      {clue:"When shipping goods, what does C.O.D. stand for?",answer:"Cash on delivery",explain:"Cash on delivery (COD) is a payment arrangement where the buyer pays for goods at the time of delivery rather than in advance. It protects buyers from non-delivery but creates risk for sellers if the buyer refuses to pay. COD was historically common in mail-order businesses and is still used in some e-commerce markets, particularly in developing countries."},
+      {clue:"An industry with a few interdependent sellers is called this.",answer:"An oligopoly",explain:"An oligopoly is a market structure dominated by a small number of large firms, each of which must consider competitors' reactions when making pricing or output decisions — this interdependence is the defining feature. Examples include the US airline industry, wireless carriers, and major soft drink companies. Oligopolies often result in strategic behavior modeled using game theory."},
+      {clue:"Buying a commodity in one market and selling it in another market with a price difference to make a profit is called this.",answer:"Arbitrage",explain:"Arbitrage exploits price differences for the same asset across markets, generating a risk-free profit. In financial markets, arbitrageurs buy where prices are low and simultaneously sell where prices are high, forcing prices to converge. The law of one price states that arbitrage will eliminate persistent price differences in competitive markets."},
+      {clue:"Which food marketing channel includes brand names like Pepsi and Doritos?",answer:"National Brand Channel",choices:["A. National Brand Channel","B. Private Label Channel","C. Store Brand Channel","D. Wholesale Channel"],explain:"National brands are marketed directly by manufacturers on a nationwide basis and are typically sold at a premium price point due to heavy advertising investment. They contrast with private label (store brand) products, which are manufactured for and sold under a retailer's own brand. National brands compete on perceived quality and brand equity."},
+      {clue:"What can be said about price elasticity of demand if a monopolist is operating at an output level that maximizes profit?",answer:"Demand is elastic",choices:["A. Demand is elastic","B. Demand is inelastic","C. Demand is unit elastic","D. Cannot be determined"],explain:"A profit-maximizing monopolist always operates in the elastic portion of its demand curve (where |Ed| > 1). This is because marginal revenue is positive only when demand is elastic — if demand were inelastic, the monopolist could raise price and increase total revenue, meaning it was not yet at the profit-maximizing point."}
+    ],
+    "Quantitative":[
+      {clue:"The statistical name for an average.",answer:"Mean",explain:"The mean is the arithmetic average, calculated by summing all values and dividing by the number of observations. It is the most commonly used measure of central tendency but is sensitive to outliers. For skewed distributions, the median may be a better measure of the 'typical' value."},
+      {clue:"The likelihood or chance that a particular event will occur is called this.",answer:"Probability",explain:"Probability quantifies uncertainty, ranging from 0 (impossible) to 1 (certain). It can be interpreted as the long-run relative frequency of an event in repeated trials (frequentist view) or as a degree of belief (Bayesian view). The rules of probability — addition, multiplication, and complement rules — form the foundation of statistical inference."},
+      {clue:"In a normal population, what percent of observed values should be within 2 standard deviations of the mean?",answer:"95 percent",explain:"This is the empirical rule (68-95-99.7 rule) for normal distributions: approximately 68% of values fall within 1 standard deviation, 95% within 2, and 99.7% within 3. This rule underpins the construction of 95% confidence intervals and is fundamental to hypothesis testing in applied econometrics and statistics."},
+      {clue:"What type of graph uses circles to represent variables within a rectangular universe?",answer:"Venn diagram",choices:["A. Venn diagram","B. Bar chart","C. Scatter plot","D. Histogram"],explain:"Venn diagrams use overlapping circles to show logical relationships between sets. The overlap (intersection) represents elements belonging to both sets, while the union covers all elements in either set. They are commonly used in probability to illustrate joint and conditional probabilities and in logic to visualize set operations."},
+      {clue:"What Greek letter is commonly used to denote a difference between two numbers or a change in a variable?",answer:"Delta (Δ)",choices:["A. Alpha","B. Beta","C. Delta","D. Gamma"],explain:"Delta (Δ) is the Greek letter used in mathematics and economics to denote change or difference — for example, ΔY/ΔX represents the change in Y for a given change in X, which is the slope of a linear function. In calculus this extends to derivatives. Lowercase delta (δ) is also used in some contexts, while uppercase Delta is standard for discrete changes."}
+    ],
+    "Policy":[
+      {clue:"In Canadian farm policy, the acronym GRIP stands for:",answer:"Gross Revenue Insurance Program",explain:"GRIP was a Canadian agricultural safety net program that guaranteed farmers a minimum level of gross revenue based on historical averages, protecting against both price and yield risks simultaneously. It combined crop insurance with price stabilization elements. Programs like GRIP reflect the broader challenge governments face in stabilizing farm income without creating market distortions."},
+      {clue:"The US's EEP program would be an example of what type of trade policy?",answer:"Export subsidy",explain:"The Export Enhancement Program (EEP) was a US agricultural policy that provided bonuses to exporters to help US commodities compete in world markets at prices below domestic levels. Export subsidies are controversial because they depress world prices, harm competing exporters in other countries, and are restricted under WTO agreements."},
+      {clue:"The difference between the price actually paid for a good and the maximum amount that a consumer is willing to pay is called this.",answer:"Consumer surplus",explain:"Consumer surplus measures the net benefit consumers receive from a transaction — it's the area below the demand curve and above the market price. It is a key measure of economic welfare in policy analysis. Policies that raise prices (like tariffs or price floors) reduce consumer surplus, while policies that lower prices increase it."},
+      {clue:"A domestic agricultural policy tool that limits the quantity of a commodity that can be sold in a market.",answer:"Market quota",explain:"Market quotas restrict the total quantity of a commodity that can be sold, effectively creating an artificial scarcity that supports higher prices. They are used in programs like US tobacco and peanut quotas historically. Quotas create quota rents — benefits to quota holders — and can lead to inefficiency if quotas are not tradeable."},
+      {clue:"Riparian Rights and Prior Appropriation are examples of:",answer:"Doctrines used for water rights",choices:["A. Doctrines used for water rights","B. Land tenure systems","C. Agricultural trade policies","D. Property tax classifications"],explain:"Riparian rights grant water use to landowners adjacent to a water source, common in the eastern US where water is relatively abundant. Prior appropriation, common in the arid western US, allocates water based on 'first in time, first in right' — senior users have priority in times of scarcity. These doctrines have major implications for agricultural water allocation and conflict."}
+    ],
+    "Finance":[
+      {clue:"What are the resources owned and controlled by the business called?",answer:"Assets",explain:"Assets are economic resources owned or controlled by a firm that are expected to provide future economic benefits. They are listed on the left side of the balance sheet and classified as current (convertible to cash within a year, like inventory and receivables) or long-term (like property, plant, and equipment). Assets must equal liabilities plus owners' equity by the accounting equation."},
+      {clue:"An interest expense of $12,000 per year on a $100,000 loan implies a simple APR of:",answer:"12 percent",explain:"Simple APR (Annual Percentage Rate) is calculated as annual interest divided by the principal: $12,000 / $100,000 = 0.12, or 12%. APR is distinguished from APY (Annual Percentage Yield), which accounts for compounding. Lenders are legally required to disclose APR so borrowers can compare loan costs on a standardized basis."},
+      {clue:"The prime interest rate is defined as:",answer:"The interest rate banks charge their best customers",explain:"The prime rate is the benchmark interest rate that commercial banks charge their most creditworthy — typically large corporate — borrowers. It is typically set about 3 percentage points above the federal funds rate and moves in tandem with Fed policy decisions. Consumer loan rates, like credit cards and home equity lines, are often expressed as prime plus a spread."},
+      {clue:"The current ratio is calculated by dividing these two items.",answer:"Current assets divided by current liabilities (CA/CL)",explain:"The current ratio measures short-term liquidity — a firm's ability to pay obligations due within a year using assets that can be converted to cash within a year. A ratio above 1.0 means current assets exceed current liabilities. A ratio that is too high may indicate inefficient use of assets, while a ratio below 1.0 signals potential liquidity problems."},
+      {clue:"The adjusted basis of an asset for tax purposes is determined by:",answer:"Cost basis less depreciation",explain:"Adjusted basis starts with the original cost basis of an asset and subtracts accumulated depreciation deductions taken over the asset's life. When the asset is sold, capital gain or loss is calculated as the sale price minus the adjusted basis. This is important because depreciation deductions reduce basis, meaning selling a fully depreciated asset for any positive price generates a taxable gain."}
+    ],
+    "Potpourri":[
+      {clue:"What planet did NASA's Perseverance rover land on in February 2021?",answer:"Mars"},
+      {clue:"What team won the 2024 Super Bowl?",answer:"Kansas City Chiefs"},
+      {clue:"What streaming service released the show 'Squid Game'?",answer:"Netflix"},
+      {clue:"What does GDP stand for?",answer:"Gross Domestic Product"},
+      {clue:"What is the tallest mountain in the world?",answer:"Mount Everest"}
+    ]
+  },
+
+  // ── ROUND 2 ──
+  {
+    "Micro":[
+      {clue:"The type of demand that represents desire backed up by the willingness to pay is called this.",answer:"Effective demand",explain:"Effective demand distinguishes actual market demand — backed by purchasing power — from mere desire or need without the ability to pay. It is the foundation of market analysis because prices are determined by what consumers are both willing and able to pay. John Maynard Keynes also used the term in a macroeconomic sense to describe total spending in an economy."},
+      {clue:"Average Physical Product (APP) is determined by dividing total output by this.",answer:"The level of input (X)",explain:"Average Physical Product measures output per unit of input — total physical product (TPP) divided by the quantity of input used. It shows the average productivity of each unit of input. APP rises when marginal product exceeds it and falls when marginal product falls below it, so the APP curve intersects the MPP curve at APP's maximum."},
+      {clue:"Measuring elasticity by taking the average price elasticity between two points on the demand curve is called this.",answer:"Arc elasticity",explain:"Arc elasticity calculates elasticity between two distinct points on a demand curve using the midpoint (average) of price and quantity as the base, avoiding the problem of getting different values depending on which point is used as the starting point. It is the most common method for estimating elasticity from observed price-quantity data."},
+      {clue:"An industry that experiences higher resource costs as output expands is called this.",answer:"An increasing cost industry",explain:"In an increasing cost industry, as the industry expands output (attracting more firms), input prices rise — often because inputs are specialized or limited in supply. This causes each firm's cost curves to shift up, so the long-run supply curve slopes upward. It contrasts with constant cost industries (flat supply) and decreasing cost industries (downward-sloping)."},
+      {clue:"Assume a total cost function: TC = 25 + 4.5Q. What happens to total cost when Q increases by 10 units?",answer:"TC increases by $45",explain:"In the linear cost function TC = 25 + 4.5Q, the fixed cost is $25 (the constant) and the variable cost per unit is $4.50 (the coefficient on Q). When Q rises by 10, total variable cost rises by 4.5 × 10 = $45. Fixed costs don't change, so total cost rises by exactly $45. The marginal cost is constant at $4.50 per unit."}
+    ],
+    "Macro":[
+      {clue:"Economic thought which suggests the government ought to play a very limited role in the economy is called this.",answer:"Laissez-faire",explain:"Laissez-faire, French for 'let do' or 'leave alone,' is the economic philosophy that markets function best with minimal government intervention. Associated with Adam Smith and classical economics, it argues that the invisible hand of market competition allocates resources efficiently without central direction. It contrasts sharply with Keynesian economics, which advocates active fiscal policy."},
+      {clue:"If a country's imports exceed exports, the country is said to have:",answer:"A balance of trade deficit",explain:"A trade deficit (negative net exports) means a country is buying more from abroad than it is selling, which requires borrowing from or selling assets to foreign nations. The US has run persistent trade deficits for decades. Trade deficits are not inherently bad — they can reflect strong domestic demand — but they do represent claims on future national income."},
+      {clue:"What is it called when an increase in the money supply fails to reduce interest rates and stimulate economic growth?",answer:"Liquidity trap",choices:["A. Inflation spiral","B. Liquidity trap","C. Fiscal cliff","D. Crowding out"],explain:"A liquidity trap occurs when interest rates are already near zero and people hoard money rather than invest or spend, making monetary policy ineffective. Keynes described this as a situation where monetary expansion fails to stimulate the economy. Japan's 'lost decade' in the 1990s and the period after the 2008 financial crisis are often cited as examples."},
+      {clue:"The demand for money can be divided into two components. What are they?",answer:"Transactions demand and asset (speculative) demand",explain:"Transactions demand for money arises from the need to pay for everyday purchases — it is positively related to income. Asset (speculative) demand arises from the desire to hold money as a store of value rather than riskier assets — it is inversely related to the interest rate. Together they form total money demand, which is the foundation of the LM curve in IS-LM analysis."},
+      {clue:"The Federal Open Market Committee decides to SELL government securities. This is an example of:",answer:"Contractionary monetary policy",explain:"When the Fed sells government securities, banks pay for them, reducing bank reserves and shrinking the money supply. This tends to raise interest rates, reducing borrowing and spending — a contractionary effect aimed at fighting inflation. Open market operations are the Fed's primary monetary policy tool, with buying securities being expansionary and selling being contractionary."}
+    ],
+    "Management":[
+      {clue:"The process whereby a manager assigns responsibility to others along with the needed authority to carry out the task is called this.",answer:"Delegation",explain:"Delegation is the process of assigning tasks, authority, and accountability to subordinates. Effective delegation multiplies a manager's capacity, develops employees' skills, and empowers teams. The key principle is that authority must match responsibility — a manager cannot hold someone accountable for a task without giving them the authority needed to accomplish it."},
+      {clue:"What are the three levels of management in a typical organization?",answer:"Top-level, middle-level, and first-line (supervisory) management",explain:"Top-level managers (CEO, CFO) set overall strategy and organizational direction. Middle managers translate strategy into operational plans and coordinate departments. First-line (supervisory) managers directly oversee frontline employees and day-to-day operations. Each level has distinct responsibilities, time horizons, and skill emphases — conceptual skills matter most at the top, technical skills at the front line."},
+      {clue:"Which conflict resolution style involves finding a mutually acceptable solution where both parties give up something?",answer:"Compromising",choices:["A. Avoiding","B. Competing","C. Compromising","D. Accommodating"],explain:"Compromising is a conflict resolution strategy where each party gives up something to reach a mutually acceptable middle ground. It is appropriate when parties have equal power, when a temporary settlement is needed, or when collaboration has failed. It differs from collaborating (win-win) and differs from accommodating (one party gives in completely)."},
+      {clue:"Which management tool uses a diagram to map out tasks, timelines, and dependencies in project management?",answer:"Gantt chart",choices:["A. Gantt chart","B. Decision tree","C. Balanced Scorecard","D. PERT chart"],explain:"A Gantt chart is a horizontal bar chart that displays project tasks along a timeline, showing start and end dates, duration, and sometimes dependencies between tasks. Developed by Henry Gantt in the early 1900s, it remains one of the most widely used project management tools. Modern software like Microsoft Project and Asana generate dynamic Gantt charts automatically."},
+      {clue:"What does PERT stand for, and what is a PERT analysis used for?",answer:"Program Evaluation and Review Technique — planning and controlling a project",explain:"PERT was developed by the US Navy in the 1950s for the Polaris submarine missile program. It maps all project activities as a network, identifies dependencies, and calculates the critical path — the longest sequence of tasks that determines the minimum project duration. PERT also incorporates probabilistic time estimates (optimistic, most likely, pessimistic) to account for uncertainty."}
+    ],
+    "Marketing":[
+      {clue:"What type of analysis focuses on historic price patterns as a tool for predicting price behavior?",answer:"Technical analysis",explain:"Technical analysis uses historical price and volume data — charts, trend lines, and indicators — to forecast future price movements, based on the premise that past patterns repeat. It contrasts with fundamental analysis, which values assets based on underlying economic factors. Technical analysis is widely used in commodity and futures markets, including agricultural commodities."},
+      {clue:"What name is commonly given to products that are priced below cost to attract customers into a store?",answer:"Loss leaders",choices:["A. Discount goods","B. Loss leaders","C. Promotional items","D. Clearance products"],explain:"Loss leaders are products sold at or below cost intentionally to draw customers into a store, with the expectation that they will purchase other, more profitable items. Grocery stores commonly use this strategy with staples like milk or bread. Loss leader pricing can be anticompetitive if used to drive out rivals, making it legally restricted in some states."},
+      {clue:"What is known about a call option's strike price if it is above the underlying futures price?",answer:"The option is out of the money",explain:"A call option gives the holder the right to buy at the strike price. If the strike price exceeds the current futures price, exercising the option would mean paying more than the market price — so the option has no intrinsic value and is 'out of the money.' It still has time value if expiration is in the future. An option is 'in the money' when exercising it is immediately profitable."},
+      {clue:"The four stages in the product life cycle are:",answer:"Introduction, growth, maturity, and decline",explain:"The product life cycle (PLC) describes how a product's sales and profits evolve over time. Introduction involves high costs and low sales as awareness builds. Growth sees rapid sales increases as the market expands. Maturity is the longest stage, with peak sales and intense competition. Decline occurs as substitutes emerge or consumer preferences shift. Marketing strategies should change with each stage."},
+      {clue:"What law states that under competitive market conditions, all prices within a market are equalized due to arbitrage?",answer:"Law of One Price (LOOP)",explain:"The Law of One Price states that in competitive markets with no transaction costs or trade barriers, identical goods must sell for the same price everywhere when expressed in the same currency. Arbitrage — buying low and selling high across locations — enforces this equality. Purchasing Power Parity (PPP) is an international application of LOOP to exchange rates."}
+    ],
+    "Quantitative":[
+      {clue:"The numerator refers to what part of a fraction?",answer:"The top part",explain:"In a fraction, the numerator is the top number representing the part being counted, while the denominator (bottom) represents the total. For example, in 3/4, the numerator 3 indicates three parts out of four. In statistics, many key ratios like the t-statistic have a numerator representing the effect size and a denominator representing variability."},
+      {clue:"A range estimate with a specified level of reliability describes this.",answer:"A confidence interval",explain:"A confidence interval provides a range of plausible values for a population parameter, along with a confidence level (typically 95%). A 95% CI means that if we repeated the sampling procedure many times, 95% of the constructed intervals would contain the true parameter. It is more informative than a point estimate because it conveys both the estimate and its precision."},
+      {clue:"The number of independent observations used in calculating a statistic is referred to as:",answer:"Degrees of freedom",explain:"Degrees of freedom (df) represent the number of independent pieces of information available to estimate a parameter. When estimating a mean, df = n - 1 because one constraint (the sample mean itself) is used. Degrees of freedom affect which t-distribution to use in hypothesis tests — smaller samples have fewer df and fatter tails, reflecting greater uncertainty."},
+      {clue:"What distribution provides good approximations of the binomial distribution when the probability of success is small and the number of trials is large?",answer:"Poisson distribution",explain:"The Poisson distribution models the number of rare events occurring in a fixed interval of time or space. It is parameterized by λ (the average rate), and when a binomial distribution has large n and small p, the Poisson with λ = np provides a good approximation. Applications include modeling insurance claims, equipment failures, and arrivals at a service point."},
+      {clue:"When observations are not symmetrically distributed around the mean, the problem is called this.",answer:"Skewness",choices:["A. Skewness","B. Kurtosis","C. Variance","D. Dispersion"],explain:"Skewness measures the asymmetry of a distribution. A positively skewed distribution has a long right tail (mean > median), common in income distributions. A negatively skewed distribution has a long left tail. In regression, skewed residuals can violate OLS assumptions and affect inference. Skewness is measured by the third standardized moment of the distribution."}
+    ],
+    "Policy":[
+      {clue:"Name the controversial U.S. Act originally enacted in 1973 to protect endangered and threatened species.",answer:"Endangered Species Act",explain:"The Endangered Species Act (ESA) prohibits federal agencies from taking actions that jeopardize listed species and makes it illegal to 'take' (harm, harass, or kill) endangered animals. It is administered by the US Fish & Wildlife Service and NOAA. The ESA has been controversial because species protection can conflict with agricultural, development, and resource extraction activities, raising issues of regulatory takings and economic costs."},
+      {clue:"In U.S. agricultural policy, what does the acronym CCC stand for?",answer:"Commodity Credit Corporation",explain:"The Commodity Credit Corporation is a government-owned corporation administered by USDA that finances price and income support programs for farmers. It provides loans, purchases, and payments under farm bill programs. The CCC is the funding mechanism behind many commodity programs — when prices fall below loan rates, farmers can forfeit their crop to the CCC instead of repaying loans."},
+      {clue:"When no one is found to be legally entitled, title to property reverts to the government. What is this called?",answer:"Escheat",choices:["A. Eminent domain","B. Foreclosure","C. Escheat","D. Reversion"],explain:"Escheat is the reversion of property to the state when no legal owner or heirs can be found. It applies to unclaimed bank accounts, abandoned property, and estates without heirs. In the US, states have escheat laws requiring financial institutions to turn over unclaimed assets after a dormancy period. It originates from feudal English law where property reverted to the lord."},
+      {clue:"Labeling of agricultural chemicals is based on efficacy and safety. What is efficacy?",answer:"Ability to control the targeted pest (effectiveness)",explain:"In the context of pesticide regulation, efficacy refers to whether a product actually does what it claims — controlling the target pest, weed, or disease effectively. The EPA evaluates both safety (toxicology and environmental risk) and efficacy when registering pesticides. A product can be safe but fail registration if it doesn't work, and it can be effective but fail if it poses unacceptable risks."},
+      {clue:"In water quality assessment, the acronym TMDL stands for:",answer:"Total Maximum Daily Load",explain:"A Total Maximum Daily Load is the maximum amount of a pollutant that a water body can receive while still meeting water quality standards. Established under the Clean Water Act, TMDLs are calculated for impaired water bodies and allocate pollution loads among point sources (like factories) and nonpoint sources (like agricultural runoff). They are a key regulatory tool for watershed management."}
+    ],
+    "Finance":[
+      {clue:"The interest rate used by the Federal Reserve to implement US monetary policy is called this.",answer:"The discount rate",explain:"The discount rate is the interest rate the Federal Reserve charges commercial banks for short-term loans through its discount window. Lowering the discount rate makes borrowing cheaper for banks, encouraging lending and expanding the money supply. It is one of three main monetary policy tools alongside open market operations and reserve requirements, though open market operations are used most frequently."},
+      {clue:"The three R's of credit — Risk, Return, and Repayment — are used to determine:",answer:"Credit worthiness of borrowers",explain:"The 3 Rs of credit assess whether a borrower is a sound lending risk. Risk evaluates the probability of default, often through credit scores and collateral. Return considers whether the interest income justifies the risk. Repayment capacity looks at cash flow and income to ensure the borrower can service the debt. Lenders use these factors alongside the traditional 5 Cs of credit (character, capacity, capital, collateral, conditions)."},
+      {clue:"When a firm sells a capital asset for a price higher than the cost, the positive difference is called:",answer:"Capital gains",explain:"A capital gain is realized when an asset is sold for more than its purchase price (cost basis). Long-term capital gains (on assets held over a year) are taxed at preferential rates in the US, while short-term gains are taxed as ordinary income. For depreciable business assets, the gain may be subject to depreciation recapture, taxed as ordinary income up to the amount of depreciation taken."},
+      {clue:"How would an earnings to sales ratio be calculated?",answer:"Net income divided by sales",explain:"The earnings-to-sales ratio (also called net profit margin) measures how much net income is generated for every dollar of revenue: Net Income / Sales. It indicates overall profitability and efficiency in converting revenue to profit after all expenses. A higher margin means the company retains more profit per dollar of sales. It varies widely by industry — grocery chains have thin margins; software firms have large ones."},
+      {clue:"If you receive a bill stating '2/10 net 30,' what does it mean?",answer:"2% discount if paid in 10 days; entire amount due in 30 days",explain:"Trade credit terms like '2/10 net 30' are standard in business-to-business transactions. Taking the discount is almost always financially attractive — a 2% discount for paying 20 days early implies an annualized interest rate of about 36%, far exceeding most borrowing costs. Firms that don't take available early-payment discounts are effectively paying very high implicit interest rates."}
+    ],
+    "Potpourri":[
+      {clue:"What spacecraft successfully completed the first crewed commercial spaceflight to the ISS in 2020?",answer:"SpaceX Crew Dragon"},
+      {clue:"What country hosted the 2024 Summer Olympics?",answer:"France (Paris)"},
+      {clue:"What singer released the album 'Midnights' in 2022?",answer:"Taylor Swift"},
+      {clue:"The Federal Reserve's dual mandate requires it to pursue maximum employment and what else?",answer:"Price stability (stable inflation)"},
+      {clue:"How many justices sit on the US Supreme Court?",answer:"Nine"}
+    ]
+  },
+
+  // ── ROUND 3 ──
+  {
+    "Micro":[
+      {clue:"What law suggests that a larger quantity will be purchased at a lower price, other things being equal?",answer:"Law of Demand",explain:"The Law of Demand states that there is an inverse relationship between price and quantity demanded, holding all else constant (ceteris paribus). It is explained by the substitution effect (higher prices make other goods relatively cheaper) and the income effect (higher prices reduce real purchasing power). Giffen goods are a rare theoretical exception where demand curves slope upward."},
+      {clue:"What can generally be said about supply elasticity in the short run relative to the long run?",answer:"More inelastic (or less elastic) in the short run",explain:"Supply is more inelastic in the short run because producers have limited ability to change inputs quickly — capital and plant size are fixed. In the long run, firms can expand capacity, enter or exit, and adjust all inputs, making supply more responsive to price changes (more elastic). This distinction is critical in agricultural markets where crop supply cannot change mid-season."},
+      {clue:"When a firm produces where marginal revenue equals marginal cost, it is maximizing this.",answer:"Profit",explain:"The profit-maximizing rule for any firm — competitive or not — is to produce where MR = MC. At this output level, the additional revenue from one more unit exactly equals the additional cost, so there is no gain from producing more or less. This is a foundational concept that applies across all market structures."},
+      {clue:"The kinked demand curve suggests that prices in an oligopolistic market tend to:",answer:"Remain unchanged (price rigidity)",explain:"The kinked demand curve model (Sweezy, 1939) explains price rigidity in oligopolies: if one firm raises price, rivals don't follow and it loses customers (elastic response); if it cuts price, rivals match and it gains little (inelastic response). This creates a 'kink' in the demand curve at the current price, with a discontinuity in marginal revenue, meaning costs can change significantly without inducing a price change."},
+      {clue:"For an inferior good, an increase in price will have a positive income effect and a negative substitution effect. This phenomenon is known as:",answer:"Giffen's Paradox (Giffen good)",choices:["A. Law of Demand","B. Substitution Effect","C. Giffen's Paradox (Giffen good)","D. Veblen Effect"],explain:"A Giffen good is an extreme inferior good where the income effect of a price increase is so large and positive that it outweighs the negative substitution effect, resulting in an upward-sloping demand curve. The classic example is staple foods like bread or rice for very poor households — as the price rises, they become poorer and must buy even more of the staple and less of more expensive foods."}
+    ],
+    "Macro":[
+      {clue:"If government receipts minus government spending is positive, the result would be called:",answer:"A budget surplus",explain:"A budget surplus occurs when government revenues exceed expenditures in a given period. The US federal government ran surpluses in fiscal years 1998–2001 under the Clinton administration, the only surpluses since 1969. Surpluses reduce the national debt (or slow its growth) and can have a contractionary effect on the economy if they reduce aggregate demand."},
+      {clue:"Net Domestic Product (NDP) is equal to GDP less this.",answer:"Depreciation",explain:"NDP = GDP minus capital consumption allowance (depreciation). Depreciation represents the wearing out of the capital stock used in production — GDP measures total output but doesn't account for the capital used up in producing it. NDP is theoretically a better measure of sustainable national income, though it is less commonly used because depreciation is difficult to measure accurately."},
+      {clue:"What is the name of the curve that shows the relationship between the tax rate and tax revenue?",answer:"Laffer Curve",choices:["A. Laffer Curve","B. Phillips Curve","C. Kuznets Curve","D. Engel Curve"],explain:"The Laffer Curve, popularized by economist Arthur Laffer in the 1970s, illustrates that tax revenue is zero at both 0% and 100% tax rates, and peaks at some intermediate rate. It was used to argue that cutting high marginal tax rates could increase total revenue by stimulating economic activity — the theoretical basis for 'supply-side economics' in the Reagan era. Empirical evidence for this effect is debated."},
+      {clue:"What type of unemployment exists when workers have obsolete job skills?",answer:"Structural unemployment",explain:"Structural unemployment arises from a mismatch between the skills workers have and the skills employers demand, often due to technological change or shifts in the economy. It is longer-lasting than frictional unemployment and requires retraining rather than just job search. Automation, globalization, and industry decline (like coal mining) are major sources of structural unemployment in modern economies."},
+      {clue:"Under what circumstances would the sale of a combine not be included in determining GDP?",answer:"If the combine was sold as a used or second-hand piece of equipment",explain:"GDP counts only final goods and services produced during the current period — it does not count the resale of used goods because no new production occurred. When a used combine changes hands, its value was already counted in GDP in the year it was originally manufactured. Only the dealer's commission or service fee for facilitating the used sale would be included in current GDP."}
+    ],
+    "Management":[
+      {clue:"What is the term for the process of hiring, training, and developing employees?",answer:"Staffing",explain:"Staffing is the management function focused on acquiring, deploying, and retaining human resources. It encompasses workforce planning, recruiting, selection, onboarding, training, performance management, and succession planning. Effective staffing is critical to organizational success — research consistently shows that people are among the most important sources of competitive advantage for firms."},
+      {clue:"Which leadership style focuses on creating a vision of the future and inspiring employees to achieve it?",answer:"Visionary leadership",explain:"Visionary leaders articulate a compelling picture of the future and align followers around that shared direction. They are particularly effective in times of organizational change or uncertainty, when followers need a clear sense of where they are headed. This style differs from transformational leadership (which focuses on inspiring change) and is closest to the 'authoritative' style in Daniel Goleman's framework of leadership styles."},
+      {clue:"Which decision-making style involves managers consulting team members but retaining final decision authority?",answer:"Consultative decision-making",explain:"In consultative decision-making, the manager gathers input, opinions, and information from team members before making a final decision, but does not share decision-making authority. It improves decision quality by incorporating diverse perspectives while maintaining clear accountability. It contrasts with autocratic (no input sought), democratic (group votes), and delegative (subordinate decides) styles."},
+      {clue:"This theory proposed by Douglas McGregor assumes employees are self-motivated and seek responsibility.",answer:"Theory Y",choices:["A. Theory Z","B. Theory Y","C. Behavioral Approach","D. Theory X"],explain:"Douglas McGregor's 1960 Theory X vs. Theory Y framework contrasts two views of human nature. Theory X assumes workers are lazy, dislike work, and must be coerced and controlled. Theory Y assumes workers are self-motivated, seek responsibility, and find work naturally fulfilling. Theory Y management — participative, empowering, and trust-based — generally produces better outcomes in knowledge work environments."},
+      {clue:"Which advanced management tool measures organizational performance from four perspectives: financial, customer, internal processes, and learning/growth?",answer:"Balanced Scorecard",choices:["A. Balanced Scorecard","B. SWOT Analysis","C. Gantt Chart","D. Six Sigma"],explain:"The Balanced Scorecard, developed by Kaplan and Norton in 1992, moves beyond purely financial metrics to give managers a comprehensive view of organizational health. Financial metrics tell you past results; customer metrics indicate market position; internal process metrics show operational efficiency; and learning/growth metrics capture capability development. Together they translate strategy into a measurable set of performance targets."}
+    ],
+    "Marketing":[
+      {clue:"A request for additional money that a futures trader must deposit to maintain their position is called this.",answer:"Margin call",explain:"A margin call occurs when the value of a futures account falls below the maintenance margin level, requiring the trader to deposit additional funds (variation margin) to bring the account back to the initial margin level. Failure to meet a margin call results in the broker liquidating the position. Margin calls can force traders to exit positions at unfavorable times, amplifying losses."},
+      {clue:"An undifferentiated marketing strategy is based upon what assumption about the target market?",answer:"The market has no individual segments and is best served with a single marketing mix",explain:"An undifferentiated (mass market) strategy treats all consumers as essentially similar and offers one product with one marketing mix to the entire market. It maximizes economies of scale in production and marketing. It was common in early mass production eras (Ford's Model T) but is increasingly rare as consumer preferences have diversified and data-driven targeting has become cost-effective."},
+      {clue:"Under what specific circumstances would an increase in demand raise the equilibrium price but not the equilibrium quantity?",answer:"When supply is perfectly inelastic",choices:["A. When supply is perfectly inelastic","B. When demand is perfectly elastic","C. When supply is perfectly elastic","D. When demand is unit elastic"],explain:"When supply is perfectly inelastic (a vertical supply curve), quantity supplied cannot change regardless of price. An increase in demand shifts the demand curve right, but since no additional quantity can be produced, the entire adjustment falls on price — it rises with no change in quantity. This is relevant for fixed-supply goods like land in a specific location or tickets to a sold-out event."},
+      {clue:"The functional approach to food marketing focuses on:",answer:"The major specialized activities performed: exchange, physical, and facilitating functions",explain:"The functional approach to food marketing categorizes marketing activities by what they do. Exchange functions include buying and selling. Physical functions include storage, transportation, and processing — activities that change the form, place, or time utility of products. Facilitating functions include financing, risk management (hedging), market information, and standardization/grading. This framework helps analyze the costs and efficiency of the marketing system."},
+      {clue:"The current futures price of Dec wheat is 320 cents. A 310 put with a premium of 14 cents has an implied time value of:",answer:"14 cents",explain:"A 310 put option gives the right to sell at 310 cents. With the futures at 320 cents, this put is out of the money — exercising it would mean selling at 310 when the market is at 320, so intrinsic value = 0. The entire 14-cent premium is therefore time value, reflecting the probability that prices could fall below 310 before expiration. Time value = Premium - Intrinsic Value = 14 - 0 = 14 cents."}
+    ],
+    "Quantitative":[
+      {clue:"What statistical distribution is associated with the bell-shaped curve?",answer:"Normal distribution",explain:"The normal (Gaussian) distribution is symmetric and bell-shaped, completely described by its mean (center) and standard deviation (spread). It is central to statistics because of the Central Limit Theorem: the sampling distribution of the mean approaches normality for large samples regardless of the population's distribution. Many natural phenomena — heights, measurement errors — follow approximately normal distributions."},
+      {clue:"In the linear function y = a + bx, the slope of the function is given by the value of what variable?",answer:"b",explain:"In the equation y = a + bx, 'a' is the y-intercept (value of y when x = 0) and 'b' is the slope, representing the change in y for a one-unit increase in x. In regression analysis, 'b' is the estimated coefficient on x and represents the marginal effect of x on y. The sign of b indicates direction; the magnitude indicates strength of the relationship."},
+      {clue:"The difference between a normal distribution and a standard normal distribution is that:",answer:"The standard normal has a mean of zero and a standard deviation of one",explain:"Any normal distribution can be converted to a standard normal (Z-distribution) through standardization: Z = (X - μ) / σ. This transformation allows us to use a single standard normal table for any normal distribution. Z-scores tell you how many standard deviations an observation is from the mean, enabling comparison across different scales."},
+      {clue:"The omission of an economically relevant variable in an OLS equation leads to what problem with the estimated coefficients?",answer:"Biased parameter estimates",choices:["A. Biased parameter estimates","B. Multicollinearity","C. Heteroskedasticity","D. Perfect collinearity"],explain:"Omitted variable bias (OVB) occurs when a variable that belongs in the regression is left out and is correlated with both the included variable(s) and the dependent variable. The OLS estimator then attributes to the included variable the effect that actually belongs to the omitted variable, causing bias. The direction of bias can often be predicted from the sign of the correlation between the omitted variable and both the included variable and the outcome."},
+      {clue:"When using a double-log model to estimate a traditional demand model, what does the coefficient on the price variable directly represent?",answer:"Own price elasticity of demand",explain:"In a double-log (log-linear) demand model — ln(Q) = a + b·ln(P) + ... — the coefficient 'b' on the log of price directly equals the own-price elasticity of demand. This is because d(lnQ)/d(lnP) = (dQ/Q)/(dP/P) = percentage change in Q / percentage change in P, which is the definition of elasticity. This is a key reason economists prefer double-log specifications for demand estimation."}
+    ],
+    "Policy":[
+      {clue:"The value that people place on knowing future generations will have the option to enjoy certain environmental resources is called what?",answer:"Bequest value",explain:"Bequest value is a component of non-use (passive use) value in environmental economics. It reflects people's willingness to pay to preserve resources for their children and future generations, even if they never use the resource themselves. Along with existence value and option value, bequest value contributes to total economic value and is typically measured through contingent valuation surveys."},
+      {clue:"How are 'net exports' determined?",answer:"Total exports minus total imports",explain:"Net exports (NX) = Exports (X) - Imports (M). When NX > 0, the country has a trade surplus; when NX < 0, a trade deficit. Net exports are one of the four components of GDP in the expenditure approach (GDP = C + I + G + NX). They reflect a country's international competitiveness, exchange rate effects, and relative economic growth rates compared to trading partners."},
+      {clue:"An import duty that must be constantly adjusted to reflect the difference between an internal price target and the world market price is called what?",answer:"A variable levy",explain:"A variable levy automatically adjusts to maintain a target domestic price by changing with world market price fluctuations. When world prices fall, the levy rises to protect domestic producers; when world prices rise, the levy falls. The EU used variable levies extensively under the Common Agricultural Policy before the WTO required conversion to fixed tariffs under the Uruguay Round agreement."},
+      {clue:"These are costs or benefits that exist outside of the normal cost/benefit analysis of a market transaction and affect third parties.",answer:"Externalities",explain:"Externalities are spillover effects of economic activities on third parties not involved in the transaction. Negative externalities (like pollution) impose costs on society; positive externalities (like education or vaccination) create benefits beyond the direct parties. Markets fail to account for externalities, leading to overproduction of goods with negative externalities and underproduction of goods with positive externalities."},
+      {clue:"What U.S. law, enacted in 1972, is the primary federal regulation governing water pollution?",answer:"The Clean Water Act",explain:"The Clean Water Act established the framework for regulating pollutant discharges into US waters and set water quality standards for surface waters. It requires permits (NPDES permits) for point source discharges and led to major reductions in industrial and municipal water pollution. Section 404 regulates dredge-and-fill activities in wetlands, creating significant implications for agricultural drainage."}
+    ],
+    "Finance":[
+      {clue:"On the balance sheet, how is debt payable within the next accounting period classified?",answer:"As a current liability",explain:"Current liabilities are obligations due within one year (or the operating cycle, whichever is longer). They include accounts payable, accrued expenses, short-term notes payable, and the current portion of long-term debt. The distinction between current and long-term liabilities matters for liquidity analysis — the current ratio and quick ratio both use current liabilities as the denominator."},
+      {clue:"The firm should cease production in the short run if the output price is below what per unit?",answer:"Average variable cost",explain:"The shutdown rule says a firm should stop production when price falls below average variable cost (AVC), because at that point revenue doesn't even cover the variable costs of producing. Above AVC but below ATC, the firm loses money but covers variable costs and some fixed costs — so it's better to produce than shut down (fixed costs are sunk). The price = AVC point is the shutdown point on the firm's supply curve."},
+      {clue:"What name is commonly given to projected income statements and balance sheets?",answer:"Pro forma",explain:"Pro forma financial statements are forward-looking projections of future financial performance based on assumptions about sales growth, margins, capital expenditures, and financing. They are essential for business planning, loan applications, and investment analysis. The term comes from Latin meaning 'for the sake of form' and signals that the statements are hypothetical rather than historical."},
+      {clue:"What is the term for the premium paid on an options contract, representing the right but not the obligation to buy or sell a commodity?",answer:"Option premium",explain:"The option premium is the price paid by the buyer to the seller (writer) for the rights conveyed by the option. It consists of intrinsic value (the immediate exercise value, if any) and time value (reflecting the probability of favorable price movement before expiration). Premiums are determined by the underlying price, strike price, time to expiration, volatility, and the risk-free rate — formalized in the Black-Scholes model."},
+      {clue:"With a nominal interest rate of 10.0% and inflation of 2.5%, the real interest rate is about:",answer:"7.5 percent",explain:"The Fisher equation approximates the real interest rate as: real rate ≈ nominal rate − inflation rate = 10% − 2.5% = 7.5%. The exact Fisher equation is (1 + real) = (1 + nominal) / (1 + inflation), which gives 7.32%, but the approximation is commonly used for small rates. The real interest rate represents the actual purchasing power return on an investment after adjusting for inflation."}
+    ],
+    "Potpourri":[
+      {clue:"What is the name of the NASA telescope launched in December 2021 that replaced the Hubble?",answer:"James Webb Space Telescope"},
+      {clue:"Who won the 2023 NBA Championship?",answer:"Denver Nuggets"},
+      {clue:"What movie won Best Picture at the 2024 Academy Awards?",answer:"Oppenheimer"},
+      {clue:"What term describes a period of two consecutive quarters of negative GDP growth?",answer:"Recession"},
+      {clue:"What social media platform did Elon Musk purchase in 2022 and rename to X?",answer:"Twitter"}
+    ]
+  },
+
+  // ROUND 4
+  {
+    "Micro":[
+      {clue:"Costs that don't change with the level of output are called:",answer:"Fixed costs"},
+      {clue:"The profit maximizing level of output is where marginal revenue equals this.",answer:"Marginal cost"},
+      {clue:"If a decrease in the price of one good increases consumption of a related good, the two goods are considered:",answer:"Complements"},
+      {clue:"As the time period under consideration increases, supply becomes:",answer:"More elastic",choices:["A. Less elastic","B. Perfectly inelastic","C. More elastic","D. Unit elastic"]},
+      {clue:"A football pool has an expected payout of $100 and probability of winning of 0.01. A risk-neutral person pays up to how much?",answer:"$1.00"}
+    ],
+    "Macro":[
+      {clue:"A consumer good that is typically used over several years is called:",answer:"A durable good"},
+      {clue:"Increasing the discount rate is an example of which type of policy?",answer:"Contractionary monetary policy"},
+      {clue:"How is technological change reflected on a production possibilities curve?",answer:"The curve shifts outward to the right"},
+      {clue:"The idea that a developing industry needs protection from foreign competition is known as the _______ argument.",answer:"Infant industry"},
+      {clue:"What is the identity MV=PQ commonly called?",answer:"The equation of exchange"}
+    ],
+    "Management":[
+      {clue:"Which function of management involves guiding and motivating employees to achieve organizational goals?",answer:"Leading (or Directing)"},
+      {clue:"Which leadership style focuses on serving others and prioritizing team members' needs above their own?",answer:"Servant leadership"},
+      {clue:"Which motivational theory uses hygiene factors and motivators to explain employee satisfaction?",answer:"Herzberg's Two-Factor Theory"},
+      {clue:"Which management style focuses on short-term, reward-based supervision to achieve compliance?",answer:"Transactional leadership"},
+      {clue:"Which strategic tool evaluates probability-weighted outcomes and expected values of competing strategies?",answer:"Decision tree analysis"}
+    ],
+    "Marketing":[
+      {clue:"The process of using the futures market and cash market simultaneously to reduce price risk is called:",answer:"Hedging"},
+      {clue:"What animal symbolizes traders who think market prices are headed down?",answer:"Bear"},
+      {clue:"The share of an industry's output accounted for by the four largest firms is called the:",answer:"4-firm concentration ratio"},
+      {clue:"The type of auction that begins with a high price and drops until a buyer accepts is called a:",answer:"Dutch auction"},
+      {clue:"A strategy that spends heavily on advertising to build consumer demand and pull products through distribution is called a:",answer:"Pull strategy"}
+    ],
+    "Quantitative":[
+      {clue:"What is a matrix composed of a single row or single column called?",answer:"A vector",choices:["A. A vector","B. A scalar","C. An identity matrix","D. A diagonal matrix"]},
+      {clue:"The lowest 25 percent of the observations in a study is called:",answer:"The bottom or lower quartile (Q1)"},
+      {clue:"The ________ ________ is a set that contains no elements.",answer:"Null (or empty) set"},
+      {clue:"A linear regression with a high R-squared but insignificant coefficients suggests this problem.",answer:"Multicollinearity"},
+      {clue:"The difference between the result obtained from a sample and the true population value is called:",answer:"Sampling error",choices:["A. Standard deviation","B. Confidence interval","C. Sampling error","D. Population bias"]}
+    ],
+    "Policy":[
+      {clue:"Regarding livestock grazing, what does the acronym AU stand for?",answer:"Animal Unit"},
+      {clue:"The discounted current value of all net benefits that occur in the future is called:",answer:"Net present value (NPV)"},
+      {clue:"What is an ad valorem tariff?",answer:"An import duty calculated as a percentage of the value of the imported good"},
+      {clue:"The 'Tragedy of the Commons' refers to:",answer:"The overuse of a free-access resource which may threaten its existence"},
+      {clue:"When an excise tax is placed on alcoholic beverages, what does 'incidence of the tax' mean?",answer:"Who ultimately bears the burden of the tax, determined by relative elasticities of supply and demand"}
+    ],
+    "Finance":[
+      {clue:"What term describes an individual firm's share of the total market?",answer:"Market share"},
+      {clue:"A direct reduction in the amount of taxes owed is called:",answer:"A tax credit"},
+      {clue:"A service or product the firm has paid for but not yet received or used is called:",answer:"A prepaid expense"},
+      {clue:"The price that gives agricultural output the same purchasing power it had in a base period is called the:",answer:"Parity price"},
+      {clue:"Dividing cost of goods sold by the value of product inventory calculates the:",answer:"Inventory turnover ratio"}
+    ],
+    "Potpourri":[
+      {clue:"What is the name of the first private company to land a spacecraft on the Moon, achieving this in early 2024?",answer:"Intuitive Machines"},
+      {clue:"What country won the 2022 FIFA World Cup?",answer:"Argentina"},
+      {clue:"What pop star's 'Eras Tour' became the highest-grossing concert tour in history?",answer:"Taylor Swift"},
+      {clue:"What is the name of the US government agency responsible for monetary policy?",answer:"Federal Reserve (the Fed)"},
+      {clue:"What is the capital city of Australia?",answer:"Canberra"}
+    ]
+  },
+
+  // ROUND 5
+  {
+    "Micro":[
+      {clue:"The Law of ________ states that price and quantity purchased are inversely related.",answer:"Demand"},
+      {clue:"What is the line showing combinations of two resources purchasable with a given level of expenditure?",answer:"Isocost line"},
+      {clue:"Two goods where a price decrease for one increases purchases of the other are called:",answer:"Complements"},
+      {clue:"What are four of the traditional demand shifters?",answer:"Population, income, price of related goods, tastes and preferences, expectations"},
+      {clue:"For a profit-maximizing unregulated monopolist, what is the relationship between price and marginal cost?",answer:"Price exceeds marginal cost"}
+    ],
+    "Macro":[
+      {clue:"What kind of economy involves exchanging goods or services for other goods or services without using money?",answer:"Barter economy"},
+      {clue:"_______ policy deals with government taxation and government expenditures.",answer:"Fiscal"},
+      {clue:"What is the largest component of the money supply (M1)?",answer:"Demand deposits",choices:["A. Currency in circulation","B. Demand deposits","C. Savings deposits","D. Traveler's checks"]},
+      {clue:"The C component of GDP is made up of what three categories?",answer:"Durable goods, non-durable goods, and services"},
+      {clue:"What does the term 'stagflation' describe?",answer:"Stagnant economic growth coupled with a high rate of inflation"}
+    ],
+    "Management":[
+      {clue:"Which function of management involves organizing resources and tasks to achieve goals?",answer:"Organizing"},
+      {clue:"Which leadership style gives employees freedom to make decisions with minimal supervision?",answer:"Laissez-faire leadership"},
+      {clue:"What type of plan outlines a firm's response to an unforeseen but significant event?",answer:"Contingency plan"},
+      {clue:"What does the acronym SWOT analysis stand for?",answer:"Strengths, Weaknesses, Opportunities, and Threats"},
+      {clue:"Which management theory introduced the idea that workers are motivated by psychological and social factors as much as by money?",answer:"Hawthorne Studies / Human Relations Theory"}
+    ],
+    "Marketing":[
+      {clue:"Combining two or more items into a single package sold at one price is called:",answer:"Bundle pricing or bundling"},
+      {clue:"The cobweb model is often used to explain what type of commodity price variation?",answer:"Cyclical price variation"},
+      {clue:"What happens to total revenue if price decreases and the firm faces an elastic demand curve?",answer:"Total revenue increases"},
+      {clue:"The ________ approach to analyzing the food marketing system looks at major specialized activities performed.",answer:"Functional"},
+      {clue:"Unrestricted grain stocks held by agricultural producers on a grain balance sheet are listed as:",answer:"Free stocks"}
+    ],
+    "Quantitative":[
+      {clue:"_______ numbers are numbers greater than zero.",answer:"Positive"},
+      {clue:"When using predictive models, the difference between the actual and predicted value is called:",answer:"Error or residual"},
+      {clue:"A chart represented by a circle with areas segmented into slices to represent proportions is called:",answer:"A pie chart"},
+      {clue:"What type of data is a likely candidate for the problem of autocorrelation?",answer:"Time series data"},
+      {clue:"What is a matrix that does not have an inverse called?",answer:"Singular matrix",choices:["A. Singular matrix","B. Nonlinear matrix","C. Orthogonal matrix","D. Identity matrix"]}
+    ],
+    "Policy":[
+      {clue:"What are benefits or costs accruing to individuals or groups not reflected in a transaction?",answer:"Externalities"},
+      {clue:"What do economists call actions by interest groups designed to restructure economic benefits in their favor?",answer:"Rent seeking"},
+      {clue:"What Farm Bill provision places restrictions on draining natural wetlands for crop production?",answer:"Swampbuster"},
+      {clue:"How does CRC (crop revenue coverage) differ from traditional MPCI?",answer:"CRC covers revenue losses due to price declines as well as losses due to yield declines"},
+      {clue:"What general food additive category is the focus of the Delaney Clause?",answer:"Potential carcinogens (cancer-causing substances)",choices:["A. Artificial sweeteners","B. Preservatives","C. Artificial coloring","D. Potential carcinogens"]}
+    ],
+    "Finance":[
+      {clue:"What is the ratio calculated as net income divided by sales called?",answer:"Earnings to sales ratio (profit margin)"},
+      {clue:"Which approach to property appraisal focuses on the earnings potential of the property?",answer:"Income approach"},
+      {clue:"Marketable claims to funds deposited with a bank for a specified period earning a stipulated interest rate are called:",answer:"Certificates of Deposit (CDs)"},
+      {clue:"Which financial statement best reflects the long-term financial health of a firm at a given point in time?",answer:"Balance sheet"},
+      {clue:"Assuming an interest rate of 10 percent, what is the approximate present value of $100 received one year from now?",answer:"$91",choices:["A. $100","B. $95","C. $91","D. $85"]}
+    ],
+    "Potpourri":[
+      {clue:"What planet has the most moons in our solar system as of 2023?",answer:"Saturn"},
+      {clue:"What team won the 2024 World Series?",answer:"Los Angeles Dodgers"},
+      {clue:"What actress stars as Barbie in the 2023 blockbuster film?",answer:"Margot Robbie"},
+      {clue:"What economic term describes a general decline in prices across an economy?",answer:"Deflation"},
+      {clue:"What country is the world's largest producer of coffee?",answer:"Brazil"}
+    ]
+  },
+
+  // ROUND 6
+  {
+    "Micro":[
+      {clue:"'As additional units of a good are consumed, total utility increases at a decreasing rate' describes this principle.",answer:"Diminishing marginal utility"},
+      {clue:"What is a market with many sellers offering a homogeneous product with unrestricted entry and exit?",answer:"Perfect (pure) competition"},
+      {clue:"The slope of the indifference curve is called:",answer:"Marginal Rate of Substitution (MRS)",choices:["A. Price Elasticity","B. Marginal Rate of Substitution (MRS)","C. Opportunity Cost","D. Utility Function"]},
+      {clue:"If the supply curve is perfectly elastic and demand increases, what happens to equilibrium price?",answer:"The equilibrium price remains unchanged"},
+      {clue:"Market demand: Q = 12 - P. Supply: Q = 3P. What is the equilibrium price?",answer:"3"}
+    ],
+    "Macro":[
+      {clue:"The income of consumers remaining after taxes have been deducted is called:",answer:"Disposable income"},
+      {clue:"The quantity theory of money assumes what about the velocity of money?",answer:"It is constant"},
+      {clue:"What famous macroeconomist is associated with 'In the long run, we are all dead'?",answer:"John Maynard Keynes",choices:["A. Adam Smith","B. Milton Friedman","C. John Maynard Keynes","D. David Ricardo"]},
+      {clue:"In an advanced exchange economy, the most common medium of exchange is:",answer:"Money"},
+      {clue:"Name the three types of unemployment.",answer:"Cyclical, Frictional, and Structural",choices:["A. Cyclical, Frictional, Structural","B. Voluntary, Involuntary, Frictional","C. Seasonal, Structural, Demand","D. Natural, Cyclical, Voluntary"]}
+    ],
+    "Management":[
+      {clue:"What is the term for a brief statement that explains an organization's core purpose or reason for existing?",answer:"Mission statement"},
+      {clue:"Which leadership style focuses on mentoring employees and developing their skills toward long-term growth?",answer:"Coaching leadership",choices:["A. Visionary leadership","B. Coaching leadership","C. Democratic leadership","D. Transformational leadership"]},
+      {clue:"A SWOT analysis is a component of what type of plan?",answer:"Strategic plan"},
+      {clue:"McGregor called the traditional approach assuming workers are lazy and must be forced to work:",answer:"Theory X"},
+      {clue:"Which management concept involves analyzing KPIs to ensure an organization is meeting its goals?",answer:"Performance management"}
+    ],
+    "Marketing":[
+      {clue:"A new or modified product launched under an already successful brand name is called:",answer:"Brand extension"},
+      {clue:"What name is given to the group of traders who think prices are going to rise?",answer:"Bulls"},
+      {clue:"A group of consumers who respond similarly to a given set of market stimuli is called:",answer:"A market segment"},
+      {clue:"________ demand exists when many consumers share a strong need that is not met.",answer:"Latent"},
+      {clue:"A wheat call with a strike price of 350 cents has how much intrinsic value if the futures price is below 350 cents?",answer:"0 cents (no intrinsic value)"}
+    ],
+    "Quantitative":[
+      {clue:"The difference between the largest and smallest values in a data set is called:",answer:"The range"},
+      {clue:"Would the first derivative of a negative constant be negative, positive, or zero?",answer:"Zero"},
+      {clue:"Define what is meant by a 2×4 matrix.",answer:"A matrix with 2 rows and 4 columns"},
+      {clue:"What is the probability of rolling two sixes with two six-sided dice?",answer:"1/36 or 2.78%",choices:["A. 1/12 or 8.33%","B. 1/18 or 5.56%","C. 1/36 or 2.78%","D. 1/24 or 4.17%"]},
+      {clue:"What forecasting technique involves dropping the oldest value and incorporating the most recent value?",answer:"A moving average"}
+    ],
+    "Policy":[
+      {clue:"In the European Union, what does CAP stand for?",answer:"Common Agricultural Policy"},
+      {clue:"Sedimentation of waterways from soil erosion is an example of what type of pollution?",answer:"Non-point source pollution"},
+      {clue:"What 19th century economist was particularly concerned with the concept of economic rent?",answer:"David Ricardo"},
+      {clue:"What is a tariff imposed to specifically offset the impact of an export subsidy?",answer:"Countervailing duty"},
+      {clue:"The EU's export restitution program is an example of what type of trade policy tool?",answer:"Export subsidy"}
+    ],
+    "Finance":[
+      {clue:"Shares of stock repurchased by the company but not retired are generally called:",answer:"Treasury stock"},
+      {clue:"Linking successive stages in the production and/or distribution process is called:",answer:"Vertical integration"},
+      {clue:"After-tax profits of a corporation that are not distributed to shareholders are called:",answer:"Retained earnings"},
+      {clue:"Would obtaining additional equity capital increase or decrease return on equity (ROE)?",answer:"Decrease"},
+      {clue:"What qualitative forecasting method repeatedly uses a panel of experts to obtain a consensus?",answer:"Delphi method",choices:["A. Delphi method","B. Trend analysis","C. Market survey","D. Time series analysis"]}
+    ],
+    "Potpourri":[
+      {clue:"SpaceX's massive rocket system designed for Mars missions is called what?",answer:"Starship"},
+      {clue:"What team did Patrick Mahomes lead to win Super Bowl LVIII in 2024?",answer:"Kansas City Chiefs"},
+      {clue:"What actor plays Iron Man in the Marvel Cinematic Universe?",answer:"Robert Downey Jr."},
+      {clue:"The NASDAQ and NYSE are examples of what type of financial market?",answer:"Stock exchanges (equity markets)"},
+      {clue:"What is the most widely spoken language in the world by number of native speakers?",answer:"Mandarin Chinese"}
+    ]
+  },
+
+  // ROUND 7 (ch_11__4_.pdf)
+  {
+    "Micro":[
+      {clue:"What law suggests that as increased quantities of a variable factor are added to fixed factors, the additional output produced will eventually decline?",answer:"The law of diminishing returns"},
+      {clue:"What are two goods that have a negative cross price elasticity of demand called?",answer:"Complements"},
+      {clue:"Over the relevant range of output, what can be said about the long run average cost curve of a firm if it is decreasing?",answer:"The firm is experiencing economies of scale"},
+      {clue:"If marginal cost is below average variable cost, what else is known about AVC?",answer:"AVC must be declining",choices:["A. AVC must be increasing","B. AVC must be constant","C. AVC must be declining","D. AVC is unrelated to MC"]},
+      {clue:"If the inverse demand equation is P = 10 - 2Q, what is the equation for the Marginal Revenue (MR) curve?",answer:"MR = 10 - 4Q"}
+    ],
+    "Macro":[
+      {clue:"A rise in the general price level caused by increased costs rather than excess demand is called:",answer:"Cost-push inflation",choices:["A. Demand-pull inflation","B. Cost-push inflation","C. Structural inflation","D. Hyperinflation"]},
+      {clue:"The law associated with the phrase 'bad money drives out good' is called:",answer:"Gresham's Law"},
+      {clue:"What is measured on the horizontal axis of the IS-LM diagram?",answer:"National Income (Y)"},
+      {clue:"What branch of economics is sometimes called the economic analysis of politics?",answer:"Public Choice theory"},
+      {clue:"The amount by which aggregate expenditure falls short of the full employment level of output is called:",answer:"The deflationary gap"}
+    ],
+    "Management":[
+      {clue:"What term describes the ability to influence and guide individuals or groups toward a common goal?",answer:"Leadership"},
+      {clue:"What is the term for a step-by-step outline of tasks and activities required to complete a project?",answer:"Action Plan"},
+      {clue:"Which management theory emphasizes there is no single best way to manage and the optimal course depends on the situation?",answer:"Contingency Theory"},
+      {clue:"Which tool is used to visually map an organization's internal structure including roles and responsibilities?",answer:"Organizational chart"},
+      {clue:"Which modern management concept involves continuous feedback between employees and managers rather than relying on annual reviews?",answer:"Continuous Performance Management"}
+    ],
+    "Marketing":[
+      {clue:"In hedging, what risk is associated with an unexpected change in the relationship between the cash price and futures price?",answer:"Basis risk"},
+      {clue:"What is the meaning of the expression 'Caveat Emptor'?",answer:"Let the buyer beware"},
+      {clue:"In product promotion activities, what is a POP display?",answer:"A point of purchase display"},
+      {clue:"Setting a low price for a new product to attract a large number of buyers and obtain a large market share is called:",answer:"Market-penetration pricing"},
+      {clue:"A futures option that can be profitably exercised at the current market price of the underlying asset is said to be:",answer:"In-the-money"}
+    ],
+    "Quantitative":[
+      {clue:"Any numerical value that describes some characteristic of sample data is often called:",answer:"A statistic"},
+      {clue:"What does the acronym ANOVA stand for?",answer:"Analysis of variance"},
+      {clue:"An unobservable variable calculated from other known information (e.g. real income) is called:",answer:"Constructed variable",choices:["A. Latent variable","B. Constructed variable","C. Derived variable","D. Estimated parameter"]},
+      {clue:"In a system of linear equations AX = d, a singular coefficient matrix would suggest:",answer:"The system does not have a unique solution"},
+      {clue:"What is meant by calling an estimator BLUE?",answer:"Best Linear Unbiased Estimator"}
+    ],
+    "Policy":[
+      {clue:"What does CAFO stand for?",answer:"Confined animal feeding operation"},
+      {clue:"The price today that would give a unit of commodity the same purchasing power it had in the base year is called:",answer:"The parity price"},
+      {clue:"What organization has essentially replaced GATT?",answer:"World Trade Organization (WTO)"},
+      {clue:"The Herfindahl index measures industry concentration. What is its upper bound?",answer:"1",choices:["A. 0.5","B. 1","C. 10","D. 100"]},
+      {clue:"Total transfers from government programs divided by a commodity's total value to producers is called:",answer:"Percentage Producer Subsidy Equivalent (PSE)"}
+    ],
+    "Finance":[
+      {clue:"A liability that will develop if some specified event occurs is called:",answer:"A contingent liability"},
+      {clue:"A commitment by a lender to make a certain sum available to a firm whenever the firm needs it is called:",answer:"A line of credit"},
+      {clue:"Which of the following would NOT be considered an asset: cash, accounts receivable, or cost of goods sold?",answer:"Cost of goods sold"},
+      {clue:"In accounting, what does the acronym GAAP stand for?",answer:"Generally Accepted Accounting Principles"},
+      {clue:"A farmer borrows $500 at 12% annual interest, repaid after 6 months. What is the interest owed?",answer:"$30 (500 × 0.12 × 0.5 = 30)"}
+    ],
+    "Potpourri":[
+      {clue:"What is the name of the first all-civilian crew to orbit Earth, launched by SpaceX in 2021?",answer:"Inspiration4"},
+      {clue:"What golfer won the 2024 Masters Tournament?",answer:"Scottie Scheffler"},
+      {clue:"What HBO show set in a post-apocalyptic world premiered in January 2023?",answer:"The Last of Us"},
+      {clue:"What is the name of the economic policy of raising interest rates to fight inflation?",answer:"Contractionary monetary policy"},
+      {clue:"What country has the largest population in the world as of 2023?",answer:"India"}
+    ]
+  },
+
+  // ROUND 8 (ch_10__4_.pdf)
+  {
+    "Micro":[
+      {clue:"What curve shows the relationship between income and expenditure on a specified good?",answer:"Engel curve"},
+      {clue:"The competitive model originally developed by Chamberlin and Robinson is:",answer:"Monopolistic competition"},
+      {clue:"The idea that as a good's price goes down it is perceived as lower quality and people buy less is known as:",answer:"Veblen effect",choices:["A. Giffen effect","B. Snob effect","C. Veblen effect","D. Substitution effect"]},
+      {clue:"The cost to society associated with imperfect competition is called:",answer:"Deadweight loss"},
+      {clue:"What can be said about returns to scale with a linearly homogeneous production function?",answer:"Constant returns to scale"}
+    ],
+    "Macro":[
+      {clue:"A period of economic downturn milder than a depression is called:",answer:"A recession"},
+      {clue:"What is the primary distinction between nominal GDP and real GDP?",answer:"Nominal GDP is in current dollars; real GDP is adjusted for changes in the price level"},
+      {clue:"Indicators of change in economic activity that happen about one or two quarters before the overall economy shifts are called:",answer:"Leading economic indicators"},
+      {clue:"The desire to hold money as an asset with the expectation that other asset prices will fall is called:",answer:"Speculative demand for money"},
+      {clue:"The idea that an autonomous change in aggregate expenditure results in a larger change in overall income is called:",answer:"The multiplier"}
+    ],
+    "Management":[
+      {clue:"What is the term for a concise statement of an organization's long-term aspirations?",answer:"Vision statement"},
+      {clue:"Which leadership style focuses on building relationships and prioritizing employee well-being?",answer:"Affiliative leadership",choices:["A. Affiliative leadership","B. Autocratic leadership","C. Coaching leadership","D. Laissez-faire leadership"]},
+      {clue:"Which management approach emphasizes analyzing tasks and workflows to improve efficiency, pioneered by Frederick Taylor?",answer:"Scientific Management",choices:["A. Theory Z","B. Scientific Management","C. Behavioral Approach","D. Human Relations"]},
+      {clue:"Which decision-making tool uses a grid to evaluate options based on urgency and importance?",answer:"Eisenhower matrix",choices:["A. Gantt chart","B. Decision tree","C. Balanced Scorecard","D. Eisenhower matrix"]},
+      {clue:"Which management concept emphasizes empowering employees to make decisions at the lowest possible level?",answer:"Decentralization"}
+    ],
+    "Marketing":[
+      {clue:"What is the term for the price at which the market maker is willing to buy?",answer:"Bid or bid price"},
+      {clue:"What is the term for the action taken by an option holder to enter a futures position?",answer:"Exercise"},
+      {clue:"In food marketing, Farmer's Share refers to:",answer:"The percent of the consumer's food dollar received by farmers"},
+      {clue:"What marketing metric measures the percentage of customers who return to make another purchase after their initial transaction?",answer:"Retention rate"},
+      {clue:"Selling a product at two or more prices based on differing elasticities of demand is called:",answer:"Price discrimination or discriminatory pricing"}
+    ],
+    "Quantitative":[
+      {clue:"How many columns are in a 2 by 3 matrix?",answer:"Three"},
+      {clue:"When flipping a fair coin, what is the probability of flipping three heads in a row?",answer:"1/8 or 12.5%"},
+      {clue:"The present value of a future payment made in time period t is calculated by dividing by:",answer:"(1 + discount rate) to the t power"},
+      {clue:"For a standard normal distribution, what percent of the values should be between -3 and +3?",answer:"99%"},
+      {clue:"How is the median calculated if there are 10 observations for a variable?",answer:"Average of the 5th and 6th values when observations are in ascending order"}
+    ],
+    "Policy":[
+      {clue:"In natural resource management, what does the acronym ITQ stand for?",answer:"Individual transferable quota"},
+      {clue:"A situation of economic isolation where no trade occurs is called:",answer:"Autarky",choices:["A. Protectionism","B. Tariff regime","C. Autarky","D. Quota system"]},
+      {clue:"What analytical procedure measures the economic gains and compares them to the economic costs?",answer:"Benefit cost analysis"},
+      {clue:"What did Samuelson define as the two properties of 'pure' public goods?",answer:"Non-rival consumption and non-excludability"},
+      {clue:"What theorem suggests externalities do not give rise to misallocation of resources if property rights are well-defined and transaction costs are negligible?",answer:"Coase theorem"}
+    ],
+    "Finance":[
+      {clue:"What is an entry on the left side of an account in double entry bookkeeping commonly called?",answer:"Debit"},
+      {clue:"What type of loan allows a borrower to access funds up to a pre-approved limit, often used for agricultural operating expenses?",answer:"Line of credit"},
+      {clue:"A bond which can be exchanged for common stock at a previously specified ratio is referred to as:",answer:"Convertible bond",choices:["A. Callable bond","B. Convertible bond","C. Municipal bond","D. Zero-coupon bond"]},
+      {clue:"For a retailing operation, how would inventory turnover be calculated?",answer:"Divide cost of goods sold by the average merchandise inventory for a specified period"},
+      {clue:"If the calculated NPV is negative, what can be said about the relationship between the discount rate and the IRR?",answer:"The discount rate is greater than the IRR"}
+    ],
+    "Potpourri":[
+      {clue:"What is the name of NASA's program aimed at returning humans to the Moon?",answer:"Artemis program"},
+      {clue:"Who won the 2024 US Open tennis men's singles title?",answer:"Jannik Sinner"},
+      {clue:"What animated Pixar film features a robot left alone on Earth?",answer:"WALL-E"},
+      {clue:"What does the acronym NAFTA stand for?",answer:"North American Free Trade Agreement"},
+      {clue:"What country produces the most oil in the world?",answer:"United States"}
+    ]
+  },
+
+  // ROUND 9 (ch_9__3_.pdf)
+  {
+    "Micro":[
+      {clue:"What term specifically describes a market structure where there are only two firms?",answer:"A duopoly"},
+      {clue:"A state in which demand exceeds supply at some given price is called:",answer:"Excess demand"},
+      {clue:"If price elasticity of demand is constant and equal to -1.0, what happens to total revenue as price changes?",answer:"TR remains constant"},
+      {clue:"The most commonly used demand curve that reflects both the income and substitution effects is called:",answer:"Marshallian demand",choices:["A. Hicksian demand","B. Engel curve","C. Marshallian demand","D. Indifference curve"]},
+      {clue:"What results from the horizontal summation of the portion of the marginal cost curve above the shutdown price?",answer:"The industry's short run supply curve"}
+    ],
+    "Macro":[
+      {clue:"A sustained rise in the general price level is called:",answer:"Inflation"},
+      {clue:"What is the specialized agency of the United Nations established to encourage international monetary cooperation and financial stability?",answer:"The International Monetary Fund (IMF)"},
+      {clue:"When actual aggregate expenditure is above the level necessary to maintain full employment output, this situation is called:",answer:"The inflationary gap"},
+      {clue:"What term describes the set of macroeconomic policies that attempted to achieve economic growth by reducing taxes and regulation?",answer:"Supply-side economics",choices:["A. Keynesian economics","B. Supply-side economics","C. Monetarism","D. Fiscal Policy"]},
+      {clue:"Assuming MPC = 0.94, what is the Marginal Propensity to Save (MPS)?",answer:"0.06 (MPS = 1 - MPC)"}
+    ],
+    "Management":[
+      {clue:"What is the term for the process of monitoring tasks and ensuring they are completed on schedule?",answer:"Supervising"},
+      {clue:"Which leadership style emphasizes setting high standards and expects employees to follow a clear example?",answer:"Pacesetting leadership",choices:["A. Pacesetting leadership","B. Autocratic leadership","C. Coaching leadership","D. Laissez-faire leadership"]},
+      {clue:"Name the concept that refers to the management of quality throughout an organization.",answer:"Total Quality Management (TQM)"},
+      {clue:"Which management technique uses brainstorming and structured group discussions to generate ideas?",answer:"Nominal Group Technique"},
+      {clue:"Which strategic tool helps organizations evaluate their competitive position by analyzing rivals, suppliers, buyers, new entrants, and substitutes?",answer:"Porter's Five Forces"}
+    ],
+    "Marketing":[
+      {clue:"What is the term used to describe the settlement process for futures contracts that are not physically delivered?",answer:"Cash settlement"},
+      {clue:"A food broker primarily provides what type of utility to the food marketing system?",answer:"Possession utility",choices:["A. Place utility","B. Form utility","C. Time utility","D. Possession utility"]},
+      {clue:"What is the implicit or shadow price for a specific characteristic of a commodity?",answer:"Hedonic price"},
+      {clue:"A set of buyers sharing common needs or characteristics that a company decides to serve is called:",answer:"A target market"},
+      {clue:"The practice of driving prices down to unprofitable levels in order to weaken or eliminate competitors is called:",answer:"Predatory pricing"}
+    ],
+    "Quantitative":[
+      {clue:"What mathematical operation is typically denoted by the Greek letter uppercase sigma?",answer:"Summation"},
+      {clue:"A rectangular array of numbers with 2 rows and 2 columns would be called:",answer:"A 2 x 2 matrix"},
+      {clue:"A sampling technique that locates research subjects by asking existing subjects to provide referrals is called:",answer:"Snowball sampling",choices:["A. Stratified sampling","B. Random sampling","C. Snowball sampling","D. Cluster sampling"]},
+      {clue:"In a time series OLS regression model, the Durbin-Watson statistic is used to test for:",answer:"Autocorrelation or serial correlation"},
+      {clue:"Given TC = 750 + 10X + 0.05X², what is the equation for marginal cost?",answer:"MC = 10 + 0.1X"}
+    ],
+    "Policy":[
+      {clue:"What does the acronym GMO stand for?",answer:"Genetically modified organism"},
+      {clue:"When an exporting country initiates an export tax on a specific good, what impact will the tax have on domestic prices?",answer:"Decrease the domestic price as it discourages exports"},
+      {clue:"The analogy of criminal behavior that demonstrates how rational individual behavior can lead to a suboptimal group outcome is called:",answer:"The prisoner's dilemma"},
+      {clue:"What is it called when an asset stays in production even though its marginal value product is less than its cost of ownership?",answer:"Asset fixity"},
+      {clue:"Name two of the four property rights reserved for the public that are superior to private property rights.",answer:"Taxation, eminent domain, police power, escheats"}
+    ],
+    "Finance":[
+      {clue:"What is the price of borrowed money commonly called?",answer:"The interest rate"},
+      {clue:"The inclusive annual time period used by an organization to budget, account for, and report its financial activities is called:",answer:"Fiscal year"},
+      {clue:"What financial concept measures how sensitive a company's earnings are to changes in sales using the ratio of contribution margin to net income?",answer:"Degree of operating leverage"},
+      {clue:"What has been purchased if the investment returns a series of equal dollar payments for a fixed period of time?",answer:"An annuity"},
+      {clue:"What is a solicitation made to shareholders of a company to buy their shares at a specified price?",answer:"Tender offer",choices:["A. Tender offer","B. Proxy fight","C. Hostile takeover","D. Stock split"]}
+    ],
+    "Potpourri":[
+      {clue:"What two private companies are leading the commercial space race, founded by Elon Musk and Jeff Bezos respectively?",answer:"SpaceX and Blue Origin"},
+      {clue:"What nation won the most gold medals at the 2024 Paris Olympics?",answer:"United States"},
+      {clue:"What is the name of the fictional African nation in the Marvel movie Black Panther?",answer:"Wakanda"},
+      {clue:"What is the name of the tariff imposed by one country in response to tariffs imposed by another?",answer:"Retaliatory tariff"},
+      {clue:"What is the most valuable company in the world by market cap as of 2024?",answer:"Apple (or Microsoft/Nvidia — accept any of the top 3)"}
+    ]
+  },
+
+  // ROUND 10 — Famous Economists + Tricky Management/Marketing/Finance
+  {
+    "Micro":[
+      {clue:"This economist developed the concept of 'creative destruction' to describe how innovation disrupts existing industries.",answer:"Joseph Schumpeter"},
+      {clue:"What term did economist Arthur Okun coin to describe the trade-off between inflation and unemployment, expressed as their sum?",answer:"Misery index"},
+      {clue:"This Nobel Prize-winning economist developed the concept of 'Nash Equilibrium' in game theory.",answer:"John Nash"},
+      {clue:"What did economist George Akerlof's 'Market for Lemons' paper demonstrate about markets with asymmetric information?",answer:"Markets can fail or collapse when buyers can't verify quality — adverse selection"},
+      {clue:"This economist argued that monopolies are not necessarily inefficient if they result from superior products or lower costs, distinguishing between 'good' and 'bad' monopolies.",answer:"Harold Demsetz"}
+    ],
+    "Macro":[
+      {clue:"Which economist is associated with the phrase 'In the long run, we are all dead' and advocated for government intervention during recessions?",answer:"John Maynard Keynes"},
+      {clue:"Milton Friedman argued that inflation is always and everywhere what type of phenomenon?",answer:"Monetary"},
+      {clue:"This 18th century economist first described the 'invisible hand' guiding markets toward efficient outcomes.",answer:"Adam Smith"},
+      {clue:"What famous economist wrote 'The Road to Serfdom,' warning that central planning leads to tyranny?",answer:"Friedrich Hayek"},
+      {clue:"Thomas Malthus predicted that population grows geometrically while food production grows arithmetically — what did he predict would result?",answer:"Famine, disease, and misery as population outstrips food supply"}
+    ],
+    "Management":[
+      {clue:"A manager notices that when she watches her team closely, productivity rises — but it falls when she steps away. This is an example of what effect?",answer:"Hawthorne effect"},
+      {clue:"Which management concept suggests that employees rise to the level of their incompetence?",answer:"The Peter Principle"},
+      {clue:"What is the term for the tendency of people in groups to make riskier decisions than they would individually?",answer:"Risky shift (or group polarization)"},
+      {clue:"A company sets a policy that all emails must be answered within 24 hours. This is an example of which type of organizational control?",answer:"Bureaucratic control"},
+      {clue:"Which management theorist developed the concept of 'management by objectives' (MBO)?",answer:"Peter Drucker"}
+    ],
+    "Marketing":[
+      {clue:"A company sells its product at a high price initially, then lowers it over time as competition increases. This is called:",answer:"Price skimming"},
+      {clue:"What term describes the total number of individual products a company offers across all product lines?",answer:"Product mix (or product assortment)"},
+      {clue:"In the BCG matrix, a product with high market share in a low-growth market is called a:",answer:"Cash cow"},
+      {clue:"What is the term for a brand strategy where a company uses the same brand name for all its products?",answer:"Blanket (or umbrella) branding"},
+      {clue:"When a retailer charges different prices for the same good in different store locations based on local demand, this is an example of:",answer:"Geographic price discrimination"}
+    ],
+    "Quantitative":[
+      {clue:"What is the name of the statistical test used to determine if two categorical variables are independent?",answer:"Chi-square test"},
+      {clue:"If R-squared is 0.85 in a regression, what percentage of variance in the dependent variable is NOT explained by the model?",answer:"15%"},
+      {clue:"In hypothesis testing, what is the probability threshold below which we reject the null hypothesis called?",answer:"Significance level (alpha)"},
+      {clue:"What type of variable takes only the values 0 or 1 and is used to represent categorical data in regression?",answer:"Dummy variable (or indicator variable)"},
+      {clue:"What does a p-value of 0.03 tell us if our significance level is 0.05?",answer:"We reject the null hypothesis — the result is statistically significant"}
+    ],
+    "Policy":[
+      {clue:"Economist Ronald Coase argued that externalities can be resolved without government intervention if what two conditions are met?",answer:"Property rights are well-defined and transaction costs are negligible"},
+      {clue:"What Nobel Prize-winning economist developed the theory of 'second best,' arguing that removing one market distortion doesn't always improve welfare if others remain?",answer:"Richard Lipsey (and Kelvin Lancaster)"},
+      {clue:"What policy tool gives polluters a fixed number of permits to emit pollutants, which they can buy and sell?",answer:"Cap and trade (emissions trading)"},
+      {clue:"Elinor Ostrom won the Nobel Prize for showing that communities can manage shared resources without privatization or government control. What was her key concept?",answer:"Governing the commons through collective institutions"},
+      {clue:"What is the term for a government policy that deliberately runs a budget deficit to stimulate the economy?",answer:"Expansionary fiscal policy"}
+    ],
+    "Finance":[
+      {clue:"The formula for the Sharpe Ratio divides excess return by what measure of risk?",answer:"Standard deviation"},
+      {clue:"What financial theory states that stock prices fully reflect all available information, making it impossible to consistently beat the market?",answer:"Efficient Market Hypothesis (EMH)"},
+      {clue:"A company has a debt-to-equity ratio of 2.0. For every $1 of equity, how much debt does it carry?",answer:"$2 of debt"},
+      {clue:"What term describes the practice of borrowing money to increase the potential return of an investment?",answer:"Leverage (or financial leverage)"},
+      {clue:"What does the Black-Scholes model calculate?",answer:"The theoretical price of options contracts"}
+    ],
+    "Potpourri":[
+      {clue:"What famous economist wrote 'The Wealth of Nations' in 1776?",answer:"Adam Smith"},
+      {clue:"What Grammy-winning artist broke the record for most Grammy wins ever in 2024?",answer:"Beyoncé"},
+      {clue:"What is the name of the AI chatbot launched by OpenAI in November 2022 that became the fastest-growing app in history?",answer:"ChatGPT"},
+      {clue:"What does the abbreviation 'IPO' stand for in finance?",answer:"Initial Public Offering"},
+      {clue:"In what year did the United Kingdom vote to leave the European Union in a referendum known as Brexit?",answer:"2016"}
+    ]
+  },
+
+  // ROUND 11 — Famous Economists + Tricky Management/Marketing/Finance
+  {
+    "Micro":[
+      {clue:"This economist developed the theory of 'comparative advantage,' showing that countries benefit from trade even when one is absolutely better at producing everything.",answer:"David Ricardo"},
+      {clue:"What concept, developed by economist Gary Becker, applies economic reasoning to non-market behavior like crime, marriage, and discrimination?",answer:"Human capital theory (or economics of discrimination)"},
+      {clue:"This economist showed that wages in competitive markets equal the marginal revenue product of labor. Who is credited with this theory?",answer:"John Bates Clark"},
+      {clue:"What term did Thorstein Veblen coin to describe consumption of goods as a public display of wealth rather than for utility?",answer:"Conspicuous consumption"},
+      {clue:"Economist Ronald Coase is best known for two contributions — the Coase Theorem and his analysis of why firms exist. What is his theory of the firm called?",answer:"Transaction cost theory (the nature of the firm)"}
+    ],
+    "Macro":[
+      {clue:"What economist developed the Phillips Curve, showing the trade-off between inflation and unemployment?",answer:"A.W. Phillips"},
+      {clue:"Irving Fisher developed the equation of exchange MV=PQ. If M doubles and V and Q are constant, what happens to P?",answer:"P doubles"},
+      {clue:"Which economist is associated with 'rational expectations' theory, arguing that people use all available information to form predictions?",answer:"Robert Lucas"},
+      {clue:"What is the name of the hypothesis that government borrowing crowds out private investment, leaving total spending unchanged?",answer:"Ricardian Equivalence"},
+      {clue:"This economist's 'General Theory of Employment, Interest and Money' revolutionized macroeconomics during the Great Depression.",answer:"John Maynard Keynes"}
+    ],
+    "Management":[
+      {clue:"What is the term for the maximum number of subordinates a manager can effectively supervise?",answer:"Span of control"},
+      {clue:"In which conflict resolution style does one party give in completely to the other's wishes?",answer:"Accommodating"},
+      {clue:"What management concept describes the tendency for group members to suppress dissenting opinions to maintain harmony?",answer:"Groupthink"},
+      {clue:"A company restructures so that decision-making authority is pushed down to lower levels. This is called:",answer:"Decentralization"},
+      {clue:"Which organizational structure assigns employees to both a functional department and a project team simultaneously?",answer:"Matrix structure"}
+    ],
+    "Marketing":[
+      {clue:"What is the term for the process by which a new product spreads through a market, from early adopters to the mainstream?",answer:"Diffusion of innovation"},
+      {clue:"In the consumer decision process, the stage where buyers compare alternatives against their criteria is called:",answer:"Evaluation of alternatives"},
+      {clue:"A supermarket places its most profitable products at eye level and places staples like milk and bread at the back of the store. This is an example of:",answer:"Store layout strategy (or retail atmospherics)"},
+      {clue:"What is the name of the pricing strategy where a firm sets price based on what customers believe the product is worth rather than on cost?",answer:"Value-based pricing"},
+      {clue:"This marketing metric measures the revenue generated per dollar spent on advertising.",answer:"Return on Ad Spend (ROAS)"}
+    ],
+    "Quantitative":[
+      {clue:"In a normal distribution, approximately what percentage of values fall within one standard deviation of the mean?",answer:"68%"},
+      {clue:"What is the term for a variable in a regression that is correlated with both the dependent variable and an independent variable, causing bias?",answer:"Omitted variable (or confounding variable)"},
+      {clue:"If a regression coefficient is 2.5 and its standard error is 1.0, what is the t-statistic?",answer:"2.5"},
+      {clue:"What type of econometric problem occurs when the variance of the error term is not constant across observations?",answer:"Heteroskedasticity"},
+      {clue:"In a double-log regression, all coefficients can be directly interpreted as what?",answer:"Elasticities"}
+    ],
+    "Policy":[
+      {clue:"What is the name of the 2010 US financial regulation act passed in response to the 2008 financial crisis?",answer:"Dodd-Frank Wall Street Reform and Consumer Protection Act"},
+      {clue:"What famous economist argued in 'Free to Choose' that economic freedom and political freedom are inseparable?",answer:"Milton Friedman"},
+      {clue:"What policy does the government use when it purchases goods and services to stimulate aggregate demand?",answer:"Expansionary fiscal policy (government spending)"},
+      {clue:"What is the name of the WTO principle that requires countries to treat all trading partners equally?",answer:"Most Favored Nation (MFN) principle"},
+      {clue:"Economist Arthur Laffer argued that tax revenues could actually increase if tax rates were cut from very high levels. What is this concept called?",answer:"The Laffer Curve"}
+    ],
+    "Finance":[
+      {clue:"What ratio measures a company's ability to pay short-term obligations using only its most liquid assets, excluding inventory?",answer:"Quick ratio (or acid-test ratio)"},
+      {clue:"What is the term for the additional return an investor demands for taking on more risk compared to a risk-free asset?",answer:"Risk premium"},
+      {clue:"A bond's price and its yield move in which direction relative to each other?",answer:"Opposite directions (inverse relationship)"},
+      {clue:"What financial model relates an asset's expected return to its beta and the market risk premium?",answer:"Capital Asset Pricing Model (CAPM)"},
+      {clue:"What is the term for the strategy of spreading investments across different assets to reduce risk?",answer:"Diversification"}
+    ],
+    "Potpourri":[
+      {clue:"What economist is on the US $20 bill — and who will replace him?",answer:"Andrew Jackson — Harriet Tubman (though the change has been delayed)"},
+      {clue:"What streaming service had the most Emmy nominations in 2023?",answer:"HBO/Max"},
+      {clue:"What is the name of the index that tracks the 500 largest US publicly traded companies?",answer:"S&P 500"},
+      {clue:"In what city is the headquarters of the International Monetary Fund located?",answer:"Washington D.C."},
+      {clue:"What famous chef and TV personality is known for the show 'Chef's Table' and runs the restaurant Eleven Madison Park?",answer:"Daniel Humm"}
+    ]
+  },
+
+  // ROUND 12
+  {
+    "Micro":[
+      {clue:"When the price of coffee rises and consumers buy more tea, coffee and tea are considered:",answer:"Substitutes"},
+      {clue:"A decrease in the price of printers leads to an increase in demand for ink cartridges. This means printers and ink cartridges are:",answer:"Complements"},
+      {clue:"When supply decreases and demand stays the same, equilibrium price will _____ and equilibrium quantity will _____.",answer:"Rise; fall"},
+      {clue:"If the cross-price elasticity of demand between two goods is negative, the goods are:",answer:"Complements"},
+      {clue:"A perfectly competitive firm is a price _____ because it has no control over the market price.",answer:"Taker"}
+    ],
+    "Macro":[
+      {clue:"Adam Smith argued that individuals pursuing their own self-interest are guided by this metaphor to benefit society.",answer:"The invisible hand"},
+      {clue:"John Maynard Keynes argued that during a recession, the government should do this to stimulate the economy.",answer:"Increase spending (expansionary fiscal policy)"},
+      {clue:"David Ricardo developed this principle showing that countries should specialize in producing goods where they have a lower opportunity cost.",answer:"Comparative advantage"},
+      {clue:"When the government spends more than it collects in taxes, the result is called a:",answer:"Budget deficit"},
+      {clue:"The central bank's primary tool for controlling the money supply is called:",answer:"Open market operations"}
+    ],
+    "Management":[
+      {clue:"What term describes a short, compelling statement about why a company exists, what it does, and who it serves?",answer:"Mission statement"},
+      {clue:"Which type of organizational structure groups workers by the product or service they work on rather than by function?",answer:"Divisional structure"},
+      {clue:"A manager who gives frequent praise, listens to employees, and builds trust is demonstrating which type of behavior?",answer:"Employee-oriented (or relationship-oriented) leadership"},
+      {clue:"What is the term for the unwritten rules and shared values that shape how employees behave in an organization?",answer:"Organizational culture"},
+      {clue:"Which planning tool breaks a large project into individual tasks, assigns responsibility, and sets deadlines?",answer:"Work breakdown structure (or action plan)"}
+    ],
+    "Marketing":[
+      {clue:"What are the four Ps of the marketing mix?",answer:"Product, Price, Place, Promotion"},
+      {clue:"A company targets customers aged 18-24 who live in urban areas. This is an example of which two types of segmentation?",answer:"Demographic and geographic segmentation"},
+      {clue:"When a firm charges a high price at launch and gradually lowers it over time, this strategy is called:",answer:"Price skimming"},
+      {clue:"What is the term for the number of times a target audience is exposed to an advertisement?",answer:"Frequency"},
+      {clue:"A product that has wide distribution, low price, and minimal differentiation is competing on:",answer:"Cost leadership (or price competition)"}
+    ],
+    "Quantitative":[
+      {clue:"In a regression output, what does a p-value less than 0.05 typically indicate?",answer:"The coefficient is statistically significant"},
+      {clue:"What is the name of the line that best fits a scatter plot by minimizing the sum of squared errors?",answer:"Ordinary least squares (OLS) regression line"},
+      {clue:"If a variable has a mean of 50 and a standard deviation of 10, a value of 70 has a z-score of:",answer:"2.0"},
+      {clue:"What term describes a sample in which every member of the population has an equal chance of being selected?",answer:"Simple random sample"},
+      {clue:"In a 2x2 contingency table, which statistical test is used to determine if two variables are independent?",answer:"Chi-square test"}
+    ],
+    "Policy":[
+      {clue:"When a factory pollutes a river used by downstream fishermen, the pollution is an example of a:",answer:"Negative externality"},
+      {clue:"A government sets a maximum price below the equilibrium price. This creates a:",answer:"Shortage"},
+      {clue:"What is the term for a tax equal to the marginal external cost of a negative externality, designed to correct market failure?",answer:"Pigouvian tax"},
+      {clue:"The US Farm Bill is renewed approximately every how many years?",answer:"Five years"},
+      {clue:"What policy tool requires all firms to reduce emissions by the same fixed amount regardless of their abatement costs?",answer:"Command and control regulation (uniform standard)"}
+    ],
+    "Finance":[
+      {clue:"What financial statement shows a company's revenues and expenses over a period of time?",answer:"Income statement"},
+      {clue:"If a stock has a beta of 1.5, it is _____ volatile than the overall market.",answer:"More (50% more)"},
+      {clue:"What is the term for the minimum return a company must earn on an investment to satisfy its investors?",answer:"Hurdle rate (or required rate of return)"},
+      {clue:"A company buys back its own shares on the open market. This is called a:",answer:"Stock buyback (or share repurchase)"},
+      {clue:"What ratio divides a company's stock price by its earnings per share to indicate how much investors pay per dollar of earnings?",answer:"Price-to-earnings (P/E) ratio"}
+    ],
+    "Potpourri":[
+      {clue:"What team won the 2025 Super Bowl?",answer:"Philadelphia Eagles"},
+      {clue:"Who won the 2024 Heisman Trophy?",answer:"Dillon Gabriel (Oregon)"},
+      {clue:"What country won the most medals overall at the 2024 Paris Summer Olympics?",answer:"United States"},
+      {clue:"What tennis player won the men's singles title at Wimbledon 2024?",answer:"Carlos Alcaraz"},
+      {clue:"What NBA team won the 2024 NBA Championship?",answer:"Boston Celtics"}
+    ]
+  },
+
+  // POTPOURRI ROUND — all 8 slots are different sub-categories
+  {
+    "Sports":[
+      {clue:"What team won Super Bowl LIX in February 2025?",answer:"Philadelphia Eagles"},
+      {clue:"What golfer won the most PGA Tour events in 2024?",answer:"Scottie Scheffler"},
+      {clue:"What country has won the most FIFA World Cup titles?",answer:"Brazil (5 titles)"},
+      {clue:"What MLB team has the most World Series championships of all time?",answer:"New York Yankees (27)"},
+      {clue:"What is the only country to have competed in every Summer Olympic Games since 1896?",answer:"Greece"}
+    ],
+    "Entertainment":[
+      {clue:"What movie became the highest-grossing film of all time when it was re-released in 2023?",answer:"Avatar (The Way of Water brought its total past $2.9B)"},
+      {clue:"What singer performed at the 2025 Super Bowl halftime show?",answer:"Kendrick Lamar"},
+      {clue:"What TV show became Netflix's most-watched series of all time in 2021?",answer:"Squid Game"},
+      {clue:"What actress has won the most Academy Awards for acting?",answer:"Meryl Streep (3 wins)"},
+      {clue:"What band reunited for a 2024 tour and became the highest-grossing touring act of that year?",answer:"Oasis"}
+    ],
+    "World Capitals":[
+      {clue:"What is the capital city of Australia?",answer:"Canberra"},
+      {clue:"What is the capital city of Canada?",answer:"Ottawa"},
+      {clue:"What is the capital city of Brazil?",answer:"Brasília"},
+      {clue:"What is the capital city of South Africa? (it has three — name one)",answer:"Pretoria (executive), Cape Town (legislative), or Bloemfontein (judicial)"},
+      {clue:"What is the capital city of Kazakhstan, the world's largest landlocked country?",answer:"Astana"}
+    ],
+    "US Geography":[
+      {clue:"What is the longest river in the United States?",answer:"Missouri River"},
+      {clue:"What US state has the most coastline?",answer:"Alaska"},
+      {clue:"What is the tallest mountain in the contiguous United States (lower 48)?",answer:"Mount Whitney (California)"},
+      {clue:"What Great Lake is the only one located entirely within the United States?",answer:"Lake Michigan"},
+      {clue:"What US city is known as the 'Gateway to the West' and is home to a famous arch?",answer:"St. Louis, Missouri"}
+    ],
+    "Science & Nature":[
+      {clue:"What is the chemical symbol for gold?",answer:"Au"},
+      {clue:"What planet in our solar system has the most moons?",answer:"Saturn"},
+      {clue:"What is the powerhouse of the cell?",answer:"Mitochondria"},
+      {clue:"What is the name of the force that keeps planets in orbit around the sun?",answer:"Gravity"},
+      {clue:"How many bones are in the adult human body?",answer:"206"}
+    ],
+    "History":[
+      {clue:"In what year did the Berlin Wall fall?",answer:"1989"},
+      {clue:"What was the name of the first artificial satellite launched into space, sent by the Soviet Union in 1957?",answer:"Sputnik"},
+      {clue:"What US president signed the Civil Rights Act of 1964?",answer:"Lyndon B. Johnson"},
+      {clue:"What ancient wonder of the world was located in Alexandria, Egypt?",answer:"The Lighthouse of Alexandria"},
+      {clue:"What was the name of the ship that sank in 1912 after hitting an iceberg on its maiden voyage?",answer:"RMS Titanic"}
+    ],
+    "Food & Drink":[
+      {clue:"What country is the origin of the dish sushi?",answer:"Japan"},
+      {clue:"What grain is used to make bourbon whiskey?",answer:"Corn (at least 51%)"},
+      {clue:"What is the most consumed beverage in the world after water?",answer:"Tea"},
+      {clue:"What vitamin is produced by the human body when exposed to sunlight?",answer:"Vitamin D"},
+      {clue:"What fruit is known as the 'king of fruits' in Southeast Asia and is famous for its strong smell?",answer:"Durian"}
+    ],
+    "Pop Culture":[
+      {clue:"What social media platform introduced the concept of 'Stories,' later copied by Instagram and Facebook?",answer:"Snapchat"},
+      {clue:"What video game franchise features characters named Mario, Luigi, and Princess Peach?",answer:"Super Mario (Nintendo)"},
+      {clue:"What does the acronym 'GOAT' stand for in sports and pop culture?",answer:"Greatest Of All Time"},
+      {clue:"What company makes the iPhone?",answer:"Apple"},
+      {clue:"What is the name of the fictional wizard school in the Harry Potter series?",answer:"Hogwarts"}
+    ]
+  }
+];
+
+// ── TIEBREAKER ──
+const tiebreaker = {
+  "Micro":   {clue:"The demand curve for a perfectly competitive firm is perfectly elastic. Why?",answer:"Because the firm is a price taker — it can sell any quantity at the market price",explain:"In perfect competition, each firm is so small relative to the market that its output decisions have no effect on the market price. It faces a horizontal demand curve at the market price, meaning it can sell all it wants at that price. Charging more loses all customers; charging less is unnecessary. This makes price equal to marginal revenue for competitive firms."},
+  "Macro":   {clue:"What term describes the total value of goods and services produced by a country's residents regardless of where they are located?",answer:"Gross National Product (GNP)",explain:"GNP measures output by a country's residents (citizens and permanent residents) wherever they are located in the world, while GDP measures output produced within a country's borders regardless of who produces it. For most large countries GNP and GDP are close, but they differ for countries with large numbers of workers abroad (like the Philippines) or large foreign investment (like Ireland)."},
+  "Management":{clue:"What term describes the maximum number of subordinates a manager can effectively supervise?",answer:"Span of control",explain:"Span of control refers to the number of employees reporting directly to one manager. Narrow spans (few direct reports) create tall hierarchies with more management layers; wide spans create flat organizations with fewer layers. The optimal span depends on task complexity, employee skill, and the degree of standardization. Modern organizations have trended toward wider spans as communication technology and employee autonomy have improved."},
+  "Marketing":{clue:"What is the term for the process of dividing a market into distinct groups of buyers with different needs, characteristics, or behaviors?",answer:"Market segmentation",explain:"Market segmentation divides a heterogeneous market into smaller, more homogeneous groups that respond similarly to marketing strategies. Effective segmentation bases include demographics, psychographics, geography, and behavior. Segmentation enables targeted marketing — firms can tailor products, pricing, promotion, and distribution to the specific needs of each segment rather than using a one-size-fits-all approach."},
+  "Quantitative":{clue:"In hypothesis testing, what is the probability of rejecting a true null hypothesis?",answer:"Alpha (α) — the significance level",explain:"Alpha (α) is the Type I error rate — the probability of incorrectly rejecting a null hypothesis that is actually true (a false positive). Researchers typically set α = 0.05, meaning they accept a 5% chance of a Type I error. The p-value is then compared to α: if p < α, we reject the null. Choosing a smaller α reduces Type I errors but increases Type II errors (failing to reject a false null)."},
+  "Policy":  {clue:"What economic term describes a good that is non-excludable and non-rival in consumption, leading to the free-rider problem?",answer:"Public good",explain:"A public good is non-excludable (you can't prevent people from using it) and non-rival (one person's use doesn't diminish others'). National defense and public fireworks are classic examples. Because of the free-rider problem — people benefit without paying — private markets undersupply public goods, creating a rationale for government provision. Most goods are not pure public goods; many have elements of both publicness and privateness."},
+  "Finance": {clue:"What financial ratio measures a company's ability to meet short-term obligations using only its most liquid assets, excluding inventory?",answer:"Quick ratio (acid-test ratio)",explain:"The quick ratio = (Current Assets - Inventory) / Current Liabilities. It is a stricter liquidity test than the current ratio because inventory may not be quickly convertible to cash. A quick ratio of 1.0 or above generally indicates adequate short-term liquidity. It is particularly important for businesses with slow-moving inventory, like manufacturers, where inventory could take months to convert to cash."},
+  "Potpourri":{clue:"What is the name of the annual economic symposium hosted by the Kansas City Federal Reserve Bank in Wyoming?",answer:"Jackson Hole Economic Symposium",explain:"The Jackson Hole Economic Symposium has been held annually since 1978 near Jackson Hole, Wyoming. It is one of the most prestigious gatherings in global central banking, bringing together central bank governors, finance ministers, and leading economists. Fed chairs often use the event to signal major policy shifts — Ben Bernanke signaled QE2 there in 2010, and Jerome Powell announced the Fed's new average inflation targeting framework there in 2020."}
+};
+
+let currentRound = 0;
+let isTiebreaker = false;
+let teams = [{name:"Team 1",score:0},{name:"Team 2",score:0}];
+let usedByRound = [{},{},{},{},{},{},{},{},{},{},{},{},{},{}];
+let currentCell = null;
+let timerInterval = null;
+let timerCount = 10;
+let stealMode = false;
+let stealFromTeam = -1;
+
+function switchRound(r) {
+  currentRound = r;
+  isTiebreaker = (r === 13);
+  document.querySelectorAll('.round-btn').forEach((b,i) => b.classList.toggle('active', i===r));
+  const grid = document.getElementById('grid');
+  grid.className = isTiebreaker ? 'tiebreak' : 'normal';
+  renderGrid();
+}
+
+function renderScores() {
+  document.getElementById('scoreboard').innerHTML = teams.map((t,i) => `
+    <div class="team-block">
+      <input value="${t.name}" oninput="teams[${i}].name=this.value" />
+      <div class="score" id="score${i}" onclick="openScorePanel(${i})" title="Click to adjust" style="cursor:pointer;">${t.score}</div>
+    </div>
+  `).join('');
+}
+
+function openScorePanel(i) {
+  const existing = document.getElementById('score-panel');
+  if (existing) existing.remove();
+  const panel = document.createElement('div');
+  panel.id = 'score-panel';
+  panel.style.cssText = 'position:fixed;top:80px;right:20px;background:#3a0a0a;border:2px solid #e8d080;border-radius:8px;padding:16px 20px;z-index:400;text-align:center;min-width:200px;';
+  panel.innerHTML = `
+    <div style="font-family:Anton,sans-serif;font-size:14px;letter-spacing:2px;color:#e8d080;margin-bottom:10px;">${teams[i].name}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      ${[5,10,15,20,25].map(v => `
+        <button onclick="nudgeScore(${i},${v})"  style="font-family:Barlow,sans-serif;font-weight:600;font-size:13px;padding:5px 10px;border-radius:4px;border:none;background:#2d7a3a;color:white;cursor:pointer;">+${v}</button>
+        <button onclick="nudgeScore(${i},-${v})" style="font-family:Barlow,sans-serif;font-weight:600;font-size:13px;padding:5px 10px;border-radius:4px;border:none;background:#5a0e0e;border:1px solid rgba(255,255,255,0.3);color:white;cursor:pointer;">-${v}</button>
+      `).join('')}
+    </div>
+    <button onclick="document.getElementById('score-panel').remove()" style="font-family:Barlow,sans-serif;font-weight:600;font-size:12px;padding:5px 14px;border-radius:4px;border:none;background:rgba(255,255,255,0.15);color:white;cursor:pointer;">Done</button>
+  `;
+  document.body.appendChild(panel);
+}
+
+function nudgeScore(i, amt) {
+  teams[i].score += amt;
+  renderScores();
+}
+
+function renderGrid() {
+  const used = usedByRound[currentRound];
+  const grid = document.getElementById('grid');
+  let html = '';
+  const isPotpourriRound = !isTiebreaker && currentRound < rounds.length &&
+    !Object.keys(rounds[currentRound]).includes('Micro');
+  const cats = isTiebreaker ? categories :
+    (isPotpourriRound ? Object.keys(rounds[currentRound]) : categories);
+
+  if (isTiebreaker) {
+    html = cats.map(c => `<div class="cat-header">${c}</div>`).join('');
+    html += cats.map((c,col) => {
+      const key = `${col}-0`;
+      const isUsed = !!used[key];
+      return `<div class="cell tiebreak-cell${isUsed?' used':''}" onclick="openTiebreaker(${col})">${isUsed ? '—' : 'TB'}</div>`;
+    }).join('');
+  } else {
+    html = cats.map(c => `<div class="cat-header">${c}</div>`).join('');
+    for (let row=0; row<5; row++) {
+      for (let col=0; col<cats.length; col++) {
+        const key = `${col}-${row}`;
+        const isUsed = !!used[key];
+        html += `<div class="cell${isUsed?' used':''}" onclick="openCell(${col},${row})">${isUsed ? '—' : points[row]}</div>`;
+      }
+    }
+  }
+  grid.style.gridTemplateColumns = `repeat(${cats.length}, minmax(0, 1fr))`;
+  grid.style.gridTemplateRows = isTiebreaker ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)';
+  grid.innerHTML = html;
+}
+
+function openTiebreaker(col) {
+  const key = `${col}-0`;
+  if (usedByRound[currentRound][key]) return;
+  currentCell = {col, row:0, key};
+  stealMode = false; stealFromTeam = -1;
+  const cat = categories[col];
+  const q = tiebreaker[cat];
+  document.getElementById('m-cat').textContent = cat + ' — Tiebreaker';
+  document.getElementById('m-pts').textContent = 'TB';
+  document.getElementById('m-clue').textContent = q.clue;
+  document.getElementById('m-answer').textContent = 'Answer: ' + q.answer;
+  document.getElementById('peek-answer').textContent = q.answer;
+  document.getElementById('peek-answer').className = '';
+  document.getElementById('peek-btn').textContent = '👁 peek';
+  document.getElementById('m-answer').className = 'modal-answer';
+  document.getElementById('steal-banner').className = '';
+  document.getElementById('award-row').className = 'award-row';
+  stopTimer();
+  document.getElementById('timer-ring-wrap').className = '';
+  hide('btn-reveal'); show('btn-buzz'); hide('btn-correct'); hide('btn-wrong'); hide('btn-nosteal'); show('btn-noanswer'); hide('btn-explain');
+  document.getElementById('modal-bg').className = 'open';
+}
+
+function openCell(col, row) {
+  const key = `${col}-${row}`;
+  if (usedByRound[currentRound][key]) return;
+  currentCell = {col, row, key};
+  stealMode = false; stealFromTeam = -1;
+  const roundCats = Object.keys(rounds[currentRound]);
+  const cat = roundCats[col];
+  const q = rounds[currentRound][cat][row];
+  document.getElementById('m-cat').textContent = cat + ' — Round ' + (currentRound+1);
+  document.getElementById('m-pts').textContent = points[row] + ' pts';
+  document.getElementById('m-clue').textContent = q.clue;
+  document.getElementById('m-answer').textContent = 'Answer: ' + q.answer;
+  document.getElementById('peek-answer').textContent = q.answer;
+  document.getElementById('peek-answer').className = '';
+  document.getElementById('peek-btn').textContent = '👁 peek';
+  document.getElementById('m-answer').className = 'modal-answer';
+  const choicesEl = document.getElementById('m-choices');
+  if (q.choices) { choicesEl.innerHTML = q.choices.map(c=>`<div class="choice-item">${c}</div>`).join(''); choicesEl.className='visible'; }
+  else { choicesEl.innerHTML=''; choicesEl.className=''; }
+  document.getElementById('steal-banner').className = '';
+  document.getElementById('award-row').className = 'award-row';
+  stopTimer();
+  document.getElementById('timer-ring-wrap').className = 'visible';
+  hide('btn-reveal'); show('btn-buzz'); hide('btn-correct'); hide('btn-wrong'); hide('btn-nosteal'); show('btn-noanswer'); hide('btn-explain');
+  document.getElementById('modal-bg').className = 'open';
+  timerCount = 13;
+  setTimer(13, 13);
+  timerInterval = setInterval(() => {
+    timerCount--;
+    setTimer(timerCount, 13);
+    if (timerCount <= 0) { stopTimer(); triggerSteal(-1); }
+  }, 1000);
+}
+
+function revealAnswer() {
+  document.getElementById('m-answer').className = 'modal-answer visible';
+  hide('btn-reveal');
+  show('btn-explain');
+}
+
+function startBuzz() {
+  stopTimer();
+  timerCount = 5;
+  setTimer(5, 5);
+  document.getElementById('timer-ring-wrap').className = 'visible';
+  document.getElementById('btn-buzz').disabled = true;
+  show('btn-reveal'); show('btn-correct'); show('btn-wrong'); hide('btn-noanswer');
+  timerInterval = setInterval(() => {
+    timerCount--;
+    setTimer(timerCount, 5);
+    if (timerCount <= 0) {
+      stopTimer();
+      if (stealMode) { markQuestionDead(true); }
+      else { triggerSteal(-1); }
+    }
+  }, 1000);
+}
+
+function setTimer(n, maxN) {
+  maxN = maxN || 13;
+  const arc = document.getElementById('timer-arc');
+  const num = document.getElementById('timer-num');
+  arc.style.strokeDashoffset = CIRC * (1 - n/maxN);
+  arc.style.stroke = n <= 3 ? '#ff4444' : (n <= Math.floor(maxN/2) ? '#ffaa00' : '#e8d080');
+  num.textContent = Math.max(n, 0);
+  num.style.fill = n <= 3 ? '#ff4444' : '#ffffff';
+}
+
+function stopTimer() {
+  clearInterval(timerInterval); timerInterval = null;
+  const b = document.getElementById('btn-buzz');
+  if (b) b.disabled = false;
+}
+
+function handleWrong() {
+  stopTimer();
+  document.getElementById('timer-ring-wrap').className = '';
+  if (stealMode) {
+    const pts = points[currentCell.row];
+    const stealTeam = stealFromTeam === 0 ? 1 : 0;
+    teams[stealTeam].score -= pts;
+    renderScores();
+    markQuestionDead(true);
+    return;
+  }
+  const pts = isTiebreaker ? 1 : points[currentCell.row];
+  const row = document.getElementById('award-row');
+  if (isTiebreaker) {
+    row.innerHTML = `<div class="award-label">Deduct 1 pt from:</div>` +
+      teams.map((t,i) => `<button class="award-btn" onclick="deductAndSteal(${i},1)">${t.name}</button>`).join('');
+  } else {
+    row.innerHTML = `<div class="award-label">Deduct ${pts} pts from:</div>` +
+      teams.map((t,i) => `<button class="award-btn" onclick="deductAndSteal(${i},${pts})">${t.name}</button>`).join('');
+  }
+  row.className = 'award-row visible';
+  hide('btn-correct'); hide('btn-wrong'); hide('btn-buzz');
+}
+
+function deductAndSteal(teamIdx, pts) {
+  if (teamIdx >= 0) { teams[teamIdx].score -= pts; renderScores(); stealFromTeam = teamIdx; }
+  triggerSteal(teamIdx);
+}
+
+function triggerSteal(wrongTeamIdx) {
+  stealMode = true;
+  document.getElementById('award-row').className = 'award-row';
+  const otherName = wrongTeamIdx >= 0 ? teams[wrongTeamIdx === 0 ? 1 : 0].name : 'Other team';
+  const banner = document.getElementById('steal-banner');
+  banner.textContent = wrongTeamIdx >= 0 ? `⚡ STEAL — ${otherName} can buzz in!` : `⏱ Time's up — steal opportunity!`;
+  banner.className = 'visible';
+  show('btn-buzz'); show('btn-correct'); show('btn-wrong'); show('btn-nosteal'); hide('btn-noanswer');
+  document.getElementById('btn-buzz').disabled = false;
+  document.getElementById('timer-ring-wrap').className = '';
+  setTimer(5, 5); timerCount = 5;
+}
+
+function showAward(correct) {
+  stopTimer();
+  document.getElementById('timer-ring-wrap').className = '';
+  const pts = isTiebreaker ? 'Tiebreaker' : points[currentCell.row];
+  const row = document.getElementById('award-row');
+  if (isTiebreaker) {
+    row.innerHTML = `<div class="award-label">Award 1 pt to:</div>` +
+      teams.map((t,i) => `<button class="award-btn" onclick="applyScore(${i},1)">${t.name}</button>`).join('') +
+      `<button class="award-btn" onclick="applyScore(-1,0)">No team</button>`;
+  } else {
+    row.innerHTML = `<div class="award-label">Award ${pts} pts to:</div>` +
+      teams.map((t,i) => `<button class="award-btn" onclick="applyScore(${i},${pts})">${t.name}</button>`).join('') +
+      `<button class="award-btn" onclick="applyScore(-1,0)">No team</button>`;
+  }
+  row.className = 'award-row visible';
+  hide('btn-correct'); hide('btn-wrong'); hide('btn-buzz'); hide('btn-nosteal');
+}
+
+function applyScore(teamIdx, pts) {
+  if (teamIdx >= 0) { teams[teamIdx].score += pts; renderScores(); }
+  usedByRound[currentRound][currentCell.key] = true;
+  renderGrid();
+  closeModal();
+}
+
+function markQuestionDead(showBanner) {
+  stopTimer();
+  if (showBanner) {
+    document.getElementById('steal-banner').textContent = '❌ Question dead — no further points';
+    document.getElementById('steal-banner').className = 'visible';
+  }
+  hide('btn-buzz'); hide('btn-correct'); hide('btn-wrong'); hide('btn-nosteal'); hide('btn-noanswer');
+  show('btn-reveal');
+  usedByRound[currentRound][currentCell.key] = true;
+  renderGrid();
+}
+
+function showExplanation() {
+  if (!currentCell) return;
+  const cat = categories[currentCell.col];
+  let q;
+  if (isTiebreaker) { q = tiebreaker[cat]; }
+  else { q = rounds[currentRound][cat][currentCell.row]; }
+  document.getElementById('explain-body').innerHTML = `
+    <div class="explain-q">${cat} — ${isTiebreaker ? 'Tiebreaker' : points[currentCell.row] + ' pts'}</div>
+    <div class="explain-a">✓ ${q.answer}</div>
+    <div class="explain-text">${q.explain}</div>
+  `;
+  document.getElementById('explain-panel').classList.add('open');
+}
+
+function closeExplain() { document.getElementById('explain-panel').classList.remove('open'); }
+
+function closeModal() {
+  stopTimer();
+  closeExplain();
+  const sp = document.getElementById('score-panel');
+  if (sp) sp.remove();
+  document.getElementById('modal-bg').className = '';
+  document.getElementById('timer-ring-wrap').className = '';
+  document.getElementById('award-row').className = 'award-row';
+  document.getElementById('steal-banner').className = '';
+  document.getElementById('peek-answer').className = '';
+  document.getElementById('peek-btn').textContent = '👁 peek';
+  currentCell = null; stealMode = false;
+}
+
+function resetRound() {
+  if (!confirm('Reset ' + (isTiebreaker ? 'Tiebreaker' : 'Round ' + (currentRound+1)) + '?')) return;
+  usedByRound[currentRound] = {};
+  renderGrid();
+}
+
+function togglePeek() {
+  const el = document.getElementById('peek-answer');
+  const btn = document.getElementById('peek-btn');
+  if (el.classList.contains('visible')) { el.className = ''; btn.textContent = '👁 peek'; }
+  else { el.className = 'visible'; btn.textContent = '🙈 hide'; }
+}
+
+function show(id) { document.getElementById(id).style.display = 'inline-block'; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+renderScores();
+renderGrid();
+</script>
+</body>
+</html>

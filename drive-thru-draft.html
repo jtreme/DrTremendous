@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drive-Thru Draft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt:#181109;
+    --asphalt2:#221a12;
+    --surface:#2a2118;
+    --surface2:#362c20;
+    --line:#473a2d;
+    --cream:#f7f1e3;
+    --muted:#bcae9b;
+    --ketchup:#e8392b;
+    --ketchup-dim:#a8281f;
+    --mustard:#f5b82e;
+    --mint:#37d2a0;
+    --shadow:0 18px 40px -18px rgba(0,0,0,.8);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1200px 540px at 50% -4%, rgba(245,184,46,.14) 0%, transparent 58%),
+      radial-gradient(900px 520px at 50% 8%, rgba(232,57,43,.07) 0%, transparent 55%),
+      radial-gradient(1100px 900px at 50% 34%, #2c2117 0%, transparent 62%),
+      #171009;
+    background-attachment:fixed;
+    color:var(--cream);
+    font-family:"DM Sans",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:clamp(14px,3vw,28px);
+    line-height:1.45;
+    position:relative;
+  }
+  /* subtle grease/asphalt grain — very low opacity so it never gets busy */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:760px;margin:0 auto;position:relative;z-index:1}
+
+  /* ---- Header ---- */
+  header{text-align:center;margin-bottom:18px;position:relative}
+  .eyebrow{
+    font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--mustard);margin-bottom:8px;
+  }
+  h1{
+    font-family:"Anton",sans-serif;font-weight:400;
+    font-size:clamp(38px,9vw,68px);line-height:.92;letter-spacing:.01em;
+    text-transform:uppercase;
+    color:var(--cream);
+    text-shadow:0 0 1px rgba(247,241,227,.5), 0 0 14px rgba(245,184,46,.28), 0 2px 0 rgba(0,0,0,.5);
+  }
+  h1 .red{color:var(--ketchup);text-shadow:0 0 1px rgba(232,57,43,.6), 0 0 18px rgba(232,57,43,.45), 0 2px 0 rgba(0,0,0,.5)}
+  .hero-badge{
+    display:inline-block;margin-top:12px;
+    font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--asphalt);background:var(--mustard);
+    padding:5px 14px;border-radius:999px;font-weight:500;
+    box-shadow:0 0 0 3px rgba(245,184,46,.18), 0 6px 16px -8px rgba(245,184,46,.6);
+  }
+  .tag{color:var(--muted);font-size:14px;margin-top:12px;max-width:48ch;margin-inline:auto}
+
+  /* ---- Tray (the 5 slots) ---- */
+  .tray{
+    background:linear-gradient(180deg, var(--surface), #241c14);
+    border:1px solid var(--line);border-radius:18px;
+    padding:14px;margin:20px 0;
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,224,170,.07);
+  }
+  .tray-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:2px 4px 12px;border-bottom:1px dashed var(--line);margin-bottom:12px;
+  }
+  .tray-title{font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .skip-badge{
+    font-family:"DM Mono",monospace;font-size:12px;color:var(--mustard);
+    border:1px solid var(--line);border-radius:999px;padding:4px 10px;
+  }
+  .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  @media(max-width:560px){.slots{grid-template-columns:repeat(2,1fr)}}
+  .slot{
+    background:var(--asphalt2);border:1px solid var(--line);border-radius:12px;
+    padding:0;min-height:104px;display:flex;flex-direction:column;
+    position:relative;overflow:hidden;transition:border-color .2s,background .2s,transform .15s,box-shadow .2s;
+  }
+  /* ticket tab header on every compartment */
+  .slot .tab{
+    display:flex;align-items:center;gap:5px;padding:6px 8px;
+    background:rgba(0,0,0,.25);border-bottom:1px dashed var(--line);
+  }
+  .slot .tab .ico{width:15px;height:15px;flex:0 0 auto;color:var(--muted);transition:color .2s}
+  .slot .pos{
+    font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .slot .body{padding:9px 10px;display:flex;flex-direction:column;gap:3px;flex:1}
+  .slot.empty{border-style:dashed}
+  .slot.eligible{border-color:var(--mint);background:#1c241f;box-shadow:0 0 0 1px var(--mint) inset, 0 0 16px -4px rgba(55,210,160,.45);cursor:pointer}
+  .slot.eligible .tab .ico{color:var(--mint)}
+  .slot.eligible:hover{transform:translateY(-2px)}
+  .slot.filled .tab{background:rgba(245,184,46,.12)}
+  .slot.filled .tab .ico,.slot.filled .pos{color:var(--mustard)}
+  .slot.filled .item-name{animation:slotPop .32s cubic-bezier(.34,1.56,.64,1)}
+  .slot .item-name{font-weight:700;font-size:14px;line-height:1.18;margin-top:auto}
+  .slot .item-chain{font-size:11px;color:var(--muted)}
+  .slot .empty-hint{margin-top:auto;font-size:12px;color:#5d5247}
+
+  /* ---- Spinner ---- */
+  .machine{
+    background:linear-gradient(180deg,var(--surface2),var(--surface));
+    border:1px solid var(--line);border-radius:18px;padding:16px;
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,224,170,.07);margin-bottom:18px;
+  }
+  .reel-window{
+    position:relative;height:88px;border-radius:12px;overflow:hidden;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 199px, rgba(0,0,0,.5) 199px 200px),
+      var(--asphalt);
+    border:1px solid var(--line);
+    box-shadow:inset 0 2px 10px rgba(0,0,0,.6);
+  }
+  /* center highlight zone behind the pointer */
+  .pay-zone{
+    position:absolute;left:50%;top:0;bottom:0;width:200px;transform:translateX(-50%);
+    z-index:2;pointer-events:none;
+    background:linear-gradient(180deg, rgba(245,184,46,.16), rgba(232,57,43,.12));
+    border-left:1px solid rgba(245,184,46,.25);border-right:1px solid rgba(245,184,46,.25);
+    transition:opacity .3s;
+  }
+  .reel-window.live .pay-zone{animation:zonePulse 1s ease-in-out infinite}
+  .reel-mask{
+    position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(90deg, var(--asphalt) 0%, transparent 16%, transparent 84%, var(--asphalt) 100%);
+  }
+  .reel{display:flex;align-items:center;height:100%;will-change:transform;position:relative;z-index:0}
+  .cell{
+    flex:0 0 200px;height:100%;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:8px;
+  }
+  .cell .chip{
+    font-family:"Anton",sans-serif;text-transform:uppercase;font-size:19px;
+    letter-spacing:.01em;line-height:.95;color:var(--cream);
+    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    border-radius:9px;border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.25));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .cell:nth-child(odd) .chip{border-color:rgba(245,184,46,.22)}
+  .cell:nth-child(even) .chip{border-color:rgba(232,57,43,.2)}
+  .pointer{
+    position:absolute;left:50%;top:0;bottom:0;width:0;transform:translateX(-50%);
+    border-left:2px solid var(--ketchup);z-index:4;pointer-events:none;
+    box-shadow:0 0 10px 1px rgba(232,57,43,.7);
+  }
+  .reel-window.live .pointer{animation:pointerGlow .6s ease-in-out infinite}
+  .pointer::before,.pointer::after{
+    content:"";position:absolute;left:50%;transform:translateX(-50%);
+    border:7px solid transparent;border-top-color:var(--ketchup);
+    filter:drop-shadow(0 0 4px rgba(232,57,43,.7));
+  }
+  .pointer::before{top:-1px}
+  .pointer::after{bottom:-1px;border-top-color:transparent;border-bottom-color:var(--ketchup)}
+
+  /* ---- Motion ---- */
+  @keyframes slotPop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+  @keyframes stampIn{0%{transform:translate(-50%,-50%) rotate(-11deg) scale(2.4);opacity:0}55%{opacity:1}100%{transform:translate(-50%,-50%) rotate(-11deg) scale(1);opacity:1}}
+  @keyframes gradePop{0%{transform:scale(.3);opacity:0}65%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  @keyframes pointerGlow{0%,100%{box-shadow:0 0 8px 1px rgba(232,57,43,.6)}50%{box-shadow:0 0 16px 3px rgba(232,57,43,.95)}}
+  @keyframes zonePulse{0%,100%{opacity:.7}50%{opacity:1}}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+  @media(prefers-reduced-motion:reduce){
+    /* stop decorative animations only — the reel spin is a transition and must keep working */
+    *{animation:none!important}
+  }
+
+  .controls{display:flex;gap:10px;margin-top:14px}
+  button{
+    font-family:"DM Sans",sans-serif;font-weight:700;font-size:15px;cursor:pointer;
+    border-radius:12px;border:1px solid transparent;padding:13px 18px;transition:filter .15s,transform .1s,opacity .15s;
+  }
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .btn-spin{flex:1;background:var(--ketchup);color:#fff;box-shadow:0 6px 0 var(--ketchup-dim)}
+  .btn-spin:hover:not(:disabled){filter:brightness(1.07)}
+  .btn-spin:active:not(:disabled){box-shadow:0 3px 0 var(--ketchup-dim);transform:translateY(3px)}
+  .btn-skip{background:transparent;color:var(--mustard);border-color:var(--line)}
+  .btn-skip:hover:not(:disabled){border-color:var(--mustard)}
+
+  /* ---- Counter (item draft) ---- */
+  .counter{margin-bottom:18px}
+  .counter-head{
+    display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 2px;
+  }
+  .counter-head .chain-name{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:24px}
+  .counter-head .hint{font-size:13px;color:var(--muted);margin-left:auto;text-align:right}
+  .menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+
+  /* situation line — spells out what's happening in plain words */
+  .counter-status{
+    display:flex;flex-direction:column;gap:5px;margin-bottom:14px;padding:11px 13px;
+    background:var(--asphalt2);border:1px solid var(--line);border-radius:12px;font-size:13px;
+  }
+  .counter-status b{color:var(--cream)}
+  .st-need{color:var(--muted)}
+  .st-need b{color:var(--mint)}
+  .st-can{color:var(--muted)}
+  .st-can b{color:var(--mustard)}
+  .st-block{
+    color:var(--cream);margin-top:3px;padding-top:8px;border-top:1px dashed var(--line);
+    line-height:1.4;
+  }
+  .st-block b{color:var(--ketchup)}
+  .card{
+    background:linear-gradient(180deg, var(--surface), #221c17);
+    border:1px solid var(--line);border-radius:14px;
+    padding:12px;display:flex;flex-direction:column;gap:9px;
+    position:relative;transition:transform .12s,border-color .15s,box-shadow .15s;
+  }
+  .card.draftable{cursor:pointer}
+  .card.draftable:hover{transform:translateY(-3px);border-color:var(--mustard);box-shadow:0 10px 24px -12px rgba(245,184,46,.6), 0 0 0 1px rgba(245,184,46,.3) inset}
+  .card.locked{opacity:.5}
+  .card .cname{font-weight:700;font-size:16px;line-height:1.16;letter-spacing:-.01em}
+  .card .ctags{display:flex;flex-wrap:wrap;gap:5px}
+  /* slot tags styled like little condiment packets */
+  .pill{
+    font-family:"DM Mono",monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--line);border-radius:4px;padding:3px 7px;color:var(--muted);
+    background:rgba(0,0,0,.2);
+  }
+  .pill.open{border-color:var(--mint);color:var(--mint);background:rgba(55,210,160,.1)}
+  .card .crow{display:flex;justify-content:space-between;align-items:center;margin-top:auto;gap:8px}
+  /* rating as a crowd-score stamp */
+  .rating{
+    font-family:"DM Mono",monospace;font-size:12px;font-weight:500;color:var(--mustard);
+    border:1px solid rgba(245,184,46,.4);border-radius:6px;padding:2px 7px;white-space:nowrap;
+  }
+  .draft-cue{font-size:12px;font-weight:700;color:var(--mint)}
+  .card.locked .draft-cue{color:#5d5247}
+
+  /* SOLD OUT cards */
+  .card.down{overflow:hidden;filter:grayscale(.65);opacity:.72}
+  .card.down .cname{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--ketchup-dim)}
+  .card.down .rating{color:#5d5247;border-color:var(--line)}
+  .down-why{color:var(--ketchup)!important;font-weight:700;font-size:11px;text-align:right;max-width:62%}
+  .stamp{
+    position:absolute;top:42%;left:50%;
+    transform:translate(-50%,-50%) rotate(-11deg);
+    background:rgba(232,57,43,.94);color:#fff;font-family:"Anton",sans-serif;
+    font-size:16px;letter-spacing:.12em;padding:4px 16px;z-index:3;white-space:nowrap;
+    border:2.5px solid rgba(255,255,255,.92);border-radius:3px;
+    box-shadow:0 3px 12px rgba(0,0,0,.55);
+    animation:stampIn .35s cubic-bezier(.3,1.4,.5,1) both;
+  }
+
+  /* slot picker */
+  .picker{
+    background:var(--asphalt2);border:1px dashed var(--mint);border-radius:14px;
+    padding:12px;margin-bottom:12px;
+  }
+  .picker p{font-size:13px;color:var(--cream);margin-bottom:10px}
+  .picker p b{color:var(--mustard)}
+  .picker-opts{display:flex;flex-wrap:wrap;gap:8px}
+  .picker-opts button{background:var(--surface);color:var(--cream);border-color:var(--line);font-size:13px;padding:9px 14px}
+  .picker-opts button:hover{border-color:var(--mint);color:var(--mint)}
+
+  .msg{font-size:13px;color:var(--mustard);text-align:center;min-height:18px;margin-top:10px;font-family:"DM Mono",monospace}
+
+  /* ---- Result (share card) ---- */
+  .result{
+    background:linear-gradient(180deg, var(--surface2), var(--surface));
+    border:1px solid var(--line);border-radius:18px;
+    padding:24px 22px;text-align:center;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+  }
+  .result .order-complete{
+    font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--mustard);padding-bottom:14px;margin-bottom:6px;
+    border-bottom:1px dashed var(--line);
+  }
+  .grade-wrap{position:relative;height:96px;display:flex;align-items:center;justify-content:center;margin:8px 0 2px}
+  .grade-wrap .ghost{
+    position:absolute;font-family:"Anton",sans-serif;font-size:170px;line-height:1;
+    color:var(--mustard);opacity:.07;z-index:0;pointer-events:none;
+  }
+  .result .grade{
+    font-family:"Anton",sans-serif;font-size:84px;line-height:1;color:var(--mustard);
+    position:relative;z-index:1;animation:gradePop .45s cubic-bezier(.3,1.5,.5,1) both;
+    text-shadow:0 0 24px rgba(245,184,46,.35);
+  }
+  .label-badge{
+    display:inline-block;font-family:"Anton",sans-serif;text-transform:uppercase;
+    font-size:20px;letter-spacing:.01em;color:var(--asphalt);
+    background:var(--mustard);padding:6px 16px;border-radius:999px;margin:6px 0 4px;
+    box-shadow:0 8px 20px -10px rgba(245,184,46,.8);
+  }
+  .result .score-line{font-family:"DM Mono",monospace;color:var(--muted);font-size:12px;margin-bottom:16px}
+  /* receipt with torn paper edges */
+  .receipt{
+    text-align:left;background:#fbf6ea;color:#2a2018;border-radius:3px;
+    padding:16px 16px;font-family:"DM Mono",monospace;font-size:13px;margin:0 auto 16px;max-width:340px;
+    position:relative;box-shadow:0 12px 28px -14px rgba(0,0,0,.7);
+    --tear:linear-gradient(135deg, transparent 0 6px, #fbf6ea 6px) 0 0/12px 12px repeat-x,
+           linear-gradient(-135deg, transparent 0 6px, #fbf6ea 6px) 0 0/12px 12px repeat-x;
+  }
+  .receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:8px;background:var(--tear)}
+  .receipt::before{top:-8px;transform:scaleY(-1)}
+  .receipt::after{bottom:-8px}
+  .receipt .r-head{text-align:center;font-weight:700;letter-spacing:.12em;padding-bottom:8px;margin-bottom:6px;border-bottom:1px dashed #c9bba6}
+  .receipt .r-row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dotted #d8ccb6}
+  .receipt .r-row.weak{background:rgba(232,57,43,.1);margin:2px -8px;padding:5px 8px;border-radius:4px;border-bottom:none}
+  .receipt .r-row:last-child{border-bottom:none}
+  .receipt .r-pos{color:#9a8c74;text-transform:uppercase;font-size:9.5px;letter-spacing:.1em}
+  .receipt .r-weak-tag{color:var(--ketchup);font-weight:700}
+  .receipt .r-total{display:flex;justify-content:space-between;font-weight:700;padding-top:8px;margin-top:4px;border-top:2px solid #2a2018}
+  .result .verdict{font-size:14px;color:var(--cream);margin-bottom:14px}
+  .result .verdict b{color:var(--ketchup)}
+  .result .dare{
+    font-family:"DM Mono",monospace;font-size:13px;color:var(--mustard);
+    border-top:1px dashed var(--line);padding-top:14px;margin-bottom:16px;
+  }
+  .result-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn-share{background:var(--mustard);color:#1a140a;font-size:14px}
+  .btn-share.pulse{animation:pulse .4s ease}
+  .btn-again{background:transparent;color:var(--cream);border-color:var(--line);font-size:14px}
+  .btn-again:hover{border-color:var(--cream)}
+
+  .hidden{display:none!important}
+  footer{text-align:center;color:#5d5247;font-size:11px;margin-top:24px;font-family:"DM Mono",monospace}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ic-MAIN" viewBox="0 0 24 24">
+    <path d="M3.2 9.2C3.2 5.9 7.1 4.2 12 4.2s8.8 1.7 8.8 5H3.2z" fill="currentColor"/>
+    <rect x="3.4" y="10.4" width="17.2" height="2.3" rx="1.15" fill="currentColor"/>
+    <rect x="3.4" y="13.7" width="17.2" height="2.1" rx="1.05" fill="currentColor" opacity=".75"/>
+    <path d="M3.4 17.4h17.2c0 2-3.4 2.9-8.6 2.9s-8.6-.9-8.6-2.9z" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-SIDE" viewBox="0 0 24 24">
+    <rect x="8.6" y="3.4" width="1.7" height="8" rx=".85" fill="currentColor"/>
+    <rect x="11.2" y="2.2" width="1.7" height="9.2" rx=".85" fill="currentColor"/>
+    <rect x="13.8" y="4.2" width="1.7" height="7.2" rx=".85" fill="currentColor"/>
+    <path d="M6.8 10.4h10.4l-1.1 9.4a1 1 0 0 1-1 .9H8.9a1 1 0 0 1-1-.9L6.8 10.4z" fill="currentColor"/>
+    <rect x="6.4" y="10" width="11.2" height="2.2" rx="1.1" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-DRINK" viewBox="0 0 24 24">
+    <rect x="13" y="2" width="1.6" height="6.5" rx=".8" transform="rotate(13 13.8 5)" fill="currentColor"/>
+    <path d="M6 8.2h12l-1.3 11.6a1.2 1.2 0 0 1-1.2 1.1H8.5a1.2 1.2 0 0 1-1.2-1.1L6 8.2z" fill="currentColor"/>
+    <rect x="5" y="6.2" width="14" height="2.4" rx="1.2" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-DESSERT" viewBox="0 0 24 24">
+    <path d="M8 11.2l4 9.6 4-9.6z" fill="currentColor"/>
+    <circle cx="12" cy="8.4" r="4.3" fill="currentColor"/>
+    <circle cx="9.7" cy="9.6" r="2.7" fill="currentColor"/>
+    <circle cx="14.3" cy="9.6" r="2.7" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-SAUCE" viewBox="0 0 24 24">
+    <path d="M5.4 9.4h13.2l-1 9.6a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.4 9.4z" fill="currentColor"/>
+    <ellipse cx="12" cy="9.2" rx="7.4" ry="2.4" fill="currentColor"/>
+    <ellipse cx="12" cy="8.9" rx="4.4" ry="1.3" fill="var(--asphalt2)"/>
+  </symbol>
+</svg>
+<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
+   style="position:fixed;top:14px;left:16px;z-index:50;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;background:rgba(20,14,9,.7);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)">
+  <img src="trex.png" alt="" style="height:24px;width:auto;display:block">
+  <span>Dr.Tremendous</span>
+</a>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Round <span id="roundNum">1</span> of 5</div>
+    <h1>Drive-Thru <span class="red">Draft</span></h1>
+    <div class="hero-badge">5 spins · 1 tray · no mercy</div>
+    <p class="tag">Spin five chains. Draft one item each. Build the best meal the spinner allows — and try not to get stuck.</p>
+  </header>
+
+  <!-- TRAY -->
+  <div class="tray">
+    <div class="tray-head">
+      <span class="tray-title">Your Tray</span>
+      <span class="skip-badge" id="skipBadge">SKIPS · 1</span>
+    </div>
+    <div class="slots" id="slots"></div>
+  </div>
+
+  <!-- MACHINE -->
+  <div class="machine" id="machine">
+    <div class="reel-window" id="reelWindow">
+      <div class="reel" id="reel"></div>
+      <div class="pay-zone"></div>
+      <div class="reel-mask"></div>
+      <div class="pointer"></div>
+    </div>
+    <div class="controls">
+      <button class="btn-spin" id="spinBtn">Spin the chain</button>
+      <button class="btn-skip" id="skipBtn">Skip (1)</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <!-- COUNTER (draft) -->
+  <div class="counter hidden" id="counter">
+    <div class="picker hidden" id="picker"></div>
+    <div class="counter-head">
+      <span class="chain-name" id="counterChain"></span>
+      <span class="hint">Tap an item to add it to your tray</span>
+    </div>
+    <div class="counter-status" id="counterStatus"></div>
+    <div class="menu" id="menu"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result hidden" id="result"></div>
+
+  <footer>No refunds · no substitutions · v0.1</footer>
+</div>
+
+<script>
+/* ============================================================
+   DATA — real chains, plausible signature items.
+   slots: which positions an item can fill. r: crowd-vibe rating (argument fuel, not gospople).
+   ============================================================ */
+const POSITIONS = ["MAIN","SIDE","DRINK","DESSERT","SAUCE"];
+const POS_LABEL = {MAIN:"Main",SIDE:"Side",DRINK:"Drink",DESSERT:"Dessert",SAUCE:"Sauce"};
+
+const CHAINS = [
+  {name:"McDonald's", items:[
+    {n:"Big Mac", s:["MAIN"], r:8},
+    {n:"10pc McNuggets", s:["MAIN","SIDE"], r:8},
+    {n:"World Famous Fries", s:["SIDE"], r:9},
+    {n:"McFlurry", s:["DESSERT"], r:7},
+    {n:"Sprite", s:["DRINK"], r:6},
+    {n:"Sweet 'N Sour", s:["SAUCE"], r:7},
+  ]},
+  {name:"Chick-fil-A", items:[
+    {n:"Chicken Sandwich", s:["MAIN"], r:9},
+    {n:"Waffle Fries", s:["SIDE"], r:9},
+    {n:"8ct Nuggets", s:["MAIN","SIDE"], r:8},
+    {n:"Frosted Lemonade", s:["DRINK","DESSERT"], r:9},
+    {n:"CFA Sauce", s:["SAUCE"], r:9},
+  ]},
+  {name:"Taco Bell", items:[
+    {n:"Crunchwrap Supreme", s:["MAIN"], r:8},
+    {n:"Mexican Pizza", s:["MAIN"], r:8},
+    {n:"Doritos Locos Taco", s:["MAIN","SIDE"], r:7},
+    {n:"Nacho Fries", s:["SIDE"], r:8},
+    {n:"Baja Blast", s:["DRINK"], r:9},
+    {n:"Cinnamon Twists", s:["DESSERT"], r:6},
+    {n:"Diablo Sauce", s:["SAUCE"], r:7},
+  ]},
+  {name:"Wendy's", items:[
+    {n:"Dave's Single", s:["MAIN"], r:8},
+    {n:"Spicy Nuggets", s:["MAIN","SIDE"], r:8},
+    {n:"Frosty", s:["DESSERT","DRINK"], r:9},
+    {n:"Seasoned Fries", s:["SIDE"], r:6},
+    {n:"S'Awesome Sauce", s:["SAUCE"], r:6},
+  ]},
+  {name:"In-N-Out", items:[
+    {n:"Double-Double", s:["MAIN"], r:9},
+    {n:"Animal-Style Fries", s:["SIDE"], r:9},
+    {n:"Neapolitan Shake", s:["DESSERT","DRINK"], r:8},
+    {n:"Spread", s:["SAUCE"], r:8},
+  ]},
+  {name:"Popeyes", items:[
+    {n:"Chicken Sandwich", s:["MAIN"], r:9},
+    {n:"Cajun Fries", s:["SIDE"], r:8},
+    {n:"Buttermilk Biscuit", s:["SIDE","DESSERT"], r:8},
+    {n:"Sweet Tea", s:["DRINK"], r:7},
+    {n:"Blackened Ranch", s:["SAUCE"], r:8},
+  ]},
+  {name:"Raising Cane's", items:[
+    {n:"Chicken Fingers", s:["MAIN"], r:8},
+    {n:"Crinkle Fries", s:["SIDE"], r:7},
+    {n:"Texas Toast", s:["SIDE"], r:8},
+    {n:"Cane's Sauce", s:["SAUCE"], r:9},
+    {n:"Sweet Tea", s:["DRINK"], r:7},
+  ]},
+  {name:"Arby's", items:[
+    {n:"Classic Roast Beef", s:["MAIN"], r:6},
+    {n:"Curly Fries", s:["SIDE"], r:9},
+    {n:"Jamocha Shake", s:["DESSERT","DRINK"], r:8},
+    {n:"Mozzarella Sticks", s:["SIDE"], r:7},
+    {n:"Arby's Sauce", s:["SAUCE"], r:6},
+  ]},
+  {name:"Sonic", items:[
+    {n:"SuperSONIC Burger", s:["MAIN"], r:6},
+    {n:"Tots", s:["SIDE"], r:8},
+    {n:"Cherry Limeade", s:["DRINK"], r:9},
+    {n:"Oreo Blast", s:["DESSERT"], r:7},
+  ]},
+  {name:"Dairy Queen", items:[
+    {n:"Chicken Strip Basket", s:["MAIN"], r:6},
+    {n:"Fries", s:["SIDE"], r:5},
+    {n:"Blizzard", s:["DESSERT"], r:9},
+    {n:"MisterMisty", s:["DRINK"], r:6},
+  ]},
+  {name:"Whataburger", items:[
+    {n:"Whataburger", s:["MAIN"], r:8},
+    {n:"Honey BBQ Chicken Strip Sandwich", s:["MAIN"], r:7},
+    {n:"Fries", s:["SIDE"], r:6},
+    {n:"Dr Pepper Shake", s:["DESSERT","DRINK"], r:7},
+    {n:"Spicy Ketchup", s:["SAUCE"], r:7},
+  ]},
+];
+
+const COMBO_ADJ = ["Greasy","Golden","Forbidden","Regional","Unstoppable","Cursed","Elite","Drive-Thru","Late-Night","Highway"];
+const COMBO_NOUN = ["Gauntlet","Special","Order","Lineup","Tray","Combo","Situation","Haul","Run","Masterpiece"];
+
+/* ============================================================
+   86'd — items that can be down on a given visit.
+   Keyed by "Chain::Item". p = chance it's out, why = the joke.
+   Anything not listed gets a small baseline chance of selling out.
+   ============================================================ */
+const OUTAGES = {
+  "McDonald's::McFlurry":            {p:0.45, why:"Ice cream machine down 😔"},
+  "Wendy's::Frosty":                 {p:0.18, why:"Frosty machine's down"},
+  "Dairy Queen::Blizzard":           {p:0.16, why:"Soft-serve machine down"},
+  "Taco Bell::Mexican Pizza":        {p:0.50, why:"Pulled from the menu. Again."},
+  "Popeyes::Chicken Sandwich":       {p:0.35, why:"Sold out (you're not surprised)"},
+  "Raising Cane's::Sweet Tea":       {p:0.20, why:"Machine's 'being cleaned' 🙄"},
+  "Sonic::Cherry Limeade":           {p:0.12, why:"Out of cherry"},
+  "Chick-fil-A::Frosted Lemonade":   {p:0.12, why:"Lemonade machine down"},
+  "In-N-Out::Neapolitan Shake":      {p:0.10, why:"Shake machine acting up"},
+  "Arby's::Jamocha Shake":           {p:0.12, why:"Shake machine down"},
+};
+const BASELINE_OUT = 0.05;            // everything else: occasionally sells out
+const BASELINE_WHY = ["Sold out for the day","Kitchen's out of it","Just ran out","Not available right now"];
+
+function outageFor(chainName,item){
+  const cfg=OUTAGES[chainName+"::"+item.n];
+  if(cfg) return cfg;
+  return {p:BASELINE_OUT, why:BASELINE_WHY[Math.floor(Math.random()*BASELINE_WHY.length)]};
+}
+
+/* ============================================================ STATE */
+let tray = {};            // pos -> {n, chain, r, pos}
+let skips = 1;
+let dealtChain = null;    // current chain object
+let spinning = false;
+let pendingItem = null;   // item awaiting slot choice
+let pendingSlots = [];    // the open slots that pending item may go in
+let outages = {};         // item index in dealt chain -> blackout reason (this visit)
+let blackoutsSeen = 0;    // tally of 86'd items witnessed across the game
+
+const CELL_W = 200;
+
+/* ============================================================ DOM */
+const $ = id => document.getElementById(id);
+const slotsEl=$("slots"), reelEl=$("reel"), spinBtn=$("spinBtn"), skipBtn=$("skipBtn"),
+      msgEl=$("msg"), counterEl=$("counter"), menuEl=$("menu"), counterChain=$("counterChain"),
+      pickerEl=$("picker"), resultEl=$("result"), machineEl=$("machine"),
+      skipBadge=$("skipBadge"), roundNum=$("roundNum"), counterStatus=$("counterStatus"),
+      reelWindow=$("reelWindow");
+
+/* ============================================================ INIT */
+function init(){
+  tray={}; skips=1; dealtChain=null; pendingItem=null; pendingSlots=[]; outages={}; blackoutsSeen=0; spinning=false;
+  POSITIONS.forEach(p=>tray[p]=null);
+  resultEl.classList.add("hidden");
+  machineEl.classList.remove("hidden");
+  counterEl.classList.add("hidden");
+  pickerEl.classList.add("hidden");
+  buildReel();
+  renderTray();
+  updateChrome();
+  msgEl.textContent="Pull the lever — see what chain you're stuck with.";
+  spinBtn.disabled=false; skipBtn.disabled=true;
+  spinBtn.textContent="Pull up to the window";
+  reelEl.style.transition="none";
+  reelEl.style.transform="translateX(0)";
+}
+
+function filledCount(){return POSITIONS.filter(p=>tray[p]).length}
+function openPositions(){return POSITIONS.filter(p=>!tray[p])}
+
+function updateChrome(){
+  roundNum.textContent=Math.min(filledCount()+1,5);
+  skipBadge.textContent="SKIPS · "+skips;
+  skipBtn.textContent="Skip ("+skips+")";
+}
+
+/* ============================================================ REEL */
+function buildReel(){
+  // long repeated strip so the spin has room to travel
+  reelEl.innerHTML="";
+  const reps=12;
+  for(let i=0;i<reps;i++){
+    CHAINS.forEach(c=>{
+      const cell=document.createElement("div");
+      cell.className="cell";
+      cell.innerHTML=`<span class="chip">${c.name}</span>`;
+      reelEl.appendChild(cell);
+    });
+  }
+}
+
+function renderTray(){
+  slotsEl.innerHTML="";
+  const eligibleNow = dealtChain && !spinning;
+  POSITIONS.forEach(pos=>{
+    const it=tray[pos];
+    const div=document.createElement("div");
+    div.className="slot "+(it?"filled":"empty");
+    const canHighlight = !it && eligibleNow &&
+      (pendingItem ? pendingSlots.includes(pos) : chainCanFill(dealtChain,pos));
+    if(canHighlight) div.classList.add("eligible");
+    const tab=`<div class="tab">
+        <svg class="ico" aria-hidden="true"><use href="#ic-${pos}"></use></svg>
+        <span class="pos">${POS_LABEL[pos]}</span>
+      </div>`;
+    if(it){
+      div.innerHTML=tab+`<div class="body">
+        <span class="item-name">${it.n}</span>
+        <span class="item-chain">${it.chain}</span>
+      </div>`;
+    }else{
+      const hint = canHighlight ? "open ↓" : "empty";
+      div.innerHTML=tab+`<div class="body"><span class="empty-hint">${hint}</span></div>`;
+    }
+    if(div.classList.contains("eligible")){
+      div.onclick=()=>{ if(pendingItem){ placeItem(pendingItem,pos); } };
+    }
+    slotsEl.appendChild(div);
+  });
+}
+
+function chainCanFill(chain,pos){
+  return chain.items.some(it=>it.s.includes(pos));
+}
+function chainHasAnyOpen(chain){
+  const open=openPositions();
+  return chain.items.some(it=>it.s.some(p=>open.includes(p)));
+}
+// roll which items on this chain are 86'd this visit
+function rollOutages(chain){
+  const o={};
+  chain.items.forEach((it,i)=>{
+    const cfg=outageFor(chain.name,it);
+    if(Math.random()<cfg.p) o[i]=cfg.why;
+  });
+  return o;
+}
+// is anything draftable RIGHT NOW (open slot + not 86'd)?
+function chainHasDraftableNow(chain,outs){
+  const open=openPositions();
+  return chain.items.some((it,i)=> !(i in outs) && it.s.some(p=>open.includes(p)));
+}
+
+/* ============================================================ SPIN */
+function spin(useChain){
+  if(spinning) return;
+  spinning=true;
+  spinBtn.disabled=true; skipBtn.disabled=true;
+  spinBtn.textContent="Spin the chain";
+  counterEl.classList.add("hidden");
+  pickerEl.classList.add("hidden");
+  pendingItem=null;
+  msgEl.textContent="Spinning…";
+  reelWindow.classList.add("live");
+  renderTray();
+
+  // choose a chain that has at least one item for an open slot
+  let pool=CHAINS.filter(chainHasAnyOpen);
+  if(pool.length===0) pool=CHAINS;
+  const target = useChain || pool[Math.floor(Math.random()*pool.length)];
+
+  // find an index of target deep in the strip, land it under the pointer
+  const idxInChains = CHAINS.indexOf(target);
+  const reps=12;
+  const landRep = 8 + Math.floor(Math.random()*2); // land deep so it travels
+  const cellIndex = landRep*CHAINS.length + idxInChains;
+  const windowW = reelEl.parentElement.clientWidth;
+  const finalX = -(cellIndex*CELL_W + CELL_W/2 - windowW/2);
+
+  reelEl.style.transition="none";
+  reelEl.style.transform="translateX(0)";
+  // force reflow
+  void reelEl.offsetWidth;
+  // shorter, gentler spin when the user prefers reduced motion — still moves, never looks frozen
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const dur = reduced ? 0.9 : 2.7;
+  reelEl.style.transition=`transform ${dur}s cubic-bezier(.16,.84,.3,1)`;
+  reelEl.style.transform=`translateX(${finalX}px)`;
+
+  setTimeout(()=>{ landed(target); }, dur*1000 + 120);
+}
+
+function landed(chain){
+  spinning=false;
+  reelWindow.classList.remove("live");
+  dealtChain=chain;
+  outages=rollOutages(chain);
+  blackoutsSeen += Object.keys(outages).length;
+  renderTray();
+  openCounter(chain);
+  updateChrome();
+  // is anything actually draftable (open slot AND not 86'd)?
+  if(!chainHasDraftableNow(chain,outages)){
+    const downCount=Object.keys(outages).length;
+    msgEl.textContent = downCount
+      ? `Everything you needed at ${chain.name} is sold out — free re-spin.`
+      : `${chain.name} can't fill what you've got open — free re-spin.`;
+    spinBtn.disabled=false;
+    spinBtn.textContent="Re-spin (free)";
+    skipBtn.disabled=true;
+    return;
+  }
+  const downCount=Object.keys(outages).length;
+  msgEl.textContent = downCount
+    ? `Dealt: ${chain.name}. Heads up — ${downCount} item${downCount>1?"s":""} sold out today.`
+    : `Dealt: ${chain.name}. Pick one item.`;
+  spinBtn.disabled=true;
+  skipBtn.disabled = skips<=0;
+}
+
+/* ============================================================ COUNTER */
+function openCounter(chain){
+  counterEl.classList.remove("hidden");
+  counterChain.textContent=chain.name;
+  const open=openPositions();
+
+  // what can this chain actually do for my OPEN slots right now?
+  const fillable = open.filter(p =>
+    chain.items.some((it,i)=> !(i in outages) && it.s.includes(p)));
+  // open slots whose only eligible items here are 86'd (the painful ones)
+  const blocked = open.filter(p =>
+    !fillable.includes(p) && chain.items.some(it=>it.s.includes(p)));
+
+  // build the situation line
+  const needTxt = open.map(p=>POS_LABEL[p]).join(", ");
+  let statusHTML =
+    `<span class="st-need">You still need: <b>${needTxt}</b></span>`;
+  if(fillable.length){
+    statusHTML += `<span class="st-can">${chain.name} can fill: <b>${fillable.map(p=>POS_LABEL[p]).join(", ")}</b></span>`;
+  }else{
+    statusHTML += `<span class="st-can">${chain.name} has nothing for your open slots.</span>`;
+  }
+  // name the culprit: which down item would have covered a blocked slot
+  if(blocked.length){
+    const p=blocked[0];
+    let culprit=null;
+    chain.items.forEach((it,i)=>{ if((i in outages)&&it.s.includes(p)&&!culprit) culprit=it.n; });
+    statusHTML += `<span class="st-block">Your <b>${POS_LABEL[p]}</b> slot would've been the <b>${culprit}</b> — but it's sold out today. Take another slot, or spin again.</span>`;
+  }
+  counterStatus.innerHTML=statusHTML;
+
+  menuEl.innerHTML="";
+  chain.items.forEach((it,i)=>{
+    const isDown = i in outages;
+    const eligibleSlots=it.s.filter(p=>open.includes(p));
+    const draftable = !isDown && eligibleSlots.length>0;
+    const card=document.createElement("div");
+    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"");
+    const tags=it.s.map(p=>`<span class="pill ${open.includes(p)?"open":""}">${POS_LABEL[p]}</span>`).join("");
+    let cue;
+    if(isDown) cue=`<span class="draft-cue down-why">${outages[i]}</span>`;
+    else if(draftable) cue=`<span class="draft-cue">Add →</span>`;
+    else cue=`<span class="draft-cue">slot already filled</span>`;
+    card.innerHTML=`
+      ${isDown?`<span class="stamp">SOLD OUT</span>`:""}
+      <div class="cname">${it.n}</div>
+      <div class="ctags">${tags}</div>
+      <div class="crow">
+        <span class="rating">★ ${it.r}/10</span>
+        ${cue}
+      </div>`;
+    if(draftable){
+      card.onclick=()=>chooseItem(it,chain,eligibleSlots);
+    }
+    menuEl.appendChild(card);
+  });
+}
+
+function chooseItem(it,chain,eligibleSlots){
+  const item={n:it.n,chain:chain.name,r:it.r};
+  if(eligibleSlots.length===1){
+    placeItem(item,eligibleSlots[0]);
+  }else{
+    // ask which slot
+    pendingItem=item;
+    pendingSlots=eligibleSlots;
+    pickerEl.classList.remove("hidden");
+    pickerEl.innerHTML=`<p><b>${it.n}</b> fits more than one spot. Where does it go? <span style="color:var(--muted)">(or tap a glowing slot above)</span></p>
+      <div class="picker-opts">${eligibleSlots.map(p=>`<button data-p="${p}">${POS_LABEL[p]}</button>`).join("")}</div>`;
+    pickerEl.querySelectorAll("button").forEach(b=>{
+      b.onclick=()=>placeItem(item,b.dataset.p);
+    });
+    renderTray(); // light up eligible slots
+    pickerEl.scrollIntoView({behavior:"smooth",block:"nearest"});
+  }
+}
+
+function placeItem(item,pos){
+  tray[pos]={...item,pos};
+  dealtChain=null;
+  pendingItem=null;
+  pendingSlots=[];
+  pickerEl.classList.add("hidden");
+  counterEl.classList.add("hidden");
+  spinBtn.textContent="Spin the chain";
+  renderTray();
+  updateChrome();
+
+  if(filledCount()>=5){
+    finish();
+  }else{
+    msgEl.textContent="Locked in. Spin for your next slot.";
+    spinBtn.disabled=false;
+    skipBtn.disabled = skips<=0;
+  }
+}
+
+/* ============================================================ SKIP */
+function doSkip(){
+  if(skips<=0||spinning) return;
+  skips--;
+  updateChrome();
+  msgEl.textContent="Skipped. New chain coming up…";
+  spin(); // fresh random chain
+}
+
+/* ============================================================ FINISH */
+// Earn a personality label from what's actually on the tray.
+function labelFor(){
+  const items=POSITIONS.map(p=>tray[p]);
+  const total=items.reduce((a,b)=>a+b.r,0), pct=total/50;
+  const chains=items.map(i=>i.chain);
+  const distinctChains=new Set(chains).size;
+  const maxChainReps=Math.max(...chains.map(c=>chains.filter(x=>x===c).length));
+  const rs=items.map(i=>i.r), spread=Math.max(...rs)-Math.min(...rs);
+  const weakest=Math.min(...rs);
+  const S=tray.SAUCE.r, M=tray.MAIN.r, SI=tray.SIDE.r, DE=tray.DESSERT.r, DR=tray.DRINK.r;
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+  // priority order: special compositions beat generic tiers
+  if(pct>=.94) return pick(["Drive-Thru Royalty","Certified Menu Hacker","The Spinner Whisperer"]);
+  if(S>=9 && pct>=.78) return "Elite Sauce Merchant";
+  if(distinctChains===5 && pct>=.8) return "Regional Menace";
+  if(DE>=9 && DR>=8) return "Dessert-First Degenerate";
+  if(M>=9 && SI>=9) return "Burger-and-Fries Purist";
+  if(maxChainReps>=3) return "Ride-or-Die Loyalist";
+  if(blackoutsSeen>=4) return "Survivor of the Machine";
+  if(spread>=4 && pct>=.66) return "Emotionally Unstable Combo";
+  if(weakest<=5 && pct>=.7) return "One Tragic Slot From Greatness";
+  if(distinctChains===5) return "Cross-Country Roadtrip";
+  if(pct>=.76) return "Airport Food Court Royalty";
+  if(pct>=.6) return "Honest Gas-Station Meal";
+  if(pct<.5) return pick(["Emergency Tray","Cursed Haul","A Cry For Help, Battered & Fried"]);
+  return `The ${pick(COMBO_ADJ)} ${pick(COMBO_NOUN)}`;
+}
+
+const DARES=[
+  "Could your tray beat this?",
+  "Send this to someone who thinks they know fast food.",
+  "Run it back — beat your own grade.",
+  "Screenshot it or it didn't happen.",
+];
+
+function finish(){
+  machineEl.classList.add("hidden");
+  counterEl.classList.add("hidden");
+  const items=POSITIONS.map(p=>tray[p]);
+  const total=items.reduce((a,b)=>a+b.r,0);          // out of 50
+  const weakest=items.reduce((a,b)=>b.r<a.r?b:a);
+  const pct=total/50;
+  let grade;
+  if(pct>=.94)grade="S"; else if(pct>=.86)grade="A"; else if(pct>=.76)grade="B";
+  else if(pct>=.64)grade="C"; else if(pct>=.5)grade="D"; else grade="F";
+
+  const name=labelFor();
+  const dare=DARES[Math.floor(Math.random()*DARES.length)];
+
+  const verdicts={
+    S:"A flawless tray. The spinner blinked first.",
+    A:"Genuinely elite. You'd defend this in a parking lot.",
+    B:"Strong order. One weak link keeps you humble.",
+    C:"It feeds you. Nobody's writing home about it.",
+    D:`Structurally a meal. Spiritually, that <b>${weakest.n}</b> is a cry for help.`,
+    F:"You played yourself. Frame it anyway."
+  };
+
+  const receipt=POSITIONS.map(p=>{
+    const it=tray[p];
+    const isWeak = it===weakest;
+    return `<div class="r-row${isWeak?' weak':''}">
+      <span><span class="r-pos">${POS_LABEL[p]}</span> &nbsp;${it.n}${isWeak?' <span class="r-weak-tag">◄ weak link</span>':''}</span>
+      <span>★${it.r}</span></div>`;
+  }).join("");
+
+  resultEl.innerHTML=`
+    <div class="order-complete">✦ Order Complete ✦</div>
+    <div class="grade-wrap"><span class="ghost">${grade}</span><span class="grade">${grade}</span></div>
+    <div class="label-badge">${name}</div>
+    <div class="score-line">CROWD SCORE ${total} / 50</div>
+    <div class="receipt">
+      <div class="r-head">— YOUR TRAY —</div>
+      ${receipt}
+      <div class="r-total"><span>TOTAL</span><span>${total}/50 · ${grade}</span></div>
+    </div>
+    <div class="verdict">${verdicts[grade]}</div>
+    <div class="dare">${dare}</div>
+    <div class="result-btns">
+      <button class="btn-share" id="shareBtn">Copy my tray</button>
+      <button class="btn-again" id="againBtn">Run it back</button>
+    </div>`;
+  resultEl.classList.remove("hidden");
+  resultEl.scrollIntoView({behavior:"smooth",block:"start"});
+
+  $("againBtn").onclick=init;
+  $("shareBtn").onclick=()=>{
+    const txt=`${name} — Grade ${grade} (${total}/50)\n`+
+      POSITIONS.map(p=>`${POS_LABEL[p]}: ${tray[p].n} (${tray[p].chain})`).join("\n")+
+      `\n${dare} 🍟 Drive-Thru Draft`;
+    navigator.clipboard?.writeText(txt).then(
+      ()=>{ const b=$("shareBtn"); b.textContent="Copied ✓"; b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); setTimeout(()=>b.textContent="Copy my tray",1600); },
+      ()=>{ $("shareBtn").textContent="Copy failed"; }
+    );
+  };
+}
+
+/* ============================================================ WIRING */
+spinBtn.onclick=()=>spin();
+skipBtn.onclick=doSkip;
+window.addEventListener("resize",()=>{ if(!spinning && !dealtChain) { /* keep reel reset */ }});
+init();
+</script>
+</body>
+</html>
