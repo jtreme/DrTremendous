@@ -82,9 +82,21 @@
       background: rgba(22, 29, 33, 0.86);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 16px;
+      padding: 18px 16px 16px;
       width: 300px;
-      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow), 0 0 0 1px rgba(241, 195, 106, 0.16), 0 0 36px rgba(241, 195, 106, 0.10);
+    }
+
+    .scenario-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--benefit));
     }
 
     .scenario-card strong {
@@ -99,30 +111,6 @@
       display: block;
       font-size: 13px;
       line-height: 1.45;
-    }
-
-    .download-btn {
-      align-items: center;
-      background: linear-gradient(135deg, rgba(241, 195, 106, 0.98), rgba(57, 217, 160, 0.9));
-      border: 0;
-      border-radius: 8px;
-      box-shadow: 0 12px 30px rgba(57, 217, 160, 0.2);
-      color: #111718;
-      cursor: pointer;
-      display: inline-flex;
-      font-size: 13px;
-      font-weight: 900;
-      justify-content: center;
-      margin-top: 14px;
-      min-height: 40px;
-      padding: 10px 14px;
-      text-transform: uppercase;
-      width: 100%;
-    }
-
-    .download-btn:hover {
-      filter: brightness(1.08);
-      transform: translateY(-1px);
     }
 
     .controls {
@@ -838,10 +826,11 @@
     }
 
     .reveal-btn {
-      background: linear-gradient(135deg, var(--benefit), var(--watch));
+      background: linear-gradient(135deg, rgba(241, 195, 106, 0.98), rgba(57, 217, 160, 0.9));
       border: 0;
       border-radius: 8px;
-      color: #06100d;
+      box-shadow: 0 12px 30px rgba(57, 217, 160, 0.22), 0 0 22px rgba(241, 195, 106, 0.18);
+      color: #111718;
       cursor: pointer;
       font-weight: 950;
       min-height: 42px;
@@ -945,7 +934,6 @@
           A state considers raising the minimum wage for agricultural labor. Students must keep two markets in view:
           farm labor first, then possible spillovers into food prices.
         </span>
-        <button class="download-btn" id="downloadBtn" type="button">Download shareable HTML</button>
       </aside>
     </header>
 
@@ -1630,19 +1618,6 @@
       wrap.style.setProperty("--glow-opacity", "0.72");
     }
 
-    function downloadTool() {
-      const html = `<!doctype html>\n${document.documentElement.outerHTML}`;
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "stakeholder-heatmap-ag-minimum-wage.html";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-    }
-
     renderClaims();
     renderBoard();
     renderMeters();
@@ -1651,7 +1626,6 @@
     document.getElementById("customBtn").addEventListener("click", evaluateCustom);
     document.getElementById("resetBtn").addEventListener("click", resetBoard);
     document.getElementById("revealBtn").addEventListener("click", revealClaim);
-    document.getElementById("downloadBtn").addEventListener("click", downloadTool);
   </script>
 
 
