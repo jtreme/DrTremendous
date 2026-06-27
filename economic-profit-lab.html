@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Economic Profit Lab — Dr. Tremendous</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#141b34; --navy-deep:#0d1226; --gold:#d8a249; --gold-soft:#e8c889;
+    --paper:#f6f3eb; --card:#fffdf8; --ink:#1b2034; --muted:#6b6f7d; --line:rgba(20,27,52,.12);
+    --rev:#21406e; --explicit:#b5573c; --acct:#2e8b6f; --implicit:#7a64a8; --loss:#c2563a; --profit:#2e8b6f;
+    --display:"Playfair Display",Georgia,serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--body);background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
+
+  .head{background:var(--navy);color:var(--paper);border-bottom:2px solid var(--gold)}
+  .head-in{max-width:840px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;gap:13px}
+  .head .rex{width:32px;height:32px;flex:none}
+  .head .t{font-family:var(--display);font-weight:700;font-size:1.18rem;letter-spacing:.01em}
+  .head .tag{font-family:var(--display);font-style:italic;color:var(--gold-soft);font-size:.95rem;margin-left:auto}
+
+  .wrap{max-width:840px;margin:0 auto;padding:30px 24px 64px}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .lede{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+  h1{font-family:var(--display);font-weight:900;font-size:clamp(1.9rem,4vw,2.6rem);line-height:1.02;margin:7px 0 0}
+  .score{font-family:var(--mono);font-size:.78rem;color:var(--muted);white-space:nowrap;padding-top:8px}
+  .score b{color:var(--ink);font-weight:600}
+  .explainer{color:var(--muted);font-size:.95rem;max-width:66ch;margin:14px 0 26px}
+  .explainer b{color:var(--ink);font-weight:600}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(20,27,52,.04),0 12px 34px rgba(20,27,52,.06)}
+
+  .work{padding:26px 28px 28px;border-top:3px solid var(--gold)}
+  .who{font-family:var(--display);font-weight:700;font-size:1.5rem;line-height:1.1;margin-bottom:8px}
+  .story{font-size:1rem;color:var(--ink)}
+  .facts{font-family:var(--mono);font-size:.78rem;color:var(--muted);background:#fbf6ea;border-radius:6px;padding:11px 14px;margin:13px 0 0;line-height:1.8}
+  .facts b{color:#a07a26}
+
+  .steph{font-family:var(--mono);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600;margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+  .steph::before{content:"";flex:none;width:20px;height:1.5px;background:var(--gold)}
+
+  .revcalc{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#f4efe4;border-radius:6px;padding:14px 16px}
+  .revcalc .formula{font-size:.98rem}
+  .revcalc .formula b{font-family:var(--mono);font-weight:600}
+  .revcalc .sub{display:block;font-size:.76rem;color:var(--muted);margin-top:2px}
+  .revcalc input{width:150px;font-family:var(--mono);font-size:.96rem;padding:10px 11px;border:1px solid var(--line);border-radius:5px;background:var(--card);text-align:right}
+
+  .item{padding:12px 0;border-bottom:1px solid var(--line)}
+  .item-main{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:9px}
+  .item .nm{font-size:.96rem;font-weight:500}
+  .item .nm .fix{font-family:var(--mono);font-size:.66rem;color:var(--loss);margin-left:7px;font-weight:600}
+  .item .amt{font-family:var(--mono);font-size:.92rem;color:var(--muted);white-space:nowrap}
+  .toggle{display:flex;gap:8px}
+  .toggle button{flex:1;font-family:var(--body);padding:9px 10px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--ink);cursor:pointer;transition:all .15s;text-align:center;line-height:1.2}
+  .toggle button b{display:block;font-family:var(--mono);font-size:.74rem;font-weight:600}
+  .toggle button small{display:block;font-size:.68rem;color:var(--muted);margin-top:2px;transition:color .15s}
+  .toggle button:hover{border-color:var(--gold)}
+  .toggle button.sel-e{background:var(--explicit);border-color:var(--explicit);color:#fff}
+  .toggle button.sel-e small{color:rgba(255,255,255,.82)}
+  .toggle button.sel-i{background:var(--implicit);border-color:var(--implicit);color:#fff}
+  .toggle button.sel-i small{color:rgba(255,255,255,.82)}
+  .item.wrong{background:#fbeae5;border-radius:6px;padding-left:10px;padding-right:10px}
+
+  .totals{display:flex;gap:12px;margin-top:16px}
+  .tot{flex:1;background:#f4efe4;border-radius:6px;padding:10px 13px}
+  .tot .k{font-family:var(--mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .tot .v{font-family:var(--mono);font-size:1.05rem;font-weight:600;margin-top:3px}
+
+  .calc-row{display:flex;align-items:center;gap:12px;margin-bottom:11px}
+  .calc-row label{flex:1;font-size:.94rem}
+  .calc-row label .sub{display:block;font-size:.74rem;color:var(--muted)}
+  .calc-row input{width:130px;font-family:var(--mono);font-size:.96rem;padding:10px 11px;border:1px solid var(--line);border-radius:5px;background:var(--card);text-align:right}
+  input.ok{border-color:var(--profit);background:#eef6f2}
+  input.no{border-color:var(--loss);background:#fbeae5}
+
+  .check{width:100%;font-family:var(--mono);font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;padding:15px;border:none;border-radius:5px;background:var(--navy);color:var(--paper);cursor:pointer;transition:background .2s,transform .15s;margin-top:14px}
+  .check:hover:not(:disabled){background:#1d2647;transform:translateY(-1px)}
+  .check:disabled{background:#d9d4c7;color:#9a9588;cursor:default}
+
+  .reveal{margin-top:22px;display:none}
+  .reveal.show{display:block}
+  .reveal .chart-panel{padding:18px 16px 8px;position:relative}
+  .finding{font-family:var(--display);font-weight:700;font-size:1.25rem;padding:4px 8px 12px;line-height:1.2}
+  .chart-scroll{overflow-x:auto}
+  svg.chart{width:100%;min-width:540px;height:auto;display:block}
+  .bar{transition:opacity .6s ease, transform .6s ease}
+  .bar.pending{opacity:0;transform:translateY(16px)}
+  .bar.show{opacity:1;transform:translateY(0)}
+  .barval{font-family:var(--mono);font-size:11.5px}
+  .grouplbl{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.02em}
+  .catlbl{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+  .connector{stroke:#cfcabb;stroke-width:1;stroke-dasharray:2 3}
+  .zero{stroke:var(--ink);stroke-width:1.4}
+  .zerolbl{font-family:var(--mono);font-size:10px;fill:var(--muted)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 10px 14px;font-family:var(--mono);font-size:.7rem;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:14px;height:11px;border-radius:2px;display:inline-block}
+  .legend i.ghost{background:var(--implicit);opacity:.28;border:1.5px dashed var(--implicit)}
+
+  .tip{position:absolute;display:none;transform:translateX(-50%);background:var(--navy);color:var(--paper);border:1px solid var(--gold);border-radius:7px;padding:10px 12px;width:220px;max-width:78vw;box-shadow:0 8px 24px rgba(13,18,38,.3);pointer-events:none;z-index:20}
+  .tip .tip-t{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;font-weight:600;color:var(--gold-soft)}
+  .tip .tip-d{font-size:.8rem;line-height:1.45;color:rgba(246,243,235,.85);margin:5px 0 7px}
+  .tip .tip-c{font-family:var(--mono);font-size:.78rem;color:var(--paper);border-top:1px solid rgba(255,255,255,.18);padding-top:6px}
+  .hit{cursor:help}
+
+  .explain{margin-top:16px}
+  .explain-h{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:6px}
+  .explain p{font-size:.95rem;line-height:1.6;color:var(--ink)}
+  .resblock{margin-top:16px;background:#f4efe4;border-radius:8px;padding:15px 17px}
+  .res-h{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:11px}
+  .res-row{display:flex;align-items:baseline;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.9rem;flex-wrap:wrap}
+  .res-row .r{font-weight:600}
+  .res-row .arrow{color:var(--gold);font-weight:700}
+  .res-row .u{color:var(--muted);flex:1;min-width:140px}
+  .res-row .a{font-family:var(--mono);font-weight:600;white-space:nowrap}
+  .res-total{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);font-size:.94rem;font-weight:600;margin-top:9px;padding-top:9px;border-top:1.5px solid rgba(20,27,52,.2)}
+  .res-note{font-size:.93rem;line-height:1.58;margin-top:12px;color:var(--ink)}
+  .res-note b{font-weight:600}
+
+  .interp{padding:24px 28px 26px}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;padding:8px 13px;border-radius:4px;margin-bottom:13px}
+  .badge .d{width:8px;height:8px;border-radius:50%}
+  .takeaway{font-size:1rem;line-height:1.6}
+  .breakdown{font-family:var(--mono);font-size:.8rem;color:var(--muted);margin-top:14px;background:#f4efe4;border-radius:6px;padding:13px 15px;line-height:2}
+  .breakdown b{color:var(--ink)}
+  .nextbtn{width:100%;font-family:var(--mono);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;padding:14px;border:1px solid var(--gold);border-radius:5px;background:#fbf6ea;color:#a07a26;font-weight:600;cursor:pointer;margin-top:18px;transition:background .2s,color .2s}
+  .nextbtn:hover{background:var(--gold);color:var(--navy)}
+
+  .dots{display:flex;gap:7px;justify-content:center;margin-top:22px}
+  .dots span{width:9px;height:9px;border-radius:50%;background:var(--line)}
+  .dots span.on{background:var(--gold)}
+  .dots span.done{background:var(--acct)}
+
+  .modes{display:inline-flex;gap:4px;background:#ece7da;border-radius:8px;padding:4px;margin-bottom:24px}
+  .mode{font-family:var(--mono);font-size:.74rem;letter-spacing:.04em;padding:10px 18px;border:none;border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;transition:all .15s}
+  .mode.active{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(20,27,52,.12);font-weight:600}
+
+  .grid{stroke:#ece7da;stroke-width:1}
+  .gridlbl{font-family:var(--mono);font-size:10px;fill:#aaa49a}
+  .ytitle{font-family:var(--mono);font-size:11px;fill:var(--muted);letter-spacing:.08em}
+  .chart-caption{font-size:.83rem;color:var(--muted);padding:0 8px 12px;line-height:1.55}
+  .chart-caption b{color:var(--ink);font-weight:600}
+  .mk-name{font-family:var(--mono);font-size:11px;font-weight:600}
+  .mk-val{font-family:var(--mono);font-size:12.5px;font-weight:600}
+  .bk-t{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.02em}
+  .bk-a{font-family:var(--mono);font-size:14px;font-weight:600}
+  .bk-n{font-family:var(--mono);font-size:9.5px;fill:var(--muted)}
+  .ripple{animation:ripple 3.2s linear infinite}
+  .replay{position:absolute;top:14px;right:16px;z-index:5;font-family:var(--mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px;border:1px solid var(--line);border-radius:5px;background:var(--card);color:var(--muted);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+  .replay:hover{border-color:var(--gold);color:var(--ink)}
+  @keyframes ripple{from{transform:translateX(0)}to{transform:translateX(-30px)}}
+  @media(prefers-reduced-motion:reduce){.ripple{animation:none}}
+
+  .quiz{padding:26px 28px 28px;border-top:3px solid var(--gold)}
+  .quiz-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;flex-wrap:wrap;gap:10px}
+  .quiz-head h2{font-family:var(--display);font-weight:700;font-size:1.6rem}
+  .quiz-head .qscore{font-family:var(--mono);font-size:.8rem;color:var(--muted);white-space:nowrap}
+  .quiz-head .qscore b{color:var(--ink)}
+  .quiz-intro{color:var(--muted);font-size:.94rem;margin-bottom:6px}
+  .q{padding:22px 0;border-bottom:1px solid var(--line)}
+  .q:last-child{border-bottom:none}
+  .q-prompt{font-size:1.02rem;font-weight:600;margin-bottom:13px;line-height:1.4}
+  .q-opts{display:flex;flex-direction:column;gap:8px}
+  .q-opt{font-family:var(--body);text-align:left;font-size:.93rem;padding:12px 14px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--ink);cursor:pointer;transition:all .15s;line-height:1.45;display:flex;gap:10px;align-items:flex-start}
+  .q-opt .mk{font-family:var(--mono);font-weight:600;color:var(--muted);flex:none}
+  .q-opt:hover:not(:disabled){border-color:var(--gold)}
+  .q-opt:disabled{cursor:default}
+  .q-opt.correct{background:#eef6f2;border-color:var(--profit)}
+  .q-opt.correct .mk{color:var(--profit)}
+  .q-opt.wrong{background:#fbeae5;border-color:var(--loss)}
+  .q-opt.wrong .mk{color:var(--loss)}
+  .q-exp{display:none;margin-top:12px;font-size:.9rem;line-height:1.55;color:var(--ink);background:#fbf6ea;border-left:3px solid var(--gold);padding:11px 14px;border-radius:0 5px 5px 0}
+  .q-exp.show{display:block}
+  .revealq{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+  .revq-h{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:12px}
+
+  .scale-panel{padding:18px 20px 20px;margin-top:16px}
+  .scale-h{font-family:var(--display);font-weight:700;font-size:1.3rem;padding:2px 4px 2px}
+  .scale-sub{font-size:.9rem;color:var(--muted);padding:2px 4px 8px}
+  svg#scale{width:100%;height:auto;display:block;max-width:580px;margin:4px auto 0}
+  .scale-verdict{text-align:center;font-family:var(--display);font-weight:700;font-size:1.2rem;margin:8px auto 4px;line-height:1.3;max-width:48ch}
+  .scl-head{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em}
+  .scl-total{font-family:var(--mono);font-size:12px;font-weight:600}
+  .scl-wt{font-family:var(--mono);font-size:10.5px;font-weight:600}
+  .weight{opacity:0;transform:translateY(-30px);transition:opacity .4s ease, transform .55s cubic-bezier(.3,1.5,.5,1)}
+  .weight.in{opacity:1;transform:translateY(0)}
+  @media(prefers-reduced-motion:reduce){.weight{transition:none}}
+
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){.bar{transition:none}}
+  @media(max-width:520px){
+    .work,.interp{padding-left:18px;padding-right:18px}
+    .calc-row input{width:110px}
+    .revcalc input{width:100%}
+  }
+</style>
+</head>
+<body>
+<div class="head">
+  <div class="head-in">
+    <svg class="rex" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="19" fill="none" stroke="#d8a249" stroke-width="1.5"/>
+      <path d="M11 26 q3-13 10-13 q3 0 4 3 l3-1 -2 4 q1 5-3 8 l1 3 -3 0 -1-3 -3 0 -1 3 -3 0 z" fill="#d8a249"/>
+      <circle cx="22" cy="17" r="1.3" fill="#141b34"/>
+    </svg>
+    <span class="t">Dr. Tremendous</span>
+    <span class="tag">Solutions, made visible.</span>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="lede">Interactive · Opportunity cost &amp; profit</div>
+      <h1>The Economic Profit Lab</h1>
+    </div>
+    <div class="score">Solved <b id="solved">0</b> / <span id="total">5</span></div>
+  </div>
+  <p class="explainer"><b>Accounting profit</b> subtracts only the costs that leave your bank account — the <b>explicit</b> costs. <b>Economic profit</b> also subtracts the <b>implicit</b> costs: everything you <b>gave up</b> to do this — the salary you'd earn elsewhere, the rent your own building could fetch, the return your money could make. Work the numbers, then reveal the waterfall.</p>
+
+  <div id="scenariosView">
+  <div class="panel work">
+    <div class="who" id="who"></div>
+    <div class="story" id="story"></div>
+    <div class="facts" id="facts"></div>
+
+    <div class="steph">Step 1 — Calculate the revenue</div>
+    <div class="revcalc">
+      <div class="formula"><span id="revFormula"></span><span class="sub">Quantity sold × price</span></div>
+      <input id="inRev" inputmode="numeric" placeholder="Revenue $">
+    </div>
+
+    <div class="steph">Step 2 — Sort each cost: paid out, or given up?</div>
+    <div id="items"></div>
+    <div class="totals">
+      <div class="tot"><div class="k">Explicit total (paid out)</div><div class="v" id="totE" style="color:var(--explicit)">—</div></div>
+      <div class="tot"><div class="k">Implicit total (given up)</div><div class="v" id="totI" style="color:var(--implicit)">—</div></div>
+    </div>
+
+    <div class="steph">Step 3 — Compute the two profits</div>
+    <div class="calc-row">
+      <label>Accounting profit<span class="sub">Revenue − explicit costs</span></label>
+      <input id="inAcct" inputmode="numeric" placeholder="$">
+    </div>
+    <div class="calc-row">
+      <label>Economic profit<span class="sub">Accounting profit − implicit costs</span></label>
+      <input id="inEcon" inputmode="numeric" placeholder="$">
+    </div>
+
+    <button class="check" id="checkBtn" disabled>Check &amp; reveal the waterfall</button>
+  </div>
+
+  <div class="reveal" id="reveal">
+    <div class="panel chart-panel">
+      <button class="replay" id="replayBtn">↻ Replay</button>
+      <div class="finding" id="finding"></div>
+      <div class="chart-caption">Reads left to right: revenue, then each cost steps the running total down. The three <b>solid</b> bars are the levels that matter — revenue, accounting profit, and the bottom line, <b>economic profit</b>. The muted bars are explicit costs paid out; the <b>ghosted</b> bars are the implicit costs you gave up. Hover any bar for the math.</div>
+      <div class="chart-scroll">
+        <svg class="chart" id="chart" viewBox="0 0 760 450" role="img" aria-label="Profit waterfall chart"></svg>
+      </div>
+      <div class="tip" id="tip"><div class="tip-t" id="tipT"></div><div class="tip-d" id="tipD"></div><div class="tip-c" id="tipC"></div></div>
+    </div>
+
+    <div class="panel scale-panel">
+      <div class="scale-h">The verdict — was it worth it?</div>
+      <div class="scale-sub">The waterfall showed <i>where the money went</i>. The scale asks the real question: is the venture worth more than your next-best life?</div>
+      <svg id="scale" viewBox="0 0 640 400" role="img" aria-label="A balance scale weighing the venture against the outside option"></svg>
+      <div class="scale-verdict" id="scaleVerdict"></div>
+      <div class="chart-caption"><b>Left pan:</b> what the venture nets you, after the bills you pay (accounting profit). <b>Right pan:</b> everything you gave up to do it (implicit costs). The heavier side wins — and the gap between them <i>is</i> economic profit. Level means it's a wash: normal profit.</div>
+    </div>
+    <div class="panel interp" style="margin-top:16px">
+      <div class="badge" id="badge"><span class="d"></span><span id="badgeText"></span></div>
+      <div class="takeaway" id="takeaway"></div>
+      <div class="explain"><div class="explain-h" id="explainH"></div><p id="explainP"></p></div>
+      <div class="resblock" id="resBlock">
+        <div class="res-h" id="resH"></div>
+        <div id="resList"></div>
+        <div class="res-total" id="resTotal"></div>
+        <div class="res-note" id="resNote"></div>
+      </div>
+      <div class="breakdown" id="breakdown"></div>
+      <div class="revealq" id="revealQ"></div>
+      <button class="nextbtn" id="nextBtn">Next scenario →</button>
+    </div>
+  </div>
+
+  <div class="dots" id="dots"></div>
+  </div><!-- /scenariosView -->
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const money=v=>{const s=Math.abs(Math.round(v)).toLocaleString();return (v<0?'\u2212$':'$')+s;};
+  const price=v=>'$'+v.toFixed(2);
+  const axisFmt=v=>v>=1000?'$'+Math.round(v/1000)+'k':'$'+Math.round(v);
+  function niceStep(max){const raw=max/4,mag=Math.pow(10,Math.floor(Math.log10(raw))),n=raw/mag;
+    let s; if(n<1.5)s=1; else if(n<3)s=2; else if(n<7)s=5; else s=10; return s*mag;}
+
+  const SCEN=[
+    {who:"The Taco Truck",
+     rev:{qty:16000, unit:"tacos", price:8.00},
+     story:"Maya left a steady job to run a taco truck for a year. Here's how the year shook out.",
+     facts:"Her old job paid <b>$52,000</b> a year · she put <b>$40,000</b> of savings into the truck, money that could earn <b>5%</b> elsewhere.",
+     items:[
+       {nm:"Ingredients & supplies", short:"Ingredients", amt:51000, type:"e"},
+       {nm:"Fuel, permits, insurance", short:"Fuel/permits", amt:18000, type:"e"},
+       {nm:"Part-time help (wages)", short:"Hired help", amt:14000, type:"e"},
+       {nm:"Maya's own labor — she'd earn $52,000 elsewhere", short:"Own labor", amt:52000, type:"i"},
+       {nm:"Interest the $40,000 in savings could earn (5%)", short:"Savings return", amt:2000, type:"i"}],
+     take:"Maya's truck clears <b>$45,000</b> on the books — but she gave up a $52,000 salary to run it. Counting that, she's about <b>$9,000 worse off</b> than if she'd kept her job."},
+
+    {who:"The Family Farm",
+     rev:{qty:29000, unit:"bushels", price:5.00},
+     story:"Sam farms 150 acres he inherited — instead of leasing the land (a solar developer is offering more than any neighbor), renting out his equipment, or taking an off-farm job.",
+     facts:"A solar developer offers <b>$40,000</b>/yr for the land — a neighbor would pay ~$27,000 to crop it · he turned down a <b>$48,000</b> extension job · his idle equipment could rent for <b>$9,000</b> · his <b>$30,000</b> could earn <b>6%</b>.",
+     items:[
+       {nm:"Seed, fertilizer, chemicals", short:"Inputs", amt:62000, type:"e"},
+       {nm:"Fuel & equipment repair", short:"Fuel/repair", amt:24000, type:"e"},
+       {nm:"Your land — a solar developer offers $40,000/yr (more than cropland rent)", short:"Land \u2192 solar", amt:40000, type:"i"},
+       {nm:"Your time & skill — the $48,000 county extension job", short:"Own labor", amt:48000, type:"i"},
+       {nm:"Your idle equipment — neighbors would rent it for $9,000", short:"Equipment rental", amt:9000, type:"i"},
+       {nm:"Interest your $30,000 could earn (6%)", short:"Savings return", amt:1800, type:"i"}],
+     take:"Sam's <b>$59,000</b> accounting profit vanishes once you count what those same resources could earn. The land alone could lease for solar at <b>$40,000</b> — more than a neighbor would pay to crop it, so that's the real opportunity cost. Add his labor and idle equipment and farming costs him about <b>$39,800</b> in economic terms."},
+
+    {who:"The Solo Dentist",
+     rev:{qty:2050, unit:"patient visits", price:200.00},
+     story:"Dr. Lee left a group practice to run her own office in a building she owns.",
+     facts:"Her building could lease for <b>$36,000</b>/yr · the group practice paid her <b>$140,000</b> · she put <b>$90,000</b> into equipment that could earn <b>4%</b> elsewhere.",
+     items:[
+       {nm:"Staff salaries", short:"Staff", amt:150000, type:"e"},
+       {nm:"Supplies & lab fees", short:"Supplies", amt:70000, type:"e"},
+       {nm:"Utilities & insurance", short:"Utilities", amt:22000, type:"e"},
+       {nm:"Rent Dr. Lee's own building could earn", short:"Own rent", amt:36000, type:"i"},
+       {nm:"Dr. Lee's own labor — $140,000 at the group practice", short:"Own labor", amt:140000, type:"i"},
+       {nm:"Interest her $90,000 in equipment could earn (4%)", short:"Capital return", amt:3600, type:"i"}],
+     take:"A <b>$168,000</b> accounting profit still trails her old salary plus the rent her building could earn. Going solo costs her about <b>$11,600</b> a year — though she may happily pay that to be her own boss."},
+
+    {who:"The Coffee Shop",
+     rev:{qty:52000, unit:"drinks", price:5.00},
+     story:"Jordan rents a storefront and runs a busy neighborhood café.",
+     facts:"Jordan's old manager job paid <b>$40,000</b> · she put <b>$25,000</b> into the buildout, money that could earn <b>5%</b> elsewhere. The storefront is rented, not owned.",
+     items:[
+       {nm:"Rent on the storefront", short:"Rent", amt:42000, type:"e"},
+       {nm:"Coffee, milk, pastries", short:"Goods", amt:78000, type:"e"},
+       {nm:"Staff wages", short:"Staff", amt:66000, type:"e"},
+       {nm:"Utilities", short:"Utilities", amt:12000, type:"e"},
+       {nm:"Jordan's own labor — $40,000 as a manager", short:"Own labor", amt:40000, type:"i"},
+       {nm:"Interest her $25,000 could earn (5%)", short:"Savings return", amt:1250, type:"i"}],
+     take:"Even after charging herself for the salary and capital she gave up, Jordan clears about <b>$20,750</b> in true economic profit — a signal to stay, and the kind of return that pulls new cafés into the market."},
+
+    {who:"The Candle Side-Business",
+     rev:{qty:4500, unit:"candles", price:12.00},
+     story:"Priya makes candles in her spare bedroom in the evenings, alongside her freelance work.",
+     facts:"The spare room could rent for <b>$700</b>/month · she values the freelance work she skips at <b>$18,000</b> · she put <b>$6,000</b> into equipment that could earn <b>5%</b>.",
+     items:[
+       {nm:"Wax, wicks, jars, shipping", short:"Materials", amt:21000, type:"e"},
+       {nm:"Etsy & advertising fees", short:"Fees", amt:6000, type:"e"},
+       {nm:"Rent Priya's spare room could earn ($700/mo)", short:"Own-room rent", amt:8400, type:"i"},
+       {nm:"Priya's own time — $18,000 of freelance work she skips", short:"Own time", amt:18000, type:"i"},
+       {nm:"Interest her $6,000 could earn (5%)", short:"Savings return", amt:300, type:"i"}],
+     take:"Priya's economic profit is essentially <b>zero</b> — what economists call <b>normal profit</b>. She's earning just about what her time, space, and money could get her elsewhere: break-even in the deepest sense."}
+  ];
+
+  let idx=0, cls={}, checked=false, solved=new Set();
+  $('total').textContent=SCEN.length;
+  const revOf=s=>s.rev.qty*s.rev.price;
+
+  function truth(s){
+    const R=revOf(s);
+    const E=s.items.filter(i=>i.type==='e').reduce((a,i)=>a+i.amt,0);
+    const I=s.items.filter(i=>i.type==='i').reduce((a,i)=>a+i.amt,0);
+    return {R,E,I,acct:R-E,econ:R-E-I};
+  }
+
+  function renderScenario(){
+    const s=SCEN[idx]; cls={}; checked=false;
+    $('who').textContent=s.who; $('story').textContent=s.story; $('facts').innerHTML=s.facts;
+    $('revFormula').innerHTML=`<b>${s.rev.qty.toLocaleString()}</b> ${s.rev.unit} sold at <b>${price(s.rev.price)}</b> each`;
+    const it=$('items'); it.innerHTML='';
+    s.items.forEach((item,i)=>{
+      const row=document.createElement('div'); row.className='item'; row.dataset.i=i;
+      row.innerHTML=`<div class="item-main"><span class="nm">${item.nm}</span><span class="amt">${money(item.amt)}</span></div>
+        <div class="toggle">
+          <button data-t="e"><b>Explicit cost</b><small>paid out of pocket</small></button>
+          <button data-t="i"><b>Implicit cost</b><small>given up</small></button>
+        </div>`;
+      it.appendChild(row);
+    });
+    it.querySelectorAll('.toggle button').forEach(b=>b.addEventListener('click',e=>{
+      if(checked) return;
+      const btn=e.target.closest('button'), row=btn.closest('.item'), i=+row.dataset.i, t=btn.dataset.t;
+      cls[i]=t;
+      row.querySelectorAll('.toggle button').forEach(x=>x.classList.remove('sel-e','sel-i'));
+      btn.classList.add(t==='e'?'sel-e':'sel-i');
+      updateTotals();
+    }));
+    ['inRev','inAcct','inEcon'].forEach(id=>{$(id).value=''; $(id).className=''; $(id).oninput=updateTotals;});
+    $('reveal').classList.remove('show');
+    $('totE').textContent='—'; $('totI').textContent='—';
+    renderDots(); updateTotals();
+  }
+
+  const num=v=>parseFloat(String(v).replace(/[$,\s]/g,''));
+
+  function updateTotals(){
+    const s=SCEN[idx]; let E=0,I=0,allCls=true;
+    s.items.forEach((item,i)=>{ if(cls[i]==='e')E+=item.amt; else if(cls[i]==='i')I+=item.amt; else allCls=false; });
+    $('totE').textContent=Object.values(cls).includes('e')?money(E):'—';
+    $('totI').textContent=Object.values(cls).includes('i')?money(I):'—';
+    const ready = allCls && ['inRev','inAcct','inEcon'].every(id=>$(id).value.trim()!=='');
+    $('checkBtn').disabled = !ready || checked;
+  }
+
+  function renderDots(){
+    const d=$('dots'); d.innerHTML='';
+    SCEN.forEach((_,i)=>{ const sp=document.createElement('span');
+      if(solved.has(i)) sp.className='done'; else if(i===idx) sp.className='on'; d.appendChild(sp); });
+  }
+
+  // ---------- Tufte bar waterfall ----------
+  const VB={yTop:40, yBot:360, xL:66, xR:740};
+  function buildBars(s){
+    const t=truth(s); const bars=[];
+    bars.push({name:'Revenue',short:'Revenue',val:t.R,from:0,to:t.R,kind:'rev'});
+    let run=t.R;
+    s.items.filter(i=>i.type==='e').forEach(i=>{ bars.push({name:i.nm,amt:i.amt,short:i.short,val:-i.amt,from:run,to:run-i.amt,kind:'e'}); run-=i.amt; });
+    bars.push({name:'Accounting profit',short:'Acct. profit',val:t.acct,from:0,to:t.acct,kind:'acct'});
+    run=t.acct;
+    s.items.filter(i=>i.type==='i').forEach(i=>{ bars.push({name:i.nm,amt:i.amt,short:i.short,val:-i.amt,from:run,to:run-i.amt,kind:'i'}); run-=i.amt; });
+    bars.push({name:'Economic profit',short:'Econ. profit',val:t.econ,from:0,to:t.econ,kind:'econ'});
+    return {bars,t};
+  }
+  function tipFor(b,t,s){
+    if(b.kind==='rev') return {title:'Revenue', desc:'Quantity sold × price — money in, before any costs.', calc:`${s.rev.qty.toLocaleString()} × ${price(s.rev.price)} = ${money(t.R)}`};
+    if(b.kind==='acct') return {title:'Accounting profit', desc:'What the books show: revenue minus the costs that left the bank account.', calc:`${money(t.R)} \u2212 ${money(t.E)} = ${money(t.acct)}`};
+    if(b.kind==='econ') return {title:'Economic profit', desc:'The true bottom line — accounting profit minus the implicit costs too.', calc:`${money(t.acct)} \u2212 ${money(t.I)} = ${money(t.econ)}`};
+    if(b.kind==='e') return {title:b.name, desc:'Explicit cost — cash paid out of pocket.', calc:`${money(b.from)} \u2212 ${money(b.amt)} = ${money(b.to)} left`};
+    return {title:b.name, desc:'Implicit cost — given up, not on the books, but a real cost of choosing this.', calc:`${money(b.from)} \u2212 ${money(b.amt)} = ${money(b.to)} left`};
+  }
+
+  function drawWaterfall(animate){
+    const s=SCEN[idx]; const {bars,t}=buildBars(s);
+    const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const domMax=t.R*1.06, domMin=Math.min(0,t.econ)-t.R*0.05;
+    const sc=(VB.yBot-VB.yTop)/(domMax-domMin);
+    const y=v=>VB.yBot-(v-domMin)*sc, y0=y(0);
+    const n=bars.length, gap=14, plotW=VB.xR-VB.xL, bw=(plotW-(n-1)*gap)/n;
+    const xOf=i=>VB.xL+i*(bw+gap);
+
+    let svg='';
+    // light dollar gridlines (kept as student scaffolding; secondary ink, recedes)
+    const step=niceStep(domMax);
+    for(let v=step; v<=domMax+1; v+=step){ const gy=y(v);
+      svg+=`<line class="grid" x1="${VB.xL}" y1="${gy}" x2="${VB.xR}" y2="${gy}"/>`;
+      svg+=`<text class="gridlbl" x="${VB.xL-9}" y="${gy+3}" text-anchor="end">${axisFmt(v)}</text>`;
+    }
+    svg+=`<text class="ytitle" transform="translate(18 ${(VB.yTop+VB.yBot)/2}) rotate(-90)" text-anchor="middle">Dollars per year</text>`;
+    // honest zero baseline (primary reference, darker)
+    svg+=`<line class="zero" x1="${VB.xL}" y1="${y0}" x2="${VB.xR}" y2="${y0}"/>`+
+         `<text class="zerolbl" x="${VB.xL-9}" y="${y0+3}" text-anchor="end">$0</text>`;
+
+    // staged reveal timeline: confident cascade to accounting profit, a held beat, then the ghosts pull it down
+    let order=0,gi=0,gstart=0; const delays=bars.map(b=>{
+      let d; if(b.kind==='i'){ d=gstart+gi*0.42; gi++; }
+      else if(b.kind==='econ'){ d=gstart+gi*0.42+0.45; }
+      else { d=order*0.16; order++; gstart=d+0.7; } return d; });
+
+    let prevX=null,prevY=null;
+    bars.forEach((b,i)=>{
+      const x=xOf(i), top=y(Math.max(b.from,b.to)), bot=y(Math.min(b.from,b.to)), h=Math.max(2,bot-top);
+      // light connector carrying the running level forward
+      if(prevX!==null) svg+=`<line class="connector" x1="${prevX}" y1="${prevY}" x2="${x}" y2="${prevY}"/>`;
+      const ghost=b.kind==='i', level=(b.kind==='rev'||b.kind==='acct'||b.kind==='econ');
+      // LAYERING: the three "levels that matter" are solid and dominant; cost steps recede
+      let fill, op=1, stroke='';
+      if(b.kind==='rev'){ fill='var(--rev)'; }
+      else if(b.kind==='acct'){ fill='var(--acct)'; }
+      else if(b.kind==='econ'){ fill=(t.econ>=0?'var(--profit)':'var(--loss)'); stroke='stroke="var(--gold)" stroke-width="2.2"'; }
+      else if(b.kind==='e'){ fill='var(--explicit)'; op=0.72; }            // explicit cost: muted, secondary
+      else { fill='var(--implicit)'; op=0.22; stroke='stroke="var(--implicit)" stroke-width="1.3" stroke-dasharray="3 3"'; } // implicit: ghosted ("unseen")
+      const delay=animate?delays[i]:0;
+      svg+=`<g class="bar ${animate?'pending':'show'}" style="transition-delay:${delay}s">`;
+      svg+=`<rect x="${x}" y="${top}" width="${bw}" height="${h}" fill="${fill}" opacity="${op}" ${stroke}/>`;
+      // direct value label
+      const lblCol=ghost?'#6f5a99':(b.kind==='econ'?'#a07a26':b.kind==='acct'?'#1f6f57':b.kind==='rev'?'var(--rev)':'#9a4a32');
+      const lblW=level?'700':'500';
+      svg+=`<text class="barval" x="${x+bw/2}" y="${b.to<0?bot+15:top-7}" text-anchor="middle" fill="${lblCol}" font-weight="${lblW}">${money(b.val)}</text>`;
+      // direct category label (two lines if long)
+      const words=b.short.split(' '); let l1=b.short,l2='';
+      if(b.short.length>9 && words.length>1){ l1=words[0]; l2=words.slice(1).join(' '); }
+      const catCol=level?'#3a3f4d':'var(--muted)';
+      svg+=`<text class="catlbl" x="${x+bw/2}" y="${VB.yBot+16}" text-anchor="middle" fill="${catCol}" font-weight="${level?'600':'400'}">${l1}</text>`;
+      if(l2) svg+=`<text class="catlbl" x="${x+bw/2}" y="${VB.yBot+28}" text-anchor="middle" fill="${catCol}" font-weight="${level?'600':'400'}">${l2}</text>`;
+      svg+=`<rect class="hit" x="${x}" y="${VB.yTop-8}" width="${bw}" height="${VB.yBot-VB.yTop+44}" fill="transparent" pointer-events="all"/>`;
+      svg+=`</g>`;
+      prevX=x+bw; prevY=y(b.to);
+    });
+
+    // DIRECT GROUP LABELS (replace the color legend): bracket + name the explicit and implicit cost groups
+    const eIdx=bars.map((b,i)=>b.kind==='e'?i:-1).filter(i=>i>=0);
+    const iIdx=bars.map((b,i)=>b.kind==='i'?i:-1).filter(i=>i>=0);
+    function group(idxs,label,color,ghost){
+      if(!idxs.length) return '';
+      const x1=xOf(idxs[0]), x2=xOf(idxs[idxs.length-1])+bw, gy=VB.yBot+40, mid=(x1+x2)/2;
+      const dash=ghost?'stroke-dasharray="4 3"':'';
+      return `<path d="M ${x1} ${gy} v5 H ${x2} v-5" fill="none" stroke="${color}" stroke-width="1.3" ${dash}/>`+
+             `<text class="grouplbl" x="${mid}" y="${gy+18}" text-anchor="middle" fill="${color}">${label}</text>`;
+    }
+    svg+=group(eIdx,'Explicit costs · paid out','#9a4a32',false);
+    svg+=group(iIdx,'Implicit costs · given up','#6f5a99',true);
+
+    $('chart').innerHTML=svg;
+
+    // hover-for-math tooltips
+    const tips=bars.map(b=>tipFor(b,t,s));
+    $('chart').querySelectorAll('.bar').forEach((g,i)=>{
+      g.addEventListener('mouseenter',()=>showTip(tips[i],g.querySelector('rect')));
+      g.addEventListener('mouseleave',hideTip);
+      g.addEventListener('click',e=>{e.stopPropagation();showTip(tips[i],g.querySelector('rect'));});
+    });
+
+    if(animate && !reduce){
+      requestAnimationFrame(()=>requestAnimationFrame(()=>
+        $('chart').querySelectorAll('.bar').forEach(b=>{b.classList.remove('pending');b.classList.add('show');})));
+    } else {
+      $('chart').querySelectorAll('.bar').forEach(b=>{b.classList.remove('pending');b.classList.add('show');});
+    }
+  }
+
+  function showTip(c,el){
+    const tip=$('tip');
+    $('tipT').textContent=c.title; $('tipD').textContent=c.desc; $('tipC').textContent=c.calc;
+    tip.style.display='block';
+    const panel=$('chart').closest('.chart-panel'), pr=panel.getBoundingClientRect(), rect=el.getBoundingClientRect();
+    const tw=tip.offsetWidth, th=tip.offsetHeight;
+    let left=rect.left-pr.left+rect.width/2;
+    left=Math.max(tw/2+8, Math.min(pr.width-tw/2-8, left));
+    let top=rect.top-pr.top-th-10;
+    if(top<4) top=rect.bottom-pr.top+12;
+    tip.style.left=left+'px'; tip.style.top=top+'px';
+  }
+  function hideTip(){ $('tip').style.display='none'; }
+  document.addEventListener('click',hideTip);
+
+  // ---------- balance scale (the verdict) ----------
+  function rot(x,y,cx,cy,deg){ const r=deg*Math.PI/180, c=Math.cos(r), s=Math.sin(r);
+    return {x:cx+(x-cx)*c-(y-cy)*s, y:cy+(x-cx)*s+(y-cy)*c}; }
+  const easeOutBack=k=>{ const c1=1.70158,c3=c1+1; return 1+c3*Math.pow(k-1,3)+c1*Math.pow(k-1,2); };
+
+  function drawScale(animate){
+    const s=SCEN[idx], t=truth(s);
+    const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const px=320, py=112, armLen=152, chainLen=74, maxDeg=18;
+    const acct=t.acct, imp=t.I, econ=t.econ;
+    const phiFinal=Math.max(-1,Math.min(1,(econ/Math.max(acct,imp,1))*1.6));
+    const iItems=s.items.filter(i=>i.type==='i');
+
+    const lpan=`<path d="M -62 0 Q 0 30 62 0" fill="none" stroke="#9a8f78" stroke-width="2.5"/>`+
+      `<text class="scl-total" x="0" y="48" text-anchor="middle" fill="#1f6f57">${money(acct)} kept</text>`+
+      `<g class="weight" style="transition-delay:.05s"><rect x="-64" y="-40" width="128" height="34" rx="5" fill="var(--acct)"/>`+
+      `<text x="0" y="-27" text-anchor="middle" fill="#fff" font-family="var(--mono)" font-size="9" opacity="0.82">Accounting profit</text>`+
+      `<text x="0" y="-12" text-anchor="middle" fill="#fff" font-family="var(--mono)" font-size="12" font-weight="600">${money(acct)}</text></g>`;
+    let rw=''; iItems.forEach((it,k)=>{ const yc=-22-k*38;
+      rw+=`<g class="weight" style="transition-delay:${(0.28+k*0.18).toFixed(2)}s"><rect x="-64" y="${yc-17}" width="128" height="34" rx="5" fill="var(--implicit)"/>`+
+          `<text x="0" y="${yc-4}" text-anchor="middle" fill="#fff" font-family="var(--mono)" font-size="9" opacity="0.82">${it.short}</text>`+
+          `<text x="0" y="${yc+11}" text-anchor="middle" fill="#fff" font-family="var(--mono)" font-size="12" font-weight="600">${money(it.amt)}</text></g>`; });
+    const rpan=`<path d="M -62 0 Q 0 30 62 0" fill="none" stroke="#9a8f78" stroke-width="2.5"/>`+
+      `<text class="scl-total" x="0" y="48" text-anchor="middle" fill="#6f5a99">${money(imp)} given up</text>`+rw;
+
+    $('scale').innerHTML=`
+      <text class="scl-head" x="150" y="28" text-anchor="middle" fill="#1f6f57">RUN THE VENTURE</text>
+      <text class="scl-head" x="490" y="28" text-anchor="middle" fill="#6f5a99">YOUR OUTSIDE OPTION</text>
+      <line x1="${px}" y1="${py}" x2="${px}" y2="352" stroke="#9a8f78" stroke-width="6" stroke-linecap="round"/>
+      <path d="M ${px-48} 374 L ${px+48} 374 L ${px+30} 352 L ${px-30} 352 Z" fill="#b8ad95"/>
+      <path id="lchain" d="" fill="none" stroke="#9a8f78" stroke-width="1.4"/>
+      <path id="rchain" d="" fill="none" stroke="#9a8f78" stroke-width="1.4"/>
+      <g id="beam">
+        <rect x="${px-armLen}" y="${py-5}" width="${armLen*2}" height="10" rx="5" fill="#7a715c"/>
+        <circle cx="${px-armLen}" cy="${py}" r="5" fill="#5f5848"/>
+        <circle cx="${px+armLen}" cy="${py}" r="5" fill="#5f5848"/>
+      </g>
+      <polygon points="${px-11},${py} ${px+11},${py} ${px},${py-17}" fill="#5f5848"/>
+      <g id="lpan">${lpan}</g>
+      <g id="rpan">${rpan}</g>`;
+
+    function setScale(phi){
+      const deg=-maxDeg*phi;
+      $('beam').setAttribute('transform',`rotate(${deg} ${px} ${py})`);
+      const le=rot(px-armLen,py,px,py,deg), re=rot(px+armLen,py,px,py,deg);
+      const lc={x:le.x,y:le.y+chainLen}, rc={x:re.x,y:re.y+chainLen};
+      $('lpan').setAttribute('transform',`translate(${lc.x} ${lc.y})`);
+      $('rpan').setAttribute('transform',`translate(${rc.x} ${rc.y})`);
+      $('lchain').setAttribute('d',`M ${le.x} ${le.y} L ${lc.x-42} ${lc.y} M ${le.x} ${le.y} L ${lc.x+42} ${lc.y}`);
+      $('rchain').setAttribute('d',`M ${re.x} ${re.y} L ${rc.x-42} ${rc.y} M ${re.x} ${re.y} L ${rc.x+42} ${rc.y}`);
+    }
+
+    let vtxt,vcol;
+    if(econ>1000){ vtxt=`Economic profit ${money(econ)} — the venture wins. Lean: <b>stay.</b>`; vcol='var(--profit)'; }
+    else if(econ<-1000){ vtxt=`Economic profit ${money(econ)} — your outside option wins. Lean: <b>go.</b>`; vcol='var(--loss)'; }
+    else { vtxt=`Economic profit ${money(econ)} — it's a wash. This is <b>normal profit.</b>`; vcol='#a07a26'; }
+    $('scaleVerdict').innerHTML=vtxt; $('scaleVerdict').style.color=vcol;
+
+    if(animate && !reduce){
+      setScale(0);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>
+        $('scale').querySelectorAll('.weight').forEach(w=>w.classList.add('in'))));
+      const wait=600+iItems.length*180;
+      setTimeout(()=>{ const t0=performance.now(), dur=1500;
+        (function step(tt){ const k=Math.min(1,(tt-t0)/dur); setScale(phiFinal*easeOutBack(k));
+          if(k<1) requestAnimationFrame(step); })(performance.now()); }, wait);
+    } else {
+      $('scale').querySelectorAll('.weight').forEach(w=>w.classList.add('in'));
+      setScale(phiFinal);
+    }
+  }
+
+  function onCheck(){
+    if(checked) return;
+    const s=SCEN[idx], t=truth(s);
+    let classOK=true;
+    document.querySelectorAll('.item').forEach(row=>{
+      const i=+row.dataset.i, correct=s.items[i].type, chosen=cls[i];
+      row.classList.remove('wrong'); const old=row.querySelector('.fix'); if(old) old.remove();
+      if(chosen!==correct){ classOK=false; row.classList.add('wrong');
+        const tag=document.createElement('span'); tag.className='fix';
+        tag.textContent=correct==='e'?'→ explicit':'→ implicit (given up)';
+        row.querySelector('.nm').appendChild(tag);
+        row.querySelectorAll('.toggle button').forEach(x=>{x.classList.remove('sel-e','sel-i');
+          if(x.dataset.t===correct) x.classList.add(correct==='e'?'sel-e':'sel-i');});
+        cls[i]=correct;
+      }
+    });
+    const rv=num($('inRev').value), ai=num($('inAcct').value), ei=num($('inEcon').value);
+    const revOK=Math.abs(rv-t.R)<=50, acctOK=Math.abs(ai-t.acct)<=50, econOK=Math.abs(ei-t.econ)<=50;
+    $('inRev').className=revOK?'ok':'no'; $('inAcct').className=acctOK?'ok':'no'; $('inEcon').className=econOK?'ok':'no';
+
+    checked=true; $('checkBtn').disabled=true;
+    $('reveal').classList.add('show');
+    drawWaterfall(true);
+    drawScale(true);
+
+    let kind,badgeText,badgeCol,findTxt;
+    if(t.econ>1000){ kind='profit'; badgeText='Economic profit'; badgeCol='var(--profit)'; findTxt='Economic profit — the venture beats every alternative.'; }
+    else if(t.econ<-1000){ kind='loss'; badgeText='Economic loss'; badgeCol='var(--loss)'; findTxt='Positive on the books — but an economic loss.'; }
+    else { kind='normal'; badgeText='Normal profit'; badgeCol='var(--gold)'; findTxt='Economic profit \u2248 0 — exactly normal profit.'; }
+    $('finding').textContent=findTxt; $('finding').style.color=badgeCol;
+    $('badge').style.background=kind==='profit'?'#eef6f2':kind==='loss'?'#fbeae5':'#fbf2e0';
+    $('badge').style.color=badgeCol; $('badge').querySelector('.d').style.background=badgeCol;
+    $('badgeText').textContent=badgeText;
+    $('takeaway').innerHTML=s.take;
+    const explain={
+      profit:["What an economic profit means","This beats every alternative use of the owner's resources — they're earning more here than they could anywhere else. Positive economic profit is a green light to stay and expand, and a magnet for new competitors, whose entry slowly competes the extra profit away."],
+      loss:["What an economic loss means","It does not mean the business is bleeding cash — on the books it can look quite profitable. It means the owner's time, money, and assets would earn more in their next-best use. The accounting profit is real, but it's smaller than what they gave up to get it. If nothing changes, the rational move is to exit and put those resources where they pay more — and in a competitive market, that exit is exactly what pulls economic profit back up toward zero."],
+      normal:["What normal profit means","Zero economic profit is the long-run resting point. The owner earns exactly their opportunity cost — no better, no worse than the next-best option. It isn't failure: it's the signal that resources are being used about as well here as anywhere, so there's no pull to enter or to leave."]
+    }[kind];
+    $('explainH').textContent=explain[0]; $('explainP').textContent=explain[1];
+    renderResources(idx);
+    const rule=t.econ>1000?'Economic profit > 0 \u2192 stay, and expect new entry.'
+            :t.econ<-1000?'Economic profit < 0 \u2192 the resources earn more elsewhere.'
+            :'Economic profit = 0 \u2192 the owner is indifferent. This is the long-run competitive outcome.';
+    $('breakdown').innerHTML=
+      `${s.rev.qty.toLocaleString()} ${s.rev.unit} \u00d7 ${price(s.rev.price)} = revenue <b>${money(t.R)}</b><br>`+
+      `Revenue ${money(t.R)} \u2212 explicit <b>${money(t.E)}</b> = accounting profit <b>${money(t.acct)}</b><br>`+
+      `\u2212 implicit <b>${money(t.I)}</b> = economic profit <b style="color:${badgeCol}">${money(t.econ)}</b><br>${rule}`;
+
+    if(classOK && revOK && acctOK && econOK && !solved.has(idx)){ solved.add(idx); $('solved').textContent=solved.size; }
+    renderRevealQuestion(idx);
+    renderDots();
+    $('reveal').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  $('checkBtn').addEventListener('click',onCheck);
+  $('replayBtn').addEventListener('click',()=>{ drawWaterfall(true); drawScale(true); });
+  $('nextBtn').addEventListener('click',()=>{ idx=(idx+1)%SCEN.length; renderScenario(); window.scrollTo({top:0,behavior:'smooth'}); });
+
+  // ---------- per-scenario reveal question ----------
+  const SQUIZ=[
+    { q:"Maya's truck shows a <b>$45,000 accounting profit</b> but a <b>\u2212$9,000 economic profit</b>. That means…",
+      opts:["The bookkeeping is wrong.",
+            "The truck is bleeding cash.",
+            "She makes money on paper, but she could earn more in her next-best option — her old job.",
+            "That can't actually happen."],
+      a:2, exp:"Accounting profit ignores implicit costs. Once you count the salary she gave up, a paper profit is still an economic loss — a signal she'd do better elsewhere."},
+    { q:"Across many small farms like Sam's, economic profit is negative. In a competitive market, what tends to happen over time?",
+      opts:["More farmers pile in.",
+            "Some exit or shift the land to better uses, nudging economic profit back toward zero.",
+            "Nothing changes.",
+            "Crop prices keep falling forever."],
+      a:1, exp:"Losses push resources toward better uses — renting the land out, taking the off-farm job. As some exit, the survivors' economic profit climbs back toward zero."},
+    { q:"Dr. Lee's accounting profit is $168,000 and her economic profit is \u2212$11,600. In general, which is <b>always</b> at least as large?",
+      opts:["Economic profit \u2265 accounting profit.",
+            "Accounting profit \u2265 economic profit.",
+            "They are always exactly equal.",
+            "It depends on revenue."],
+      a:1, exp:"Economic profit subtracts everything accounting profit does, plus the implicit costs. So accounting profit \u2265 economic profit — equal only when implicit costs are zero."},
+    { q:"Jordan's café earns a <b>positive</b> economic profit of $20,750. What does that tell us?",
+      opts:["She earns more than her resources could earn anywhere else — a signal to stay, and one that attracts new competitors.",
+            "She's losing money and should close.",
+            "She earns exactly what her resources could earn elsewhere.",
+            "Her accounting profit must be negative."],
+      a:0, exp:"Positive economic profit means the café beats every alternative. In a competitive market it lures entry, which slowly competes the extra profit away."},
+    { q:"Priya's economic profit is about <b>$0</b> — \u201cnormal profit.\u201d That means she is…",
+      opts:["Losing money.",
+            "Earning exactly what her time, space, and money could earn elsewhere — indifferent between continuing and stopping.",
+            "Earning more than any alternative.",
+            "About to go under."],
+      a:1, exp:"Zero economic profit is the long-run resting point: every cost is covered, including opportunity cost, with nothing extra and nothing missing."}
+  ];
+  function renderRevealQuestion(i){
+    const Q=SQUIZ[i], box=$('revealQ'); let answered=false;
+    box.innerHTML=`<div class="revq-h">Now reason it through</div><div class="q-prompt">${Q.q}</div><div class="q-opts"></div><div class="q-exp"></div>`;
+    const opts=box.querySelector('.q-opts');
+    Q.opts.forEach((o,oi)=>{
+      const btn=document.createElement('button'); btn.className='q-opt';
+      btn.innerHTML=`<span class="mk">${String.fromCharCode(65+oi)}</span><span>${o}</span>`;
+      btn.addEventListener('click',()=>{
+        if(answered) return; answered=true;
+        const btns=box.querySelectorAll('.q-opt');
+        btns.forEach((bb,k)=>{ bb.disabled=true; if(k===Q.a) bb.classList.add('correct'); });
+        const right=(oi===Q.a);
+        if(!right) btns[oi].classList.add('wrong');
+        const ex=box.querySelector('.q-exp');
+        ex.innerHTML=`<b style="color:${right?'var(--profit)':'var(--loss)'}">${right?'\u2713 Correct.':'\u2717 Not quite.'}</b> ${Q.exp}`;
+        ex.style.borderLeftColor=right?'var(--profit)':'var(--loss)';
+        ex.classList.add('show');
+      });
+      opts.appendChild(btn);
+    });
+  }
+  renderScenario();
+
+  // ---------- concrete "where your resources would go" ----------
+  const SRES=[
+    { items:[ {res:"Your time & skill", use:"the $52,000 office job you left", amt:52000},
+              {res:"Your $40,000 in savings", use:"a market index fund (5%)", amt:2000} ],
+      note:"Take the office job and park the $40,000 in a fund and you'd clear <b>$54,000</b> — no truck required. The truck nets <b>$45,000</b>. Maya's time and savings are worth about <b>$9,000 more</b> deployed that way, which is the quiet pull that sends people with her skills back to salaried work." },
+    { items:[ {res:"Your 150 acres", use:"a solar lease ($40,000) — beats the ~$27,000 a neighbor would pay", amt:40000},
+              {res:"Your time & skill", use:"the county extension job", amt:48000},
+              {res:"Your equipment", use:"rented out to neighbors in season", amt:9000},
+              {res:"Your $30,000", use:"a bond fund (6%)", amt:1800} ],
+      note:"Here's the catch: the land has <b>more than one</b> next-best use. A neighbor would rent it for ~$27,000, but a solar developer offers <b>$40,000</b> — so <i>that's</i> the real opportunity cost, the best forgone option. Add the extension job, equipment rental, and bond interest and walking away is worth <b>$98,800</b>. Farming nets <b>$59,000</b> — an economic loss of about <b>$39,800</b>. The gap is why land near transmission lines quietly flips to solar, and labor heads off-farm." },
+    { items:[ {res:"Your building", use:"leased to another practice", amt:36000},
+              {res:"Your time & skill", use:"the group-practice job", amt:140000},
+              {res:"Your $90,000 in equipment", use:"the market (4%)", amt:3600} ],
+      note:"Lease the building and rejoin a group practice: <b>$179,600</b>. Solo, she nets <b>$168,000</b>. Her building and clinical hours are worth <b>$11,600 more</b> elsewhere — the steady pressure behind solo practices merging into groups." },
+    { items:[ {res:"Your time & skill", use:"a $40,000 manager job", amt:40000},
+              {res:"Your $25,000", use:"an index fund (5%)", amt:1250} ],
+      note:"At their best alternative — a manager job plus an index fund — Jordan's time and money would earn <b>$41,250</b>. The café earns <b>$62,000</b>. This is genuinely the best place for her resources right now, which is exactly the signal that pulls new cafés into the neighborhood." },
+    { items:[ {res:"Your spare room", use:"rented out ($700/mo)", amt:8400},
+              {res:"Your evenings", use:"$18,000 of freelance work", amt:18000},
+              {res:"Your $6,000", use:"the market (5%)", amt:300} ],
+      note:"Renting the room, freelancing in the evenings, and investing the $6,000 would earn <b>$26,700</b>. The candles earn <b>$27,000</b> — a near tie. Priya's room, evenings, and savings make about the same either way, so nothing pulls them elsewhere." }
+  ];
+  function renderResources(i){
+    const Q=SRES[i], t=truth(SCEN[i]), econ=t.econ;
+    $('resH').textContent = econ>1000 ? 'This venture is the best use of your resources'
+                          : econ<-1000 ? 'Where your resources would earn more'
+                          : 'Your resources earn about the same either way';
+    $('resList').innerHTML = Q.items.map(x=>
+      `<div class="res-row"><span class="r">${x.res}</span><span class="arrow">\u2192</span><span class="u">${x.use}</span><span class="a">${money(x.amt)}</span></div>`).join('');
+    const total=Q.items.reduce((a,x)=>a+x.amt,0);
+    $('resTotal').innerHTML=`<span>Your outside option, all in</span><span>${money(total)}/yr</span>`;
+    $('resNote').innerHTML=Q.note;
+  }
+})();
+</script>
+</body>
+</html>
