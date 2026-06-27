@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Supply &amp; Demand Generator · Dr. Tremendous</title>
+<link rel="icon" href="trex.png">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { padding-top: 56px; background: #f7f3e8; }
+  @media print { body { padding-top: 0 !important; } }
+  #dt-home {
+    position: fixed; top: 14px; left: 16px; z-index: 9999;
+    display: flex; align-items: center; gap: 9px; text-decoration: none;
+    font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 16px;
+    line-height: 1; color: #141b34;
+    background: rgba(247, 243, 232, 0.86); border: 1px solid #e7e0cd;
+    padding: 6px 12px 6px 8px; border-radius: 3px; backdrop-filter: blur(3px);
+    transition: box-shadow 0.18s, transform 0.18s;
+  }
+  #dt-home:hover { box-shadow: 3px 3px 0 #d8a249; transform: translate(-1px,-1px); }
+  #dt-home img { height: 25px; width: auto; display: block; }
+  #dt-home .gold { color: #d8a249; }
+  @media print { #dt-home { display: none !important; } }
+  @media (max-width: 640px) { #dt-home { font-size: 13px; } #dt-home img { height: 20px; } }
+</style>
+</head>
+<body>
+<a id="dt-home" href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous" class="noprint">
+  <img src="trex.png" alt="">
+  <span>Dr.Treme<span class="gold">ndous</span></span>
+</a>
+<div id="root"></div>
+<script type="text/jsx-source" id="app-src">
+const { useState, useMemo } = React;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DR. TREMENDOUS · LINEAR SUPPLY & DEMAND GENERATOR
+// Deterministic (no AI): every problem has clean integer/half intercepts, a real
+// equilibrium where Qd = Qs, and—optionally—a binding price floor or ceiling with
+// the short-side quantity worked out. Built for ARE 201 figure-reading practice.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NAVY = "#141b34";
+const GOLD = "#d8a249";
+const CREAM = "#f7f3e8";
+const INK = "#2a2f45";
+const RED = "#a8432f";
+const GREEN = "#3f6b46";
+const DEMAND = "#2f6f8f"; // teal-blue demand
+const SUPPLY = "#a8432f"; // rust supply
+const CS_FILL = "#2f6f8f"; // consumer surplus — blue
+const PS_FILL = "#3f6b46"; // producer surplus — green
+const DWL_FILL = "#d13b2a"; // deadweight loss — true red, distinct from rust supply
+
+// Build the pool of clean problems once.
+function buildPool() {
+  const pool = [];
+  const slopes = [0.5, 1, 1.5, 2];
+  const QEs = [4, 5, 6, 8, 10, 12];
+  const PEs = [4, 5, 6, 7, 8, 9, 10, 12];
+  for (const Qe of QEs)
+    for (const Pe of PEs)
+      for (const b of slopes)
+        for (const d of slopes) {
+          const a = Pe + b * Qe; // demand P-intercept
+          const c = Pe - d * Qe; // supply P-intercept
+          if (c < 0) continue;
+          if (!Number.isInteger(a) || !Number.isInteger(c)) continue;
+          const xint = a / b; // demand Q-intercept
+          if (!Number.isInteger(xint)) continue;
+          if (a > 24 || xint > 24) continue;
+          let mFloor = null, mCeil = null;
+          for (const m of [1, 2, 3, 4]) {
+            const Qd = (a - (Pe + m)) / b, Qsf = ((Pe + m) - c) / d;
+            if (mFloor === null && Number.isInteger(Qd) && Number.isInteger(Qsf) && Qd >= 1) mFloor = m;
+            const Qsc = ((Pe - m) - c) / d, Qdc = (a - (Pe - m)) / b;
+            if (mCeil === null && (Pe - m) >= 1 && Number.isInteger(Qsc) && Number.isInteger(Qdc) && Qsc >= 1) mCeil = m;
+          }
+          pool.push({ Qe, Pe, a, b, c, d, xint, mFloor, mCeil });
+        }
+  return pool;
+}
+
+const fmt = (x) => (Number.isInteger(x) ? String(x) : x.toFixed(2));
+const COMMODITIES = ["corn", "soybeans", "milk", "eggs", "wheat", "apples", "honey", "tomatoes", "peaches", "cotton"];
+const eq = (intercept, slope, sign) =>
+  `P = ${fmt(intercept)} ${sign} ${slope === 1 ? "" : fmt(slope)}Q`;
+
+// Clip a line P = cy + m(Q − cx) to the box [0,Qmax]×[0,Pmax]; return 2 endpoints.
+function clipLine(cx, cy, m, Qmax, Pmax) {
+  const pts = [];
+  const push = (q, p) => { if (q >= -1e-6 && q <= Qmax + 1e-6 && p >= -1e-6 && p <= Pmax + 1e-6) pts.push([q, p]); };
+  push(0, cy + m * (0 - cx));
+  push(Qmax, cy + m * (Qmax - cx));
+  push(cx + (0 - cy) / m, 0);
+  push(cx + (Pmax - cy) / m, Pmax);
+  const uniq = [];
+  pts.forEach((p) => { if (!uniq.some((u) => Math.abs(u[0] - p[0]) < 1e-3 && Math.abs(u[1] - p[1]) < 1e-3)) uniq.push(p); });
+  return uniq.slice(0, 2);
+}
+
+function makeElShuffle() {
+  return { flat: Math.random() < 0.5 ? 0.4 : 0.5, steep: Math.random() < 0.5 ? 1.5 : 2, flatIsA: Math.random() < 0.5 };
+}
+
+function ElasticityFigure() {
+  const [type, setType] = useState("demand");
+  const [ask, setAsk] = useState("elastic");
+  const [shuffle, setShuffle] = useState(makeElShuffle);
+  const [reveal, setReveal] = useState(false);
+  const { flat, steep, flatIsA } = shuffle;
+
+  const W = 460, H = 360, mL = 46, mB = 40, mT = 18, mR = 30;
+  const plotW = W - mL - mR, plotH = H - mT - mB;
+  const Qmax = 10, Pmax = 10, cx = 5, cy = 5;
+  const X = (q) => mL + (q / Qmax) * plotW;
+  const Y = (p) => mT + plotH - (p / Pmax) * plotH;
+  const sign = type === "demand" ? -1 : 1;
+
+  const slopeA = (flatIsA ? flat : steep) * sign;
+  const slopeB = (flatIsA ? steep : flat) * sign;
+  const lineA = clipLine(cx, cy, slopeA, Qmax, Pmax);
+  const lineB = clipLine(cx, cy, slopeB, Qmax, Pmax);
+  const flatLabel = flatIsA ? "A" : "B";
+  const steepLabel = flatIsA ? "B" : "A";
+  const answer = ask === "elastic" ? flatLabel : steepLabel;
+
+  const colorA = "#2f6f8f", colorB = "#a8432f";
+  const end = (line) => line[1] || line[0];
+  const tog = (val, cur, set, label) => (
+    <button onClick={() => { set(val); setReveal(false); }} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, padding: "7px 14px", border: "none", cursor: "pointer", background: cur === val ? NAVY : "transparent", color: cur === val ? CREAM : NAVY }}>{label}</button>
+  );
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${GOLD}`, padding: "16px 18px" }}>
+      <div className="noprint" style={{ display: "flex", gap: 18, flexWrap: "wrap", marginBottom: 14 }}>
+        <div style={{ display: "flex", border: `1px solid ${NAVY}` }}>
+          {tog("demand", type, setType, "Demand")}
+          {tog("supply", type, setType, "Supply")}
+        </div>
+        <div style={{ display: "flex", border: `1px solid ${NAVY}` }}>
+          {tog("elastic", ask, setAsk, "More elastic")}
+          {tog("inelastic", ask, setAsk, "More inelastic")}
+        </div>
+      </div>
+      <p style={{ fontSize: 15, margin: "0 0 12px" }}>
+        Two {type} curves are shown. <strong>Which curve is more {ask}?</strong>
+      </p>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxWidth: 460 }}>
+        <line x1={X(0)} y1={Y(0)} x2={X(Qmax)} y2={Y(0)} stroke={NAVY} strokeWidth={1.5} />
+        <line x1={X(0)} y1={Y(0)} x2={X(0)} y2={Y(Pmax)} stroke={NAVY} strokeWidth={1.5} />
+        <text x={X(Qmax)} y={Y(0) + 30} fontSize={12} textAnchor="end" fill={NAVY} fontWeight={600}>Quantity</text>
+        <text x={X(0) - 34} y={Y(Pmax) - 4} fontSize={12} fill={NAVY} fontWeight={600}>Price</text>
+        <line x1={X(lineA[0][0])} y1={Y(lineA[0][1])} x2={X(lineA[1][0])} y2={Y(lineA[1][1])} stroke={colorA} strokeWidth={2.5} />
+        <line x1={X(lineB[0][0])} y1={Y(lineB[0][1])} x2={X(lineB[1][0])} y2={Y(lineB[1][1])} stroke={colorB} strokeWidth={2.5} />
+        <text x={X(end(lineA)[0]) + 6} y={Y(end(lineA)[1])} fontSize={15} fill={colorA} fontWeight={700} stroke="#fff" strokeWidth={3.5} paintOrder="stroke" strokeLinejoin="round">A</text>
+        <text x={X(end(lineB)[0]) + 6} y={Y(end(lineB)[1])} fontSize={15} fill={colorB} fontWeight={700} stroke="#fff" strokeWidth={3.5} paintOrder="stroke" strokeLinejoin="round">B</text>
+      </svg>
+      <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+        <button onClick={() => setReveal(!reveal)} style={{ fontFamily: "inherit", fontWeight: 600, fontSize: 13, color: CREAM, background: NAVY, border: "none", padding: "9px 18px", cursor: "pointer" }}>
+          {reveal ? "Hide answer" : "Show answer"}
+        </button>
+        <button onClick={() => { setShuffle(makeElShuffle()); setReveal(false); }} style={{ fontFamily: "inherit", fontSize: 13, color: NAVY, background: "transparent", border: `1px solid ${NAVY}`, padding: "8px 16px", cursor: "pointer" }}>
+          New graph
+        </button>
+      </div>
+      {reveal && (
+        <p style={{ fontSize: 13.5, marginTop: 12, lineHeight: 1.5 }}>
+          <strong>Curve {answer}</strong> is more {ask}. The {ask === "elastic" ? "flatter" : "steeper"} curve is more {ask}:
+          a {ask === "elastic" ? "small" : "large"} price change brings a {ask === "elastic" ? "large" : "small"} change in quantity.
+          {" "}The other curve is more {ask === "elastic" ? "inelastic" : "elastic"}.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function SupplyDemandGenerator() {
+  const pool = useMemo(buildPool, []);
+  const [prob, setProb] = useState(() => pool[Math.floor(Math.random() * pool.length)]);
+  const [commodity, setCommodity] = useState(() => COMMODITIES[Math.floor(Math.random() * COMMODITIES.length)]);
+  const [mode, setMode] = useState("none"); // none | floor | ceiling
+  const [tool, setTool] = useState("controls"); // controls | elasticity
+  const [showAnswers, setShowAnswers] = useState(false);
+  const [shade, setShade] = useState(false);
+  const [answers, setAnswers] = useState({});
+  const [checked, setChecked] = useState(false);
+  const [printMode, setPrintMode] = useState(null); // null | "student" | "key"
+
+  const printAs = (which) => {
+    setPrintMode(which);
+    setTimeout(() => { window.print(); setPrintMode(null); }, 200);
+  };
+
+  const reset = () => { setAnswers({}); setChecked(false); };
+  const next = () => {
+    // only draw problems that support whichever control is selected
+    let p = pool[Math.floor(Math.random() * pool.length)];
+    let guard = 0;
+    while (((mode === "floor" && !p.mFloor) || (mode === "ceiling" && !p.mCeil)) && guard < 50) {
+      p = pool[Math.floor(Math.random() * pool.length)];
+      guard++;
+    }
+    setProb(p);
+    setCommodity(COMMODITIES[Math.floor(Math.random() * COMMODITIES.length)]);
+    reset();
+  };
+  const chooseMode = (m) => {
+    setMode(m);
+    if (m === "floor" || m === "ceiling") {
+      let p = pool[Math.floor(Math.random() * pool.length)];
+      let guard = 0;
+      while (((m === "floor" && !p.mFloor) || (m === "ceiling" && !p.mCeil)) && guard < 50) {
+        p = pool[Math.floor(Math.random() * pool.length)];
+        guard++;
+      }
+      setProb(p);
+      setCommodity(COMMODITIES[Math.floor(Math.random() * COMMODITIES.length)]);
+    }
+    reset();
+  };
+
+  const { Qe, Pe, a, b, c, d, xint } = prob;
+
+  // Equilibrium surplus
+  const CS = 0.5 * Qe * (a - Pe);
+  const PS = 0.5 * Qe * (Pe - c);
+
+  // Control specifics
+  let ctrl = null;
+  if (mode === "floor" && prob.mFloor) {
+    const Pc = Pe + prob.mFloor;
+    const Qd = (a - Pc) / b, Qs = (Pc - c) / d;
+    const traded = Math.min(Qd, Qs); // short side = Qd
+    const priceAtTraded = c + d * traded; // SUPPLY price at the traded quantity (3rd DWL corner)
+    const dwlBase = Qe - traded;            // quantity reduction
+    const dwlHeight = Pc - priceAtTraded;   // gap between demand (floor) and supply at traded Q
+    const dwl = 0.5 * dwlBase * dwlHeight;
+    ctrl = { kind: "Price floor", P: Pc, Qd, Qs, traded, gap: Qs - Qd, gapLabel: "Surplus", dwl, dwlBase, dwlHeight,
+             bindCurve: "supply", priceAtTraded };
+  } else if (mode === "ceiling" && prob.mCeil) {
+    const Pc = Pe - prob.mCeil;
+    const Qd = (a - Pc) / b, Qs = (Pc - c) / d;
+    const traded = Math.min(Qd, Qs); // short side = Qs
+    const priceAtTraded = a - b * traded; // DEMAND price at the traded quantity (3rd DWL corner)
+    const dwlBase = Qe - traded;            // quantity reduction
+    const dwlHeight = priceAtTraded - Pc;   // gap between demand at traded Q and supply (ceiling)
+    const dwl = 0.5 * dwlBase * dwlHeight;
+    ctrl = { kind: "Price ceiling", P: Pc, Qd, Qs, traded, gap: Qd - Qs, gapLabel: "Shortage", dwl, dwlBase, dwlHeight,
+             bindCurve: "demand", priceAtTraded };
+  }
+  const controlUnavailable = (mode === "floor" && !prob.mFloor) || (mode === "ceiling" && !prob.mCeil);
+
+  // Student questions for the current scenario, each with its exact answer.
+  const newPS_ctrl = ctrl ? (ctrl.kind === "Price floor"
+    ? ctrl.traded * (ctrl.P - ctrl.priceAtTraded) + 0.5 * ctrl.traded * (ctrl.priceAtTraded - c)
+    : 0.5 * ctrl.traded * (ctrl.P - c)) : 0;
+  const newCS_ctrl = ctrl ? (ctrl.kind === "Price floor"
+    ? 0.5 * ctrl.traded * (a - ctrl.P)
+    : ctrl.traded * (ctrl.priceAtTraded - ctrl.P) + 0.5 * ctrl.traded * (a - ctrl.priceAtTraded)) : 0;
+
+  const questions = ctrl
+    ? [
+        { id: "qd", q: "Quantity demanded at the price control", ans: ctrl.Qd, unit: "units" },
+        { id: "qs", q: "Quantity supplied at the price control", ans: ctrl.Qs, unit: "units" },
+        { id: "type", q: "Is there a shortage or a surplus? (type the word)", text: ctrl.gapLabel.toLowerCase() },
+        { id: "gap", q: "How large is the shortage or surplus?", ans: ctrl.gap, unit: "units" },
+        { id: "sold", q: "Quantity bought and sold", ans: ctrl.traded, unit: "units" },
+        { id: "ncs", q: "Consumer surplus after the policy", ans: newCS_ctrl, unit: "$" },
+        { id: "nps", q: "Producer surplus after the policy", ans: newPS_ctrl, unit: "$" },
+        { id: "dwl", q: "Deadweight loss", ans: ctrl.dwl, unit: "$" },
+      ]
+    : [
+        { id: "eqP", q: "Equilibrium price", ans: Pe, unit: "$" },
+        { id: "eqQ", q: "Equilibrium quantity", ans: Qe, unit: "units" },
+        { id: "cs", q: "Consumer surplus", ans: CS, unit: "$" },
+        { id: "ps", q: "Producer surplus", ans: PS, unit: "$" },
+        { id: "ts", q: "Total surplus", ans: CS + PS, unit: "$" },
+      ];
+
+  const isRight = (qq) => {
+    const v = (answers[qq.id] || "").trim();
+    if (v === "") return false;
+    if (qq.text !== undefined) return v.toLowerCase() === qq.text;
+    return Math.abs(parseFloat(v) - qq.ans) < 0.01;
+  };
+
+  // When printing, the version decides what shows; otherwise the instructor toggle / check does.
+  const revealKey = printMode ? printMode === "key" : (showAnswers || checked);
+
+  // ── SVG geometry ──
+  const W = 580, H = 460, mL = 56, mB = 50, mT = 22, mR = 40;
+  const plotW = W - mL - mR, plotH = H - mT - mB;
+  const Qmax = Math.ceil((xint + 1) / 2) * 2;
+  const Pmax = Math.ceil((a + 1) / 2) * 2;
+  const X = (q) => mL + (q / Qmax) * plotW;
+  const Y = (p) => mT + plotH - (p / Pmax) * plotH;
+
+  // Demand endpoints: (0,a) → (xint,0)
+  const dem = { x1: X(0), y1: Y(a), x2: X(xint), y2: Y(0) };
+  // Supply: (0,c) → end within bounds
+  const QsupEnd = Math.min(Qmax, (Pmax - c) / d);
+  const sup = { x1: X(0), y1: Y(c), x2: X(QsupEnd), y2: Y(c + d * QsupEnd) };
+
+  const gridQ = [], gridP = [];
+  for (let q = 2; q <= Qmax; q += 2) gridQ.push(q);
+  for (let p = 2; p <= Pmax; p += 2) gridP.push(p);
+
+  const dot = (q, p, color, label) => (
+    <g>
+      <circle cx={X(q)} cy={Y(p)} r={4.5} fill={color} stroke="#fff" strokeWidth={1.5} />
+      {label && (
+        <text x={X(q) + 7} y={Y(p) - 7} fontSize={12.5} fontFamily="'IBM Plex Mono', monospace" fill={NAVY}
+              fontWeight={700} stroke="#fff" strokeWidth={3.5} paintOrder="stroke" strokeLinejoin="round">
+          {label}
+        </text>
+      )}
+    </g>
+  );
+
+  return (
+    <div style={{ background: CREAM, minHeight: "100vh", color: INK, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; }
+        button:focus-visible { outline: 2px solid ${GOLD}; outline-offset: 2px; }
+        @media print { .noprint { display:none !important; } body { background:#fff; } }
+      `}</style>
+
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 22px 70px" }}>
+        <header style={{ borderBottom: `3px solid ${NAVY}`, paddingBottom: 16, marginBottom: 18 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 2, color: GOLD, textTransform: "uppercase" }}>
+            Dr. Tremendous · ARE 201 · Solutions, made visible
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: 34, color: NAVY, margin: "6px 0 2px" }}>
+            Supply &amp; Demand Generator
+          </h1>
+          <p style={{ margin: 0, fontSize: 14.5, color: "#555", maxWidth: 640 }}>
+            Clean linear curves with whole-number intercepts and a real equilibrium where quantity demanded equals
+            quantity supplied. Add a binding price floor or ceiling and the short-side quantity is worked out for you.
+          </p>
+        </header>
+
+        {/* Tool mode */}
+        <div className="noprint" style={{ display: "flex", border: `1px solid ${NAVY}`, width: "fit-content", marginBottom: 18 }}>
+          {[{ k: "controls", l: "Surplus & price controls" }, { k: "elasticity", l: "Identify elasticity" }].map((t) => (
+            <button key={t.k} onClick={() => setTool(t.k)} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 0.5, textTransform: "uppercase", padding: "8px 16px", border: "none", cursor: "pointer", background: tool === t.k ? NAVY : "transparent", color: tool === t.k ? CREAM : NAVY }}>
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        {tool === "elasticity" && <ElasticityFigure />}
+
+        {tool === "controls" && (
+          <>
+        {/* Controls */}
+        <div className="noprint" style={{ display: "flex", gap: 18, flexWrap: "wrap", alignItems: "center", marginBottom: 18 }}>
+          <button onClick={next} style={{ fontFamily: "inherit", fontWeight: 600, fontSize: 14, color: CREAM, background: NAVY, border: "none", padding: "11px 22px", cursor: "pointer" }}>
+            New problem
+          </button>
+          <div style={{ display: "flex", border: `1px solid ${NAVY}` }}>
+            {[{ k: "none", l: "No control" }, { k: "floor", l: "Price floor" }, { k: "ceiling", l: "Price ceiling" }].map((t) => (
+              <button key={t.k} onClick={() => chooseMode(t.k)} style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, padding: "9px 16px", border: "none", cursor: "pointer", background: mode === t.k ? NAVY : "transparent", color: mode === t.k ? CREAM : NAVY }}>
+                {t.l}
+              </button>
+            ))}
+          </div>
+          <label style={{ fontSize: 13, display: "flex", gap: 7, alignItems: "center", cursor: "pointer" }}>
+            <input type="checkbox" checked={shade} onChange={() => setShade(!shade)} style={{ accentColor: GOLD, width: 16, height: 16 }} />
+            Shade CS / PS
+          </label>
+          <label style={{ fontSize: 13, display: "flex", gap: 7, alignItems: "center", cursor: "pointer" }}>
+            <input type="checkbox" checked={showAnswers} onChange={() => setShowAnswers(!showAnswers)} style={{ accentColor: GOLD, width: 16, height: 16 }} />
+            Reveal key (instructor)
+          </label>
+          <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+            <button onClick={() => printAs("student")} disabled={controlUnavailable} style={{ fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: NAVY, background: GOLD, border: "none", padding: "9px 14px", cursor: controlUnavailable ? "default" : "pointer", opacity: controlUnavailable ? 0.5 : 1 }}>
+              Print student version
+            </button>
+            <button onClick={() => printAs("key")} disabled={controlUnavailable} style={{ fontFamily: "inherit", fontSize: 13, fontWeight: 600, color: CREAM, background: NAVY, border: "none", padding: "9px 14px", cursor: controlUnavailable ? "default" : "pointer", opacity: controlUnavailable ? 0.5 : 1 }}>
+              Print answer key
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 1.3fr) 1fr", gap: 22, alignItems: "start" }}>
+          {/* Graph */}
+          <div style={{ background: "#fff", border: "1px solid #e7e0cd", padding: 12 }}>
+            <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto" }} fontFamily="'IBM Plex Sans', sans-serif">
+              {/* short tick marks at each axis value (no full grid — guide lines do the reading) */}
+              {gridQ.map((q) => <line key={"gq" + q} x1={X(q)} y1={Y(0)} x2={X(q)} y2={Y(0) + 5} stroke="#b8ad8e" strokeWidth={1} />)}
+              {gridP.map((p) => <line key={"gp" + p} x1={X(0)} y1={Y(p)} x2={X(0) - 5} y2={Y(p)} stroke="#b8ad8e" strokeWidth={1} />)}
+
+              {/* shaded regions */}
+              {shade && mode === "none" && (
+                <>
+                  <polygon points={`${X(0)},${Y(Pe)} ${X(0)},${Y(a)} ${X(Qe)},${Y(Pe)}`} fill={CS_FILL} opacity={0.16} />
+                  <polygon points={`${X(0)},${Y(Pe)} ${X(0)},${Y(c)} ${X(Qe)},${Y(Pe)}`} fill={PS_FILL} opacity={0.18} />
+                </>
+              )}
+              {shade && ctrl && ctrl.kind === "Price floor" && (
+                <>
+                  {/* CS triangle */}
+                  <polygon points={`${X(0)},${Y(a)} ${X(0)},${Y(ctrl.P)} ${X(ctrl.traded)},${Y(ctrl.P)}`} fill={CS_FILL} opacity={0.16} />
+                  {/* PS trapezoid */}
+                  <polygon points={`${X(0)},${Y(ctrl.P)} ${X(0)},${Y(c)} ${X(ctrl.traded)},${Y(ctrl.priceAtTraded)} ${X(ctrl.traded)},${Y(ctrl.P)}`} fill={PS_FILL} opacity={0.18} />
+                  {/* DWL triangle */}
+                  <polygon points={`${X(ctrl.traded)},${Y(ctrl.P)} ${X(ctrl.traded)},${Y(ctrl.priceAtTraded)} ${X(Qe)},${Y(Pe)}`} fill={DWL_FILL} opacity={0.26} />
+                  {/* segmentation line: splits the PS trapezoid into rectangle (above) + triangle (below) */}
+                  <line x1={X(0)} y1={Y(ctrl.priceAtTraded)} x2={X(ctrl.traded)} y2={Y(ctrl.priceAtTraded)} stroke={PS_FILL} strokeWidth={1} strokeDasharray="2 3" />
+                </>
+              )}
+              {shade && ctrl && ctrl.kind === "Price ceiling" && (
+                <>
+                  {/* CS trapezoid */}
+                  <polygon points={`${X(0)},${Y(a)} ${X(0)},${Y(ctrl.P)} ${X(ctrl.traded)},${Y(ctrl.P)} ${X(ctrl.traded)},${Y(ctrl.priceAtTraded)}`} fill={CS_FILL} opacity={0.16} />
+                  {/* PS triangle */}
+                  <polygon points={`${X(0)},${Y(ctrl.P)} ${X(0)},${Y(c)} ${X(ctrl.traded)},${Y(ctrl.P)}`} fill={PS_FILL} opacity={0.18} />
+                  {/* DWL triangle */}
+                  <polygon points={`${X(ctrl.traded)},${Y(ctrl.priceAtTraded)} ${X(ctrl.traded)},${Y(ctrl.P)} ${X(Qe)},${Y(Pe)}`} fill={DWL_FILL} opacity={0.26} />
+                  {/* segmentation line: splits the CS trapezoid into rectangle (below) + triangle (above) */}
+                  <line x1={X(0)} y1={Y(ctrl.priceAtTraded)} x2={X(ctrl.traded)} y2={Y(ctrl.priceAtTraded)} stroke={CS_FILL} strokeWidth={1} strokeDasharray="2 3" />
+                </>
+              )}
+
+              {/* axes */}
+              <line x1={X(0)} y1={Y(0)} x2={X(Qmax)} y2={Y(0)} stroke={NAVY} strokeWidth={1.5} />
+              <line x1={X(0)} y1={Y(0)} x2={X(0)} y2={Y(Pmax)} stroke={NAVY} strokeWidth={1.5} />
+              {gridQ.map((q) => <text key={"tq" + q} x={X(q)} y={Y(0) + 18} fontSize={13} textAnchor="middle" fill="#666" fontFamily="'IBM Plex Mono', monospace">{q}</text>)}
+              {gridP.map((p) => <text key={"tp" + p} x={X(0) - 9} y={Y(p) + 4} fontSize={13} textAnchor="end" fill="#666" fontFamily="'IBM Plex Mono', monospace">{p}</text>)}
+              <text x={X(Qmax)} y={Y(0) + 34} fontSize={12.5} textAnchor="end" fill={NAVY} fontWeight={600}>Quantity</text>
+              <text x={X(0) - 40} y={Y(Pmax) - 6} fontSize={12.5} fill={NAVY} fontWeight={600}>Price</text>
+
+              {/* demand & supply */}
+              <line x1={dem.x1} y1={dem.y1} x2={dem.x2} y2={dem.y2} stroke={DEMAND} strokeWidth={2.5} />
+              <line x1={sup.x1} y1={sup.y1} x2={sup.x2} y2={sup.y2} stroke={SUPPLY} strokeWidth={2.5} />
+              <text x={dem.x2 + 8} y={dem.y2 - 8} fontSize={15} fill={DEMAND} fontWeight={700} textAnchor="start" stroke="#fff" strokeWidth={3.5} paintOrder="stroke" strokeLinejoin="round">D</text>
+              <text x={sup.x2 + 8} y={sup.y2 + 6} fontSize={15} fill={SUPPLY} fontWeight={700} textAnchor="start" stroke="#fff" strokeWidth={3.5} paintOrder="stroke" strokeLinejoin="round">S</text>
+
+              {/* intercept dots */}
+              {dot(0, a, DEMAND)}
+              {dot(xint, 0, DEMAND)}
+              {dot(0, c, SUPPLY)}
+
+              {/* equilibrium */}
+              <line x1={X(Qe)} y1={Y(0)} x2={X(Qe)} y2={Y(Pe)} stroke="#bbb" strokeWidth={1} strokeDasharray="4 3" />
+              <line x1={X(0)} y1={Y(Pe)} x2={X(Qe)} y2={Y(Pe)} stroke="#bbb" strokeWidth={1} strokeDasharray="4 3" />
+              {dot(Qe, Pe, NAVY, `E (${fmt(Qe)}, ${fmt(Pe)})`)}
+
+              {/* control line */}
+              {ctrl && (
+                <>
+                  <line x1={X(0)} y1={Y(ctrl.P)} x2={X(Qmax)} y2={Y(ctrl.P)} stroke={GOLD} strokeWidth={2.5} strokeDasharray="6 4" />
+                  <text x={X(0) - 8} y={Y(ctrl.P) + 4} fontSize={11.5} textAnchor="end" fill="#9a7320" fontFamily="'IBM Plex Mono', monospace" fontWeight={700} stroke="#fff" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">{fmt(ctrl.P)}</text>
+                  <text x={X(Qmax)} y={Y(ctrl.P) - 6} fontSize={12} textAnchor="end" fill="#9a7320" fontFamily="'IBM Plex Mono', monospace" fontWeight={700} stroke="#fff" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">
+                    {ctrl.kind === "Price floor" ? "Floor" : "Ceiling"} P={fmt(ctrl.P)}
+                  </text>
+                  {/* vertical edge at the traded quantity, from the binding curve up/down to the control */}
+                  <line x1={X(ctrl.traded)} y1={Y(ctrl.P)} x2={X(ctrl.traded)} y2={Y(ctrl.priceAtTraded)} stroke={NAVY} strokeWidth={1} strokeDasharray="3 3" />
+                  {dot(ctrl.Qd, ctrl.P, DEMAND, `Qd=${fmt(ctrl.Qd)}`)}
+                  {dot(ctrl.Qs, ctrl.P, SUPPLY, `Qs=${fmt(ctrl.Qs)}`)}
+                  {/* third DWL corner: guide lines to both axes so its Q and P are readable */}
+                  <line x1={X(ctrl.traded)} y1={Y(ctrl.priceAtTraded)} x2={X(ctrl.traded)} y2={Y(0)} stroke="#bbb" strokeWidth={1} strokeDasharray="4 3" />
+                  <line x1={X(ctrl.traded)} y1={Y(ctrl.priceAtTraded)} x2={X(0)} y2={Y(ctrl.priceAtTraded)} stroke="#bbb" strokeWidth={1} strokeDasharray="4 3" />
+                  <text x={X(ctrl.traded)} y={Y(0) + 16} fontSize={11.5} textAnchor="middle" fill={NAVY} fontFamily="'IBM Plex Mono', monospace" fontWeight={700} stroke="#fff" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">{fmt(ctrl.traded)}</text>
+                  <text x={X(0) - 8} y={Y(ctrl.priceAtTraded) + 4} fontSize={11.5} textAnchor="end" fill={NAVY} fontFamily="'IBM Plex Mono', monospace" fontWeight={700} stroke="#fff" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round">{fmt(ctrl.priceAtTraded)}</text>
+                  {dot(ctrl.traded, ctrl.priceAtTraded, ctrl.bindCurve === "supply" ? SUPPLY : DEMAND, `(${fmt(ctrl.traded)}, $${fmt(ctrl.priceAtTraded)})`)}
+                </>
+              )}
+            </svg>
+            {shade && (
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center", padding: "8px 4px 2px", fontSize: 12.5, fontFamily: "'IBM Plex Mono', monospace" }}>
+                {[
+                  { c: CS_FILL, l: "Consumer surplus" },
+                  { c: PS_FILL, l: "Producer surplus" },
+                  ...(ctrl ? [{ c: DWL_FILL, l: "Deadweight loss" }] : []),
+                ].map((it) => (
+                  <span key={it.l} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ width: 13, height: 13, background: it.c, opacity: 0.5, display: "inline-block", border: `1px solid ${it.c}` }} />
+                    {it.l}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Data panel */}
+          <div>
+            <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${NAVY}`, padding: "16px 18px", marginBottom: 14 }}>
+              {printMode && (
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 1, color: NAVY, textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>
+                  {printMode === "key" ? "Answer key" : "Student version"} — {commodity}
+                </div>
+              )}
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 1, color: GOLD, textTransform: "uppercase", marginBottom: 10 }}>
+                Scenario
+              </div>
+              <p style={{ fontSize: 14.5, margin: 0, lineHeight: 1.55 }}>
+                The figure shows the market for <strong>{commodity}</strong>.
+                {ctrl
+                  ? <> The government sets a {ctrl.kind.toLowerCase()} of <strong>${fmt(ctrl.P)}</strong> (the dashed gold line). Using the graph, answer the questions below.</>
+                  : <> There is no government intervention. Using the graph, answer the questions below.</>}
+              </p>
+              {revealKey && (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed #e0d8bf" }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: 1, color: "#9a906f", textTransform: "uppercase", marginBottom: 6 }}>Instructor data</div>
+                  <Row label="Demand" value={eq(a, b, "−")} color={DEMAND} />
+                  <Row label="Supply" value={eq(c, d, "+")} color={SUPPLY} />
+                </div>
+              )}
+            </div>
+
+            {/* Student questions with answer entry */}
+            {!controlUnavailable && (
+              <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${GOLD}`, padding: "16px 18px", marginBottom: 14 }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 1, color: "#9a7320", textTransform: "uppercase", marginBottom: 10 }}>
+                  Questions — {ctrl ? ctrl.kind.toLowerCase() : "no control"}
+                </div>
+                {questions.map((qq, i) => {
+                  const right = isRight(qq);
+                  const correctText = qq.text !== undefined ? qq.text : (qq.unit === "$" ? `$${fmt(qq.ans)}` : `${fmt(qq.ans)} ${qq.unit}`);
+                  if (printMode) {
+                    return (
+                      <div key={qq.id} style={{ marginBottom: 9, fontSize: 13.5 }}>
+                        <span>{i + 1}. {qq.q}</span>
+                        {printMode === "key"
+                          ? <strong style={{ color: GREEN }}>  {correctText}</strong>
+                          : <span style={{ color: "#bbb" }}>  ______________</span>}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={qq.id} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 13.5, marginBottom: 4 }}>{qq.q}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {qq.unit === "$" && <span style={{ color: "#9a906f" }}>$</span>}
+                        <input
+                          value={answers[qq.id] || ""}
+                          onChange={(e) => setAnswers((p) => ({ ...p, [qq.id]: e.target.value }))}
+                          placeholder={qq.text !== undefined ? "word" : "number"}
+                          style={{ width: qq.text !== undefined ? 120 : 90, padding: "6px 8px", border: `1px solid ${checked ? (right ? GREEN : RED) : "#ccc4ad"}`, fontFamily: "inherit", fontSize: 14 }}
+                        />
+                        {qq.unit !== "$" && <span style={{ color: "#9a906f", fontSize: 13 }}>{qq.unit}</span>}
+                        {checked && (
+                          <span style={{ fontSize: 13, fontWeight: 600, color: right ? GREEN : RED }}>
+                            {right ? "✓" : `✗  ${correctText}`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="noprint" style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                  <button onClick={() => setChecked(true)} style={{ fontFamily: "inherit", fontWeight: 600, fontSize: 13, color: CREAM, background: NAVY, border: "none", padding: "9px 18px", cursor: "pointer" }}>
+                    Check answers
+                  </button>
+                  {checked && (
+                    <button onClick={() => { setAnswers({}); setChecked(false); }} style={{ fontFamily: "inherit", fontSize: 13, color: NAVY, background: "transparent", border: `1px solid ${NAVY}`, padding: "8px 16px", cursor: "pointer" }}>
+                      Clear answers
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {revealKey && (
+              <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${GREEN}`, padding: "16px 18px" }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 1, color: GREEN, textTransform: "uppercase", marginBottom: 10 }}>
+                  Worked answer key
+                </div>
+                {controlUnavailable ? (
+                  <p style={{ fontSize: 13.5, color: "#9a906f", margin: 0 }}>
+                    This problem doesn't yield clean numbers for a {mode}. Click <strong>New problem</strong> for one that does.
+                  </p>
+                ) : (
+                  <>
+                    <Row label="Equilibrium" value={`Q* = ${fmt(Qe)}, P* = $${fmt(Pe)}`} />
+                    <Row label="Consumer surplus" value={`$${fmt(CS)}`} />
+                    <Row label="Producer surplus" value={`$${fmt(PS)}`} />
+                    <Row label="Total surplus" value={`$${fmt(CS + PS)}`} />
+                    {ctrl && (
+                      <>
+                        <div style={{ borderTop: "1px solid #eee4cc", margin: "10px 0 8px" }} />
+                        <Row label="Quantity demanded at control" value={`${fmt(ctrl.Qd)} units`} />
+                        <Row label="Quantity supplied at control" value={`${fmt(ctrl.Qs)} units`} />
+                        <Row label="Quantity traded (short side)" value={`${fmt(ctrl.traded)} units`} />
+                        <Row label={ctrl.gapLabel} value={`${fmt(ctrl.gap)} units`} color={RED} />
+                        {ctrl.kind === "Price floor" ? (
+                          <>
+                            <div style={{ borderTop: "1px solid #eee4cc", margin: "10px 0 8px" }} />
+                            <div style={{ fontSize: 11.5, color: "#9a906f", marginBottom: 4 }}>Producer surplus = rectangle + triangle</div>
+                            <Row label="  Rectangle" value={`${fmt(ctrl.traded)} × $${fmt(ctrl.P - ctrl.priceAtTraded)} = $${fmt(ctrl.traded * (ctrl.P - ctrl.priceAtTraded))}`} />
+                            <Row label="  Triangle" value={`½ × ${fmt(ctrl.traded)} × $${fmt(ctrl.priceAtTraded - c)} = $${fmt(0.5 * ctrl.traded * (ctrl.priceAtTraded - c))}`} />
+                            <Row label="  New producer surplus" value={`$${fmt(ctrl.traded * (ctrl.P - ctrl.priceAtTraded) + 0.5 * ctrl.traded * (ctrl.priceAtTraded - c))}`} color={GREEN} />
+                            <Row label="New consumer surplus" value={`$${fmt(0.5 * ctrl.traded * (a - ctrl.P))}`} color={GREEN} />
+                          </>
+                        ) : (
+                          <>
+                            <div style={{ borderTop: "1px solid #eee4cc", margin: "10px 0 8px" }} />
+                            <div style={{ fontSize: 11.5, color: "#9a906f", marginBottom: 4 }}>Consumer surplus = rectangle + triangle</div>
+                            <Row label="  Rectangle" value={`${fmt(ctrl.traded)} × $${fmt(ctrl.priceAtTraded - ctrl.P)} = $${fmt(ctrl.traded * (ctrl.priceAtTraded - ctrl.P))}`} />
+                            <Row label="  Triangle" value={`½ × ${fmt(ctrl.traded)} × $${fmt(a - ctrl.priceAtTraded)} = $${fmt(0.5 * ctrl.traded * (a - ctrl.priceAtTraded))}`} />
+                            <Row label="  New consumer surplus" value={`$${fmt(ctrl.traded * (ctrl.priceAtTraded - ctrl.P) + 0.5 * ctrl.traded * (a - ctrl.priceAtTraded))}`} color={GREEN} />
+                            <Row label="New producer surplus" value={`$${fmt(0.5 * ctrl.traded * (ctrl.P - c))}`} color={GREEN} />
+                          </>
+                        )}
+                        <div style={{ borderTop: "1px solid #eee4cc", margin: "10px 0 8px" }} />
+                        <div style={{ fontSize: 11.5, color: "#9a906f", marginBottom: 4 }}>Deadweight loss = ½ × base × height</div>
+                        <Row label="  Base (quantity reduction)" value={`${fmt(Qe)} − ${fmt(ctrl.traded)} = ${fmt(ctrl.dwlBase)} units`} />
+                        <Row label="  Height (price gap at that quantity)" value={`$${fmt(ctrl.dwlHeight)}`} />
+                        <Row label="  Deadweight loss" value={`½ × ${fmt(ctrl.dwlBase)} × $${fmt(ctrl.dwlHeight)} = $${fmt(ctrl.dwl)}`} color={RED} />
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <p style={{ fontSize: 12, color: "#9a906f", fontFamily: "'IBM Plex Mono', monospace", marginTop: 18 }}>
+          All values are computed deterministically — the equilibrium is always a true Qd = Qs crossing, and surplus areas are exact.
+        </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value, color }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 14, padding: "4px 0", fontSize: 13.5 }}>
+      <span style={{ color: "#6a6450" }}>{label}</span>
+      <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500, color: color || NAVY, textAlign: "right" }}>{value}</span>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<SupplyDemandGenerator />);
+</script>
+<script>
+  (function () {
+    var src = document.getElementById("app-src").textContent;
+    try {
+      var out = Babel.transform(src, { presets: [["react", { runtime: "classic" }]] }).code;
+      (0, eval)(out);
+    } catch (e) {
+      document.getElementById("root").innerHTML =
+        '<pre style="padding:24px;color:#a8432f;font-family:monospace;white-space:pre-wrap">' +
+        "Failed to start: " + (e && e.message ? e.message : e) + "</pre>";
+      throw e;
+    }
+  })();
+</script>
+</body>
+</html>

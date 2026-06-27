@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam 2 Gap Finder · Dr. Tremendous</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  html,body{margin:0;padding:0;}
+  body { padding-top: 56px; background: #f7f3e8; }
+  @media print { body { padding-top: 0 !important; } }
+  #dt-home {
+    position: fixed; top: 14px; left: 16px; z-index: 9999;
+    display: flex; align-items: center; gap: 9px; text-decoration: none;
+    font-family: 'Playfair Display', Georgia, serif; font-weight: 700; font-size: 16px;
+    line-height: 1; color: #141b34;
+    background: rgba(247, 243, 232, 0.86); border: 1px solid #e7e0cd;
+    padding: 6px 12px 6px 8px; border-radius: 3px; backdrop-filter: blur(3px);
+    transition: box-shadow 0.18s, transform 0.18s;
+  }
+  #dt-home:hover { box-shadow: 3px 3px 0 #d8a249; transform: translate(-1px,-1px); }
+  #dt-home img { height: 25px; width: auto; display: block; }
+  #dt-home .gold { color: #d8a249; }
+  @media print { #dt-home { display: none !important; } }
+  @media (max-width: 640px) { #dt-home { font-size: 13px; } #dt-home img { height: 20px; } }
+</style>
+</head>
+<body>
+<a id="dt-home" href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous" class="noprint">
+  <img src="trex.png" alt="">
+  <span>Dr.Treme<span class="gold">ndous</span></span>
+</a>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useRef, useEffect } = React;
+// ─────────────────────────────────────────────────────────────────────────────
+// DR. TREMENDOUS · ARE 201 EXAM 2 REMEDIATION ENGINE
+// Check the questions a student missed → weak objectives light up →
+// targeted review materials + difficulty-matched practice (generated live).
+// Built on real Exam 2 item data (n=16, post-regrade).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const NAVY = "#141b34";
+const GOLD = "#d8a249";
+const CREAM = "#f7f3e8";
+const INK = "#2a2f45";
+const RED = "#a8432f";
+const GREEN = "#3f6b46";
+const DEMAND = "#2f6f8f";
+const SUPPLY = "#a8432f";
+const CS_FILL = "#2f6f8f";
+const PS_FILL = "#3f6b46";
+const DWL_FILL = "#d13b2a";
+
+// Learning objective text (Units 5, 6, 8a)
+const LO_TEXT = {
+  "5.1": "Explain the relationship between consumer surplus and the demand curve, and between producer surplus and the supply curve.",
+  "5.2": "Calculate consumer surplus, producer surplus, and total surplus using both a graph and a table.",
+  "5.3": "Define price controls and distinguish between binding and non-binding price ceilings and floors using a graph.",
+  "5.4": "Explain how a binding price control creates a shortage or surplus, and determine the resulting change in total surplus and deadweight loss using a graph.",
+  "5.5": "Apply price-floor analysis to labor markets, including the minimum wage and the agricultural Adverse Effect Wage Rate (AEWR).",
+  "5.6": "Evaluate the winners and losers from a price control by comparing consumer and producer surplus before and after the policy.",
+  "5.7": "Explain how price controls and anti-price-gouging measures can reduce economic efficiency and distort the information that prices provide.",
+  "5.8": "Analyze real-world price-control events in agricultural and food markets, including government price supports and farm labor policy.",
+  "6.1": "Define price elasticity of demand and explain what its value tells you about responsiveness of quantity demanded to a change in price.",
+  "6.2": "Calculate the price elasticity of demand from data, including the midpoint method, and classify demand as elastic, inelastic, or unit elastic.",
+  "6.3": "Explain the determinants of the price elasticity of demand: substitutes, necessity vs. luxury, share of income, and time horizon.",
+  "6.4": "Explain and apply the relationship between the price elasticity of demand and total revenue.",
+  "6.5": "Define and calculate the price elasticity of supply, and explain why supply is more elastic in the long run than the short run.",
+  "6.7": "Use the relative elasticities of supply and demand to determine tax incidence between buyers and sellers.",
+  "6.8": "Apply elasticity to agricultural markets, including why inelastic demand causes farm revenue to fall when a bumper crop increases supply.",
+  "6.9": "Analyze real-world pricing and policy events using elasticity, including the gas tax and corporate pricing power.",
+  "8.1": "Explain the law of diminishing returns to labor and why the marginal product of labor eventually falls.",
+  "8.2": "Calculate the marginal product of labor from production data and identify where diminishing (and negative) returns begin.",
+  "8.3": "Distinguish fixed costs from variable costs and classify the costs of an agricultural firm.",
+  "8.4": "Calculate total cost, average fixed cost, average variable cost, average total cost, and marginal cost from data.",
+  "8.5": "Identify and interpret the cost curves (MC, ATC, AVC, AFC) on an unlabeled graph, and explain their shapes and relationships.",
+  "8.6": "Explain how a change in fixed or variable costs affects the cost curves.",
+  "8.7": "Analyze real-world cost events in agricultural production, including how input price shocks affect a firm's cost structure.",
+};
+
+// Review materials per LO (from the Unit 5 / 6 / 8a source mapping)
+const LO_MATERIALS = {
+  "5.1": ["Unit 5 PlayPosit — Consumer & Producer Surplus segments (Q1, Q2, Q5–Q8)", "Unit 5 Quiz: surplus identification items"],
+  "5.2": ["Unit 5 PlayPosit — surplus calculation walkthrough (the triangle/rectangle setup)", "H5P: Consumer & Producer Surplus interactive", "Unit 5 Ungraded Practice Quiz"],
+  "5.3": ["Unit 5 PlayPosit — Price Controls segment (Q3–Q5, binding vs. non-binding)", "Unit 5 Quiz: binding/non-binding items"],
+  "5.4": ["Unit 5 PlayPosit — Price Controls (Q6–Q8, DWL setup)", "H5P: Price Floor and Price Ceiling interactives", "Unit 5 Ungraded Practice Quiz"],
+  "5.5": ["Unit 5 — H-2A / Adverse Effect Wage Rate quiz questions (6 items)", "Unit 5 PlayPosit — labor-market price floor segment"],
+  "5.6": ["Unit 5 PlayPosit — winners and losers segment (Q9–Q10)", "Unit 5 Quiz: surplus-comparison items"],
+  "5.7": ["Article: 'Prices Are Information' (Unit 5 Real World)", "Unit 5 Quiz: anti-price-gouging / efficiency items (5 questions)"],
+  "5.8": ["Unit 5 Real World price-control articles", "Unit 5 Quiz: government price-support items"],
+  "6.1": ["Unit 6 PlayPosit — Part 1 (Q1, Q5, Q16, definition of PED)", "Unit 6 Quiz"],
+  "6.2": ["Unit 6 PlayPosit — Part 1 (Q4, Q7, Q13, midpoint method)", "Unit 6 Ungraded Practice Quiz with video solution"],
+  "6.3": ["Unit 6 PlayPosit — Part 1 (Q8–Q12, Q14, determinants)", "Unit 6 Quiz: determinants items"],
+  "6.4": ["Unit 6 PlayPosit — Part 2 (entire segment: PED ↔ total revenue)", "Unit 6 PlayPosit — Part 2 Q5 (critical ag application)"],
+  "6.5": ["Unit 6 PlayPosit — Part 2 (Q9–Q11) and Part 3 (Q1–Q4, PES short vs. long run)", "Unit 6 Quiz: PES items"],
+  "6.7": ["Unit 6 PlayPosit — Part 3 (Q5–Q10, tax incidence)", "Unit 6 Quiz: tax-incidence items"],
+  "6.8": ["Unit 6 PlayPosit — Part 2 Q5 (bumper-crop / inelastic-demand revenue)", "Unit 3 Fertilizer article connection"],
+  "6.9": ["Gas-tax podcast (Unit 6 Real World)", "Unit 6 Quiz: real-world pricing items"],
+  "8.1": ["Unit 8a PlayPosit — Production Costs & Functions (Q1–Q12, diminishing returns)", "Unit 8a Quiz"],
+  "8.2": ["Unit 8a PlayPosit — Production (Q1–Q12, marginal product of labor)", "Unit 8a Quiz: MPL items (4 questions)"],
+  "8.3": ["Unit 8a PlayPosit — fixed vs. variable cost (Q13–Q15)", "Unit 8a Quiz: cost-classification items"],
+  "8.4": ["Unit 8a PlayPosit — cost calculations (Q16, Q18)", "Optional Interactive: Test Your Cost Calculation Skills", "Unit 8a Ungraded Practice Quiz"],
+  "8.5": ["Unit 8a PlayPosit — cost-curve identification (Q19, Q23–Q26)", "H5P: Cost Curve Identification", "H5P: Identify the Minimum Cost Output"],
+  "8.6": ["H5P: Visualizing Cost Curves — how changes in VC and FC affect MC, ATC, AVC", "Unit 8a PlayPosit — curve-shift segment"],
+  "8.7": ["Article: 'Double blow for chocolate firms' + analysis (Unit 8a)", "Article: 'Why does organic milk cost so much?' + analysis"],
+};
+
+// The 33 questions — LO, empirical difficulty band, facility, topic, and the
+// real exam text used as the style exemplar for generated practice.
+const QUESTIONS = [
+  { n: 1, unit: "6", los: ["6.7"], topic: "Tax incidence with asymmetric elasticities", diff: "easy", fac: 88, ex: "Demand for gasoline is highly inelastic, supply is relatively elastic. A $0.50/gal tax is imposed. Which group bears more of the burden, and what happens to quantity?" },
+  { n: 2, unit: "6", los: ["6.5"], topic: "Price elasticity of supply, short run", diff: "easy", fac: 81, ex: "A drought blocks grain shipments through the Panama Canal, spiking prices. Which best characterizes the price elasticity of supply for grain in the short run?" },
+  { n: 3, unit: "6", los: ["6.3"], topic: "Determinants of elasticity — substitutes", diff: "hard", fac: 56, ex: "Which factor would make demand for chocolate candies more elastic? (A close substitute becoming available.)" },
+  { n: 4, unit: "6", los: ["6.5"], topic: "PES — switching costs reduce elasticity", diff: "easy", fac: 81, ex: "Former broiler growers face millions in capital costs to switch to egg production. Which factors reduce the price elasticity of supply the most? (Select all: high switching costs; long-term lock-in contracts.)" },
+  { n: 5, unit: "6", los: ["6.4"], topic: "Total revenue test (price down, revenue up)", diff: "medium", fac: 69, ex: "The price of corn decreases and farmer revenues increase. Consumer demand for corn must be elastic." },
+  { n: 6, unit: "6", los: ["6.7"], topic: "Tax incidence from a graph", diff: "hard", fac: 50, ex: "Using a supply-and-demand graph, which side of the market pays less of the tax? (The more elastic side.)" },
+  { n: 7, unit: "6", los: ["6.2"], topic: "Midpoint-method PED calculation", diff: "medium", fac: 69, ex: "Wheat price rises $10→$12; quantity demanded falls 1000→800. Calculate PED using the midpoint method. (≈ -1.22)" },
+  { n: 8, unit: "6", los: ["6.4", "6.8"], topic: "Subsidy + revenue fall → inelastic demand (select all)", diff: "hard", fac: 32, ex: "A subsidy raises corn production but farm revenue falls. Select all that apply: (I) supply shifted to an inelastic part of demand; (III) in % terms, the price change exceeded the quantity change." },
+  { n: 9, unit: "6", los: ["6.1"], topic: "Inferring elasticity from pricing behavior (Costco)", diff: "medium", fac: 75, ex: "Costco lowers product prices while raising membership fees. What can you infer about the elasticity of its customers? (Products elastic, memberships inelastic.)" },
+  { n: 10, unit: "6", topic: "PES calculation and curve identification", diff: "easy", fac: 84, parts: [
+    { id: "q10a", label: "Part a — calculate the elasticity", los: ["6.5"], diff: "medium", ex: "The price of eggs falls 36% and the quantity supplied of cheese falls 9%. Calculate the price elasticity of supply, rounded to two decimals. (0.25.)" },
+    { id: "q10b", label: "Part b — match the value to the right supply curve", los: ["6.5"], diff: "easy", ex: "A price elasticity of supply of 0.25 is inelastic. Identify which supply curve matches: the one where quantity supplied changes only modestly when price changes (the steeper curve)." },
+  ]},
+  { n: 11, unit: "5", los: ["5.3"], topic: "Binding floor vs. non-binding ceiling", diff: "easy", fac: 81, ex: "Equilibrium milk price is $4.00. Policy A sets a $5.00 minimum; Policy B sets a $5.00 maximum. Which is correct? (Policy A is a binding floor creating a surplus.)" },
+  { n: 12, unit: "5", los: ["5.4", "5.8"], topic: "Price floor from an agricultural figure", diff: "easy", fac: 88, ex: "Using the Supply and Demand in Agriculture figure, the government raises farmer income by setting a price floor at P4, causing a surplus of Q3−Q0." },
+  { n: 13, unit: "5", topic: "Adverse Effect Wage Rate as a price floor", diff: "medium", fac: 62, parts: [
+    { id: "q13a", label: "Part a — identifying the AEWR as a price floor", los: ["5.5"], diff: "medium", ex: "The AEWR sets a wage employers must pay H-2A workers. What type of policy studied in this unit is it most similar to? (A price floor.)" },
+    { id: "q13b", label: "Part b — what variable is on the Y-axis", los: ["5.5"], diff: "medium", ex: "When analyzing the AEWR as a price floor in a labor market, what variable belongs on the Y-axis? (The wage.)" },
+    { id: "q13c", label: "Part c — who the consumers are", los: ["5.5"], diff: "hard", ex: "In a labor-market graph of the AEWR price floor, who plays the role of the consumers (the buyers)? (Employers — the farms hiring labor.)" },
+  ]},
+  { n: 14, unit: "5", los: ["5.2", "5.4"], topic: "Producer surplus from a graph with a price floor", diff: "hard", fac: 50, ex: "Given supply/demand coordinates and a price floor of $5.75, calculate producer surplus (area between price received and supply curve out to the quantity traded). Answer: 100,000." },
+  { n: 15, unit: "5", los: ["5.1", "5.2"], topic: "Combined consumer surplus, two buyers", diff: "easy", fac: 88, ex: "One consumer will pay $45, another $30; market price is $25. Combined consumer surplus = (45−25)+(30−25) = 25." },
+  { n: 16, unit: "5", los: ["5.1"], topic: "Consumer surplus edge case (WTP below price)", diff: "hard", fac: 44, ex: "I am willing to pay $200 for sunglasses priced at $250. My consumer surplus is 0 — I don't buy, and surplus is never negative." },
+  { n: 17, unit: "5", los: ["5.4"], topic: "Deadweight loss from a price ceiling", diff: "medium", fac: 62, ex: "Given a supply/demand figure and a price ceiling at $3.75, calculate deadweight loss (the lost-transactions triangle). Answer: 40,000." },
+  { n: 18, unit: "5", los: ["5.1"], topic: "Total producer surplus with a priced-out seller", diff: "hard", fac: 38, ex: "Producers A ($10), B ($15), C ($22) face a market price of $20. Total producer surplus = (20−10)+(20−15) = 15; C does not sell." },
+  { n: 19, unit: "5", topic: "Winners and losers from a wheat price floor", diff: "medium", fac: 77, parts: [
+    { id: "q19a", label: "Producers' outcome", los: ["5.6"], diff: "medium", ex: "Under a $6 wheat price floor (equilibrium $4), how are producers affected? (They receive a higher price per unit, though some output goes unsold.)" },
+    { id: "q19b", label: "Consumers' outcome", los: ["5.6"], diff: "medium", ex: "Under a $6 wheat price floor (equilibrium $4), how are consumers affected? (They face higher prices and lose consumer surplus.)" },
+    { id: "q19c", label: "Society's outcome", los: ["5.6"], diff: "medium", ex: "Under a $6 wheat price floor (equilibrium $4), how is society as a whole affected? (It bears a deadweight loss because fewer transactions occur.)" },
+  ]},
+  { n: 20, unit: "5", los: ["5.7"], topic: "Price-gouging laws and the information role of prices", diff: "easy", fac: 81, ex: "During Hurricane Helene, anti-price-gouging laws cap gas prices. Why might this make things worse? (High prices signal outside suppliers to rush fuel in, increasing supply.)" },
+  { n: 21, unit: "5", los: ["5.4"], topic: "Price ceiling outcome (shortage mechanism)", diff: "easy", fac: 88, ex: "A $2.00 corn ceiling below the $3.50 equilibrium causes a shortage because quantity demanded exceeds quantity supplied and the low price discourages production." },
+  { n: 22, unit: "5", los: ["5.7"], topic: "Rent control as a price ceiling reducing supply", diff: "easy", fac: 88, ex: "Rent control 30% below market leads landlords to cut maintenance and convert units. It is a price ceiling that reduces quantity supplied." },
+  { n: 23, unit: "8", topic: "Fixed cost, AVC, and marginal cost from a cost table", diff: "easy", fac: 94, parts: [
+    { id: "q23a", label: "Part a — fixed cost", los: ["8.3"], diff: "easy", ex: "Given a total-cost table, the fixed cost is the total cost at zero units of output. (Here, 500.)" },
+    { id: "q23b", label: "Part b — average variable cost of the first unit", los: ["8.4"], diff: "medium", ex: "Given a total-cost table, the average variable cost of the first unit is variable cost divided by quantity: (750 − 500)/1 = 250." },
+    { id: "q23c", label: "Part c — marginal cost of the fifth unit", los: ["8.4"], diff: "medium", ex: "Given a total-cost table, the marginal cost of the fifth unit is the change in total cost from the fourth to the fifth unit: 2250 − 1800 = 450." },
+  ]},
+  { n: 24, unit: "8", los: ["8.3"], topic: "Classify and sum variable costs", diff: "medium", fac: 62, ex: "From a list of annual farm costs, total variable cost = seed (25,000) + fertilizer/herbicide (40,000) = 65,000. Lease, insurance (paid regardless of output), and depreciation are fixed." },
+  { n: 25, unit: "8", los: ["8.2"], topic: "Identify onset of diminishing returns from a table", diff: "medium", fac: 62, ex: "Output by worker: 30, 70, 100, 120, 130, 128. MPL peaks at worker 2 (40), so diminishing returns first appear at worker 3." },
+  { n: 26, unit: "8", los: ["8.1"], topic: "Marginal cost rises as production scales", diff: "medium", fac: 75, ex: "When farmers increase egg production in the short run, marginal cost rises because additional output requires more feed, labor, and housing." },
+  { n: 27, unit: "8", los: ["8.4"], topic: "Average cost interpretation", diff: "medium", fac: 76, ex: "Interpret average cost from production data and distinguish it from marginal cost." },
+  { n: 28, unit: "8", los: ["8.6"], topic: "Variable input price rise — which curves shift", diff: "easy", fac: 94, ex: "Equipment (a fixed cost) rises in price → the ATC curve shifts up; AVC and MC are unchanged." },
+  { n: 29, unit: "8", los: ["8.6"], topic: "Fixed cost change — curve effects", diff: "easy", fac: 94, ex: "A change in fixed cost shifts AFC and ATC but leaves AVC and MC unchanged." },
+  { n: 30, unit: "8", los: ["8.5"], topic: "AFC vs. MC curve shapes", diff: "hard", fac: 56, ex: "One curve falls continuously (AFC) while another falls then rises (MC). Identify the pair from their shapes alone." },
+  { n: 31, unit: "8", los: ["8.7"], topic: "Fertilizer cost shock → variable cost / MC", diff: "easy", fac: 94, ex: "Fertilizer (purchased per acre) rises 40%. Variable costs rise, shifting the MC curve upward; AVC does not shift down." },
+  { n: 32, unit: "5", topic: "Concept-to-scenario matching (mixed units)", diff: "medium", fac: 62, parts: [
+    { id: "q32a", label: "Deadweight loss scenario (lost employment matches)", los: ["5.4"], diff: "medium", ex: "A wage floor leaves some willing workers jobless, and the value of those lost matches is a cost no one recaptures. Name the concept. (Deadweight loss.)" },
+    { id: "q32b", label: "Price ceiling scenario (generators, no resupply)", los: ["5.7"], diff: "medium", ex: "An anti-gouging law holds generator prices at pre-storm levels; outside sellers see no profit opportunity and don't ship in, so shelves stay empty. Name the concept. (Price ceiling.)" },
+    { id: "q32c", label: "Average total cost scenario (U-shaped per-unit cost)", los: ["8.5"], diff: "medium", ex: "A farm's cost per bushel fell as it expanded but began rising past 150,000 bushels even though fixed payments were unchanged. Name the concept. (Average total cost.)" },
+    { id: "q32d", label: "Inelastic demand scenario (almond glut, revenue falls)", los: ["6.4"], diff: "medium", ex: "A record almond harvest drops prices sharply; buyers purchase about the same quantity, so grower revenue falls. Name the concept. (Inelastic demand.)" },
+    { id: "q32e", label: "Price floor scenario (dairy support, stored cheese)", los: ["5.3"], diff: "medium", ex: "A guaranteed minimum milk price above equilibrium leaves the government buying and storing the excess as cheese. Name the concept. (Price floor.)" },
+    { id: "q32f", label: "Diminishing returns scenario (each worker adds less)", los: ["8.1"], diff: "medium", ex: "Added greenhouse workers raise output by 50, then 35, then 15 trays. Name the concept. (Diminishing returns to labor.)" },
+  ]},
+  { n: 33, unit: "8", los: ["8.5"], topic: "Output where ATC is minimized (MC crosses ATC)", diff: "medium", fac: 69, ex: "Average total cost is minimized at the output where the marginal cost curve crosses it — not where MC is at its own minimum." },
+];
+
+const UNIT_NAMES = { "5": "Unit 5 · Price Controls & Surplus", "6": "Unit 6 · Elasticity", "8": "Unit 8a · Production & Costs" };
+const DIFF_LABEL = { easy: "Recall", medium: "Apply", hard: "Stretch" };
+const DIFF_COLOR = { easy: "#6b8f71", medium: GOLD, hard: RED };
+
+// Flatten into checkable items: simple questions become one item; multi-part
+// questions expand into one item per sub-part. Both carry id, los, diff, ex.
+// NUMERIC = pure fill-in-the-blank calculation (no multiple choice to back into).
+const NUMERIC_IDS = new Set(["q7", "q10a", "q14", "q15", "q16", "q17", "q18", "q23b", "q23c", "q24", "q29"]);
+const CHECKABLES = [];
+QUESTIONS.forEach((q) => {
+  if (q.parts) {
+    q.parts.forEach((p) =>
+      CHECKABLES.push({ id: p.id, qn: q.n, unit: q.unit, los: p.los, diff: p.diff || q.diff, topic: p.label, ex: p.ex, numeric: NUMERIC_IDS.has(p.id) })
+    );
+  } else {
+    CHECKABLES.push({ id: "q" + q.n, qn: q.n, unit: q.unit, los: q.los, diff: q.diff, topic: q.topic, ex: q.ex, numeric: NUMERIC_IDS.has("q" + q.n) })
+  }
+});
+
+// Pre-written practice variants, keyed by checkable id. Each is a clone of the
+// real missed question — same skill, same format, new numbers/context. Static so
+// the tool never depends on a live API call. Graph-calculation items (q14, q17,
+// q10b) are NOT here — they route to the deterministic figures instead.
+const VARIANTS = {
+  q1: { stem: "Insulin demand is highly inelastic and supply is relatively elastic. A $0.40/unit tax is placed on insulin. Who bears more of the burden, and what happens to quantity?", options: ["Buyers bear most of it, and quantity falls only slightly", "Sellers bear most of it, and quantity falls sharply", "The burden splits evenly", "Sellers bear all of it because they remit the tax"], correct: 0, why: "The more inelastic side (buyers here) bears more of the burden — not whoever sends in the tax." },
+  q2: { stem: "A late frost destroys part of the orange crop and prices spike within the week. The short-run price elasticity of supply for oranges is best described as:", options: ["Inelastic — growers can't add output quickly", "Elastic — growers respond immediately", "Perfectly elastic", "Unit elastic"], correct: 0, why: "Output can't expand within a season, so short-run supply is inelastic." },
+  q3: { stem: "Which change would make demand for a particular brand of bottled water more elastic?", options: ["A nearly identical competing brand goes on sale nearby", "The brand becomes the only one stocked in the region", "Buyers come to see it as a necessity", "Incomes rise sharply"], correct: 0, why: "More close substitutes make demand more responsive — more elastic." },
+  q4: { stem: "Which factor most reduces the price elasticity of supply for a farm product?", options: ["High capital costs that make switching production slow", "Many easy production alternatives", "A long, flexible selling season", "Abundant cheap storage"], correct: 0, why: "High switching/capital costs keep producers from responding, lowering PES." },
+  q5: { stem: "A dairy co-op lowers the price of milk and finds total revenue rises. Demand for milk must be:", options: ["Elastic", "Inelastic", "Unit elastic", "Perfectly inelastic"], correct: 0, why: "When a price cut raises revenue, the quantity response dominates — demand is elastic." },
+  q6: { stem: "On a supply-and-demand graph, demand is steep (inelastic) and supply is flat (elastic). After a per-unit tax, which side pays LESS of it?", options: ["Sellers, because supply is the more elastic side", "Buyers, because demand is steeper", "They split it evenly", "Whichever side remits the tax"], correct: 0, why: "The more elastic side bears less of the burden." },
+  q7: { stem: "The price of soybeans rises from $10 to $14 and quantity demanded falls from 600 to 400 bushels. Using the midpoint method, the price elasticity of demand is (round to two decimal places):", options: ["−1.20", "−0.83", "−2.00", "−0.50"], correct: 0, why: "Midpoint uses average price and quantity in the denominators, giving −1.20." },
+  q8: { stem: "A subsidy raises soybean output, but total farm revenue falls. Which best explains why?", options: ["Output expanded along an inelastic part of demand, so price fell more than quantity rose", "Output expanded along an elastic part of demand", "Demand shifted to the left", "The subsidy reduced supply"], correct: 0, why: "Revenue falls when demand is inelastic — the price drop outweighs the quantity gain." },
+  q9: { stem: "A warehouse club lowers grocery prices while raising its annual membership fee. This suggests:", options: ["Grocery demand is elastic; membership demand is inelastic", "Both are elastic", "Both are inelastic", "Membership demand is elastic"], correct: 0, why: "Cutting the elastic item and raising the inelastic one maximizes revenue." },
+  q10a: { stem: "When the price of cucumbers rises 30%, the quantity supplied rises 9%. The price elasticity of supply is (round to two decimal places):", options: ["0.30", "3.33", "0.09", "1.00"], correct: 0, why: "PES = %ΔQs ÷ %ΔP = 9 ÷ 30 = 0.30." },
+  q11: { stem: "The equilibrium price of eggs is $3.00/dozen. Policy A sets a $4.00 minimum; Policy B sets a $4.00 maximum. Which is correct?", options: ["Policy A is a binding price floor that creates a surplus", "Policy A is a binding ceiling that creates a shortage", "Policy B is a binding ceiling that creates a shortage", "Neither binds, since both are $4.00"], correct: 0, why: "A floor above equilibrium binds and creates a surplus; a ceiling above equilibrium doesn't bind." },
+  q12: { stem: "Using the supply-and-demand figure, the government sets a price floor above the equilibrium price. What results?", options: ["A surplus — quantity supplied exceeds quantity demanded", "A shortage", "No effect on the market", "Equilibrium rises to the floor with no surplus"], correct: 0, why: "A binding floor leaves more supplied than demanded — a surplus (not a shortage)." },
+  q13a: { stem: "The H-2A program requires farms to pay the Adverse Effect Wage Rate, set above the market wage. This is most like which policy?", options: ["A price floor", "A price ceiling", "A per-unit tax", "A subsidy"], correct: 0, why: "A wage set above the market level is a price floor in the labor market." },
+  q13b: { stem: "In a labor-market graph of the AEWR wage floor, what belongs on the vertical axis?", options: ["The wage", "The number of workers", "The price of the crop", "Farm profit"], correct: 0, why: "In a labor market the 'price' is the wage, which goes on the vertical axis." },
+  q13c: { stem: "In a labor-market graph of the AEWR, who plays the role of the consumers (the buyers)?", options: ["The farms hiring labor", "The H-2A workers", "The federal government", "Grocery shoppers"], correct: 0, why: "Employers are the buyers of labor, so they are the 'consumers' in this market." },
+  q15: { stem: "One buyer will pay up to $50 for a ham, another up to $36; the market price is $30. Their combined consumer surplus is:", options: ["$26", "$20", "$56", "$6"], correct: 0, why: "(50−30) + (36−30) = 20 + 6 = 26." },
+  q16: { stem: "You are willing to pay up to $180 for a pair of boots priced at $220. Your consumer surplus is:", options: ["$0 — you don't buy, and surplus is never negative", "−$40", "$40", "$180"], correct: 0, why: "If willingness to pay is below price, no purchase happens and surplus is 0, never negative." },
+  q18: { stem: "Three growers can supply at $8, $12, and $19; the market price is $16. Total producer surplus is:", options: ["$12", "$15", "$4", "$20"], correct: 0, why: "(16−8) + (16−12) = 12; the $19 grower won't sell at $16." },
+  q19a: { stem: "Under a wheat price floor set above equilibrium, producers:", options: ["Receive a higher price per unit, though some output goes unsold", "Are unaffected by the policy", "Lose surplus on every unit", "Are forced to lower their prices"], correct: 0, why: "The floor raises the price they receive, but not all output sells." },
+  q19b: { stem: "Under a wheat price floor set above equilibrium, consumers:", options: ["Pay more and lose consumer surplus", "Gain consumer surplus", "Are unaffected", "Buy more than before"], correct: 0, why: "A higher price reduces the amount bought and the surplus consumers keep." },
+  q19c: { stem: "Under a wheat price floor set above equilibrium, society as a whole:", options: ["Bears a deadweight loss, since some mutually beneficial trades no longer happen", "Gains overall", "Is unaffected; it is just a transfer", "Sees total surplus rise"], correct: 0, why: "Fewer trades occur than at equilibrium, creating a deadweight loss." },
+  q20: { stem: "After a hurricane, a state caps bottled-water prices at pre-storm levels. Why might shelves stay emptier?", options: ["The capped price removes the signal that would pull outside suppliers in", "It guarantees more water arrives", "It raises quantity supplied", "It has no effect on supply"], correct: 0, why: "Prices carry information; capping them suppresses the signal that draws in new supply." },
+  q21: { stem: "A $1.50/lb ceiling is set on tomatoes when the equilibrium price is $2.75/lb. What happens?", options: ["A shortage — quantity demanded exceeds quantity supplied at $1.50", "A surplus", "No change", "Price rises to clear the market"], correct: 0, why: "A binding ceiling below equilibrium creates a shortage and can't rise to clear." },
+  q22: { stem: "A city caps apartment rents 25% below the market rate. The most likely long-run effect is:", options: ["Reduced quantity supplied as owners convert units or cut maintenance", "More apartments built", "Higher-quality units", "No effect on supply"], correct: 0, why: "A binding price ceiling reduces the quantity and quality supplied over time." },
+  q23a: { stem: "A farm's total cost at zero units of output is $600. Its fixed cost is:", options: ["$600", "$0", "Cannot be determined without output", "$60"], correct: 0, why: "Fixed cost is the cost incurred at zero output." },
+  q23b: { stem: "A farm's total cost is $600 at 0 units and $850 at 1 unit. The average variable cost of the first unit is:", options: ["$250", "$850", "$600", "$425"], correct: 0, why: "Variable cost of unit 1 = 850 − 600 = 250, divided by 1 unit." },
+  q23c: { stem: "Total cost is $1,900 at 4 units and $2,350 at 5 units. The marginal cost of the fifth unit is:", options: ["$450", "$470", "$2,350", "$50"], correct: 0, why: "MC = change in total cost = 2,350 − 1,900 = 450." },
+  q24: { stem: "A farm lists: seed $30,000; fertilizer $45,000; land lease $20,000; crop insurance (paid annually regardless of output) $10,000; equipment depreciation $15,000. Total variable cost is:", options: ["$75,000", "$85,000", "$120,000", "$95,000"], correct: 0, why: "Only seed and fertilizer vary with output; lease, insurance, and depreciation are fixed." },
+  q25: { stem: "Using the table below, at which worker does the farm first experience diminishing returns to labor?", table: { headers: ["Workers", "Total output"], rows: [["0", "0"], ["1", "40"], ["2", "90"], ["3", "130"], ["4", "160"], ["5", "180"], ["6", "190"]] }, options: ["Worker 3", "Worker 1", "Worker 5", "Worker 6"], correct: 0, why: "Marginal product peaks at worker 2 (+50), then declines starting at worker 3." },
+  q26: { stem: "As a dairy increases milk output in the short run, marginal cost:", options: ["Rises, as added output needs more feed, labor, and barn time", "Falls continuously", "Stays constant", "Is always zero"], correct: 0, why: "Short-run marginal cost rises with output as inputs are stretched." },
+  q27: { stem: "A farm signs a fixed annual land lease. Which cost curves does this shift upward?", options: ["Average fixed cost and average total cost", "Average variable cost and marginal cost", "Marginal cost only", "No curves shift"], correct: 0, why: "A fixed cost raises AFC and ATC but leaves AVC and MC unchanged." },
+  q28: { stem: "The price of hourly labor (a variable input) rises. Which curves shift up?", options: ["AVC, MC, and ATC", "AFC and ATC only", "MC only", "No curves shift"], correct: 0, why: "A variable-cost increase lifts AVC, MC, and ATC; AFC is unchanged." },
+  q29: { stem: "At 10 units, total cost is $900 and fixed cost is $400. The average variable cost is:", options: ["$50", "$90", "$40", "$500"], correct: 0, why: "Variable cost = 900 − 400 = 500; divided by 10 units = 50." },
+  q30: { stem: "As output rises, one cost curve falls the whole way while another falls then rises. The pair is:", options: ["Average fixed cost (always falling) and marginal cost (falls then rises)", "Marginal cost and average fixed cost, reversed", "Both are average fixed cost", "Both are average total cost"], correct: 0, why: "AFC always declines; MC dips then rises." },
+  q31: { stem: "A fertilizer price spike raises a grower's per-acre (variable) costs. The marginal cost curve:", options: ["Shifts up", "Shifts down", "Is unchanged", "Only AFC moves"], correct: 0, why: "Higher variable costs push the marginal cost curve up." },
+  q32a: { stem: "A wage floor leaves some willing workers jobless, and that lost value is recovered by no one. This describes:", options: ["Deadweight loss", "A price ceiling", "Average total cost", "Inelastic demand"], correct: 0, why: "The unrecovered value of lost trades is deadweight loss." },
+  q32b: { stem: "An anti-gouging law holds generator prices at pre-storm levels; outside sellers see no profit opportunity and don't ship more in, so shelves stay empty. This describes:", options: ["A price ceiling", "A price floor", "Deadweight loss", "Diminishing returns"], correct: 0, why: "A cap holding price below equilibrium is a price ceiling." },
+  q32c: { stem: "A farm's cost per bushel falls as it expands but starts rising past a point, even though fixed payments are unchanged. This describes:", options: ["Average total cost", "Marginal revenue", "A price floor", "Elastic demand"], correct: 0, why: "Per-unit total cost that falls then rises is the U-shaped average total cost." },
+  q32d: { stem: "A record almond harvest drops prices sharply, but buyers purchase about the same quantity, so grower revenue falls. This describes:", options: ["Inelastic demand", "Elastic demand", "A price ceiling", "Deadweight loss"], correct: 0, why: "Quantity barely responds to a big price change — inelastic demand." },
+  q32e: { stem: "A guaranteed minimum milk price above equilibrium leaves the government buying and storing the excess as cheese. This describes:", options: ["A price floor", "A price ceiling", "Diminishing returns", "Consumer surplus"], correct: 0, why: "A minimum price above equilibrium is a price floor, producing a surplus." },
+  q32f: { stem: "Added greenhouse workers raise output by 50, then 35, then 15 trays. This describes:", options: ["Diminishing returns to labor", "Economies of scale", "A price floor", "Elastic supply"], correct: 0, why: "Each additional worker adds less output — diminishing returns." },
+  q33: { stem: "Average total cost is minimized at the output where:", options: ["The marginal cost curve crosses the average total cost curve", "Marginal cost is at its own minimum", "Average fixed cost stops falling", "Average variable cost equals average fixed cost"], correct: 0, why: "ATC bottoms out exactly where MC intersects it." },
+};
+
+// Item statistics from Exam 2 (n=16, post-regrade): facility, discrimination,
+// and the skill type(s) each question demands. Used by the class-level view.
+const STATS = {
+  1: { fac: 88, disc: 36, skills: ["concept"] },
+  2: { fac: 81, disc: 42, skills: ["concept"] },
+  3: { fac: 56, disc: 57, skills: ["concept"] },
+  4: { fac: 81, disc: 22, skills: ["selectall"] },
+  5: { fac: 69, disc: 22, skills: ["concept"] },
+  6: { fac: 50, disc: 56, skills: ["graph"] },
+  7: { fac: 69, disc: 46, skills: ["calculation"] },
+  8: { fac: 33, disc: 50, skills: ["selectall"] },
+  9: { fac: 75, disc: 35, skills: ["concept"] },
+  10: { fac: 84, disc: 27, skills: ["calculation"] },
+  11: { fac: 81, disc: 48, skills: ["concept"] },
+  12: { fac: 88, disc: 21, skills: ["graph"] },
+  13: { fac: 62, disc: 56, skills: ["multipart"] },
+  14: { fac: 50, disc: 71, skills: ["graph"] },
+  15: { fac: 88, disc: 23, skills: ["calculation"] },
+  16: { fac: 44, disc: 65, skills: ["calculation"] },
+  17: { fac: 62, disc: 54, skills: ["graph"] },
+  18: { fac: 38, disc: 76, skills: ["calculation"] },
+  19: { fac: 77, disc: 42, skills: ["matching"] },
+  20: { fac: 81, disc: -4, skills: ["concept"] },
+  21: { fac: 88, disc: 20, skills: ["concept"] },
+  22: { fac: 88, disc: 21, skills: ["concept"] },
+  23: { fac: 94, disc: 7, skills: ["table"] },
+  24: { fac: 62, disc: 5, skills: ["table"] },
+  25: { fac: 62, disc: 36, skills: ["table"] },
+  26: { fac: 75, disc: 39, skills: ["concept"] },
+  27: { fac: 76, disc: 33, skills: ["selectall"] },
+  28: { fac: 94, disc: 13, skills: ["concept"] },
+  29: { fac: 94, disc: 17, skills: ["calculation"] },
+  30: { fac: 56, disc: 17, skills: ["concept"] },
+  31: { fac: 94, disc: 22, skills: ["concept"] },
+  32: { fac: 62, disc: 48, skills: ["matching"] },
+  33: { fac: 69, disc: 50, skills: ["concept"] },
+};
+const SKILL_META = {
+  concept: { label: "Concept recognition", short: "concept", note: "single-answer multiple choice — pick the right idea" },
+  selectall: { label: "Select-all", short: "select-all", note: "more than one correct answer; evaluate every option" },
+  calculation: { label: "Calculation — values given", short: "calc (given)", note: "compute from numbers stated in the prompt" },
+  table: { label: "Calculation from a table", short: "calc (table)", note: "extract values from a data table, then compute" },
+  graph: { label: "Reading from a graph", short: "graph", note: "extract values, areas, or relationships from a figure" },
+  matching: { label: "Matching", short: "matching", note: "map several scenarios to outcomes at once" },
+  multipart: { label: "Multi-part", short: "multi-part", note: "several linked sub-questions in one item" },
+};
+
+// Classify a question by where it sits on the facility × discrimination grid.
+function classify(fac, disc) {
+  if (disc >= 35) return { tag: "Carrying measurement", color: "#3f6b46", advice: "ask more like this" };
+  if (fac >= 85) return { tag: "Dead weight", color: "#a8432f", advice: "harden or cut" };
+  return { tag: "Review the item", color: "#b8860b", advice: "check wording / key" };
+}
+
+function DesignPanel() {
+  const [sortBy, setSortBy] = useState("verdict");
+  // Aggregate facility and discrimination by skill type (multi-tagged questions
+  // contribute to each skill they touch).
+  const bySkill = {};
+  Object.entries(STATS).forEach(([n, s]) => {
+    s.skills.forEach((sk) => {
+      if (!bySkill[sk]) bySkill[sk] = { fac: [], disc: [], qs: [] };
+      bySkill[sk].fac.push(s.fac);
+      bySkill[sk].disc.push(s.disc);
+      bySkill[sk].qs.push(Number(n));
+    });
+  });
+  const avg = (a) => Math.round(a.reduce((x, y) => x + y, 0) / a.length);
+  const rows = Object.entries(bySkill)
+    .map(([sk, d]) => ({ sk, fac: avg(d.fac), disc: avg(d.disc), count: d.qs.length }))
+    .sort((a, b) => b.disc - a.disc);
+
+  const ranked = rows.filter((r) => r.count >= 2);
+  const weakestSkill = [...ranked].sort((a, b) => a.fac - b.fac)[0] || rows[0];
+  const bestSkill = [...ranked].sort((a, b) => b.disc - a.disc)[0] || rows[0];
+
+  const cell = { padding: "8px 10px", fontSize: 13.5, borderBottom: "1px solid #e7e0cd" };
+  const barBg = "#ece4d0";
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      {/* Headline read */}
+      <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderLeft: `4px solid ${NAVY}`, padding: "16px 18px", marginBottom: 20 }}>
+        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 1, color: GOLD, textTransform: "uppercase", marginBottom: 6 }}>
+          What the class is telling you
+        </div>
+        <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55 }}>
+          The class is <strong>weakest at {SKILL_META[weakestSkill.sk].label.toLowerCase()}</strong> (average facility {weakestSkill.fac}%) and
+          strongest at recognizing concepts. Meanwhile, <strong>{SKILL_META[bestSkill.sk].label.toLowerCase()} questions discriminate best</strong> (average
+          {" "}{bestSkill.disc}%), so they carry the most of your exam's measurement per question. The teaching takeaway and the
+          exam-design takeaway point the same way: the skills students produce cold — calculation and graph reading — are where the
+          real signal is. Recognition multiple-choice is where everyone clusters.
+        </p>
+        <p style={{ margin: "10px 0 0", fontSize: 12, color: "#9a906f", fontStyle: "italic" }}>
+          Based on n=16 from one administration. Treat as directional; let it firm up across terms before resetting the blueprint.
+        </p>
+      </div>
+
+      {/* Skill-type table */}
+      <h3 style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 1.5, color: NAVY, textTransform: "uppercase", borderBottom: `1px solid ${GOLD}`, paddingBottom: 6 }}>
+        By skill type — weakness vs. measurement
+      </h3>
+      <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 60px", background: "#fff", border: "1px solid #e7e0cd", marginBottom: 24 }}>
+        <div style={{ ...cell, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", color: NAVY }}>Skill</div>
+        <div style={{ ...cell, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", color: NAVY }}>Class facility</div>
+        <div style={{ ...cell, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", color: NAVY }}>Discrimination</div>
+        <div style={{ ...cell, fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", color: NAVY }}>Qs</div>
+        {rows.map((r) => (
+          <React.Fragment key={r.sk}>
+            <div style={cell}>
+              <div style={{ fontWeight: 600, color: NAVY }}>{SKILL_META[r.sk].label}</div>
+              <div style={{ fontSize: 11.5, color: "#9a906f" }}>{SKILL_META[r.sk].note}</div>
+            </div>
+            <div style={cell}>
+              <div style={{ background: barBg, height: 8, borderRadius: 2, overflow: "hidden", marginBottom: 3 }}>
+                <div style={{ width: `${r.fac}%`, height: "100%", background: r.fac < 65 ? RED : r.fac < 80 ? GOLD : "#6b8f71" }} />
+              </div>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{r.fac}%</span>
+            </div>
+            <div style={cell}>
+              <div style={{ background: barBg, height: 8, borderRadius: 2, overflow: "hidden", marginBottom: 3 }}>
+                <div style={{ width: `${Math.max(0, r.disc) * 1.3}%`, height: "100%", background: r.disc >= 35 ? "#3f6b46" : GOLD }} />
+              </div>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12 }}>{r.disc}%</span>
+            </div>
+            <div style={{ ...cell, fontFamily: "'IBM Plex Mono', monospace" }}>{r.count}</div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Question verdicts — sortable */}
+      <h3 style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 1.5, color: NAVY, textTransform: "uppercase", borderBottom: `1px solid ${GOLD}`, paddingBottom: 6 }}>
+        Question-by-question verdict
+      </h3>
+      {(() => {
+        const verdictRank = { "Carrying measurement": 0, "Review the item": 1, "Dead weight": 2 };
+        const all = Object.entries(STATS).map(([n, s]) => ({ n: Number(n), ...s, ...classify(s.fac, s.disc) }));
+        const sorters = {
+          verdict: (a, b) => verdictRank[a.tag] - verdictRank[b.tag] || b.disc - a.disc,
+          skill: (a, b) => SKILL_META[a.skills[0]].label.localeCompare(SKILL_META[b.skills[0]].label) || b.disc - a.disc,
+          disc: (a, b) => b.disc - a.disc,
+          fac: (a, b) => b.fac - a.fac,
+          q: (a, b) => a.n - b.n,
+        };
+        const sorted = [...all].sort(sorters[sortBy]);
+        const opts = [
+          { k: "verdict", label: "Verdict" },
+          { k: "skill", label: "Skill type" },
+          { k: "disc", label: "Discrimination" },
+          { k: "fac", label: "Facility" },
+          { k: "q", label: "Question #" },
+        ];
+        const cellS = { padding: "7px 10px", fontSize: 13.5, borderBottom: "1px solid #f0ead8" };
+        const headS = { padding: "8px 10px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 0.5, textTransform: "uppercase", color: NAVY, textAlign: "left", borderBottom: `1px solid ${GOLD}` };
+        return (
+          <>
+            <div className="noprint" style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", margin: "12px 0 10px" }}>
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#9a906f", textTransform: "uppercase", letterSpacing: 0.5 }}>Sort by</span>
+              {opts.map((o) => (
+                <button key={o.k} onClick={() => setSortBy(o.k)}
+                  style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, padding: "5px 12px", cursor: "pointer", border: `1px solid ${NAVY}`, background: sortBy === o.k ? NAVY : "transparent", color: sortBy === o.k ? CREAM : NAVY }}>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ background: "#fff", border: "1px solid #e7e0cd" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...headS, width: 50 }}>Q</th>
+                    <th style={headS}>Skill type</th>
+                    <th style={{ ...headS, width: 90 }}>Facility</th>
+                    <th style={{ ...headS, width: 110 }}>Discrim.</th>
+                    <th style={{ ...headS, width: 170 }}>Verdict</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((q) => (
+                    <tr key={q.n}>
+                      <td style={{ ...cellS, fontFamily: "'IBM Plex Mono', monospace", color: NAVY }}>Q{q.n}</td>
+                      <td style={cellS}>{q.skills.map((s) => SKILL_META[s].label).join(", ")}</td>
+                      <td style={{ ...cellS, fontFamily: "'IBM Plex Mono', monospace", color: q.fac >= 85 ? "#a8432f" : q.fac < 60 ? "#3f6b46" : INK }}>{q.fac}%</td>
+                      <td style={{ ...cellS, fontFamily: "'IBM Plex Mono', monospace", color: q.disc >= 35 ? "#3f6b46" : q.disc < 20 ? "#a8432f" : INK }}>{q.disc}%</td>
+                      <td style={cellS}>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#fff", background: q.color, padding: "3px 8px", borderRadius: 2, whiteSpace: "nowrap" }}>{q.tag}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        );
+      })()}
+      <p style={{ fontSize: 12, color: "#9a906f", fontFamily: "'IBM Plex Mono', monospace", marginTop: 14 }}>
+        Facility green = hard (&lt;60%), red = easy (&ge;85%). Discrimination green = strong (&ge;35%), red = weak (&lt;20%). Q20's negative discrimination is a small-sample artifact, not a broken item.
+      </p>
+    </div>
+  );
+}
+
+// ── Embedded deterministic supply/demand graph generator ──────────────────────
+// Correct-by-construction problems used as live practice for price-control surplus
+// misses (Q14 = PS under a floor, Q17 = DWL under a ceiling). No AI: every value
+// is exact, every equilibrium is a real Qd = Qs crossing.
+function buildSDPool() {
+  const pool = [];
+  const slopes = [0.5, 1, 1.5, 2];
+  const QEs = [4, 5, 6, 8];
+  const PEs = [4, 5, 6, 7, 8];
+  for (const Qe of QEs)
+    for (const Pe of PEs)
+      for (const b of slopes)
+        for (const d of slopes) {
+          const a = Pe + b * Qe, c = Pe - d * Qe;
+          if (c < 0 || !Number.isInteger(a) || !Number.isInteger(c)) continue;
+          const xint = a / b;
+          if (!Number.isInteger(xint) || a > 16 || xint > 16) continue;
+          let mFloor = null, mCeil = null;
+          for (const m of [1, 2, 3, 4]) {
+            const Qd = (a - (Pe + m)) / b, Qsf = ((Pe + m) - c) / d;
+            if (mFloor === null && Number.isInteger(Qd) && Number.isInteger(Qsf) && Qd >= 1) mFloor = m;
+            const Qsc = ((Pe - m) - c) / d, Qdc = (a - (Pe - m)) / b;
+            if (mCeil === null && (Pe - m) >= 1 && Number.isInteger(Qsc) && Number.isInteger(Qdc) && Qsc >= 1) mCeil = m;
+          }
+          pool.push({ Qe, Pe, a, b, c, d, xint, mFloor, mCeil });
+        }
+  return pool;
+}
+const SD_POOL = buildSDPool();
+const sdFmt = (x) => (Number.isInteger(x) ? String(x) : x.toFixed(2));
+
+// Clip a line P = cy + m(Q − cx) to the box; return two endpoints.
+function clipLineR(cx, cy, m, Qmax, Pmax) {
+  const pts = [];
+  const push = (q, p) => { if (q >= -1e-6 && q <= Qmax + 1e-6 && p >= -1e-6 && p <= Pmax + 1e-6) pts.push([q, p]); };
+  push(0, cy + m * (0 - cx));
+  push(Qmax, cy + m * (Qmax - cx));
+  push(cx + (0 - cy) / m, 0);
+  push(cx + (Pmax - cy) / m, Pmax);
+  const uniq = [];
+  pts.forEach((p) => { if (!uniq.some((u) => Math.abs(u[0] - p[0]) < 1e-3 && Math.abs(u[1] - p[1]) < 1e-3)) uniq.push(p); });
+  return uniq.slice(0, 2);
+}
+function makeElCfg() {
+  return {
+    type: Math.random() < 0.5 ? "demand" : "supply",
+    ask: Math.random() < 0.5 ? "elastic" : "inelastic",
+    flat: Math.random() < 0.5 ? 0.4 : 0.5,
+    steep: Math.random() < 0.5 ? 1.5 : 2,
+    flatIsA: Math.random() < 0.5,
+  };
+}
+function ElasticityPractice({ q, skill }) {
+  const [cfg, setCfg] = useState(makeElCfg);
+  const [reveal, setReveal] = useState(false);
+  const { type, ask, flat, steep, flatIsA } = cfg;
+  const W = 440, H = 340, mL = 44, mB = 38, mT = 16, mR = 28;
+  const plotW = W - mL - mR, plotH = H - mT - mB;
+  const Qmax = 10, Pmax = 10, cx = 5, cy = 5;
+  const X = (qq) => mL + (qq / Qmax) * plotW;
+  const Y = (p) => mT + plotH - (p / Pmax) * plotH;
+  const sign = type === "demand" ? -1 : 1;
+  const lineA = clipLineR(cx, cy, (flatIsA ? flat : steep) * sign, Qmax, Pmax);
+  const lineB = clipLineR(cx, cy, (flatIsA ? steep : flat) * sign, Qmax, Pmax);
+  const answer = ask === "elastic" ? (flatIsA ? "A" : "B") : (flatIsA ? "B" : "A");
+  const cA = "#2f6f8f", cB = "#a8432f";
+  const end = (l) => l[1] || l[0];
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${GOLD}`, padding: "16px 18px", marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600, fontSize: 19, color: NAVY, margin: 0 }}>Practice on the figure — identify elasticity</h3>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#9a906f" }}>{q ? `from Q${q} · ` : ""}generated fresh</span>
+      </div>
+      {q && <p style={{ fontSize: 13, color: "#6a6450", margin: "4px 0 0" }}>You missed <strong>Q{q}</strong> ({skill}). Here's a fresh version.</p>}
+      <p style={{ fontSize: 15, margin: "8px 0 12px" }}>Two {type} curves are shown. <strong>Which curve is more {ask}?</strong></p>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxWidth: 440 }}>
+        <line x1={X(0)} y1={Y(0)} x2={X(Qmax)} y2={Y(0)} stroke={NAVY} strokeWidth={1.5} />
+        <line x1={X(0)} y1={Y(0)} x2={X(0)} y2={Y(Pmax)} stroke={NAVY} strokeWidth={1.5} />
+        <text x={X(Qmax)} y={Y(0) + 28} fontSize={12} textAnchor="end" fill={NAVY} fontWeight={600}>Quantity</text>
+        <text x={X(0) - 32} y={Y(Pmax) - 4} fontSize={12} fill={NAVY} fontWeight={600}>Price</text>
+        <line x1={X(lineA[0][0])} y1={Y(lineA[0][1])} x2={X(lineA[1][0])} y2={Y(lineA[1][1])} stroke={cA} strokeWidth={2.5} />
+        <line x1={X(lineB[0][0])} y1={Y(lineB[0][1])} x2={X(lineB[1][0])} y2={Y(lineB[1][1])} stroke={cB} strokeWidth={2.5} />
+        <text x={X(end(lineA)[0]) + 6} y={Y(end(lineA)[1])} fontSize={15} fill={cA} fontWeight={700} stroke="#fff" strokeWidth={3.5} paintOrder="stroke" strokeLinejoin="round">A</text>
+        <text x={X(end(lineB)[0]) + 6} y={Y(end(lineB)[1])} fontSize={15} fill={cB} fontWeight={700} stroke="#fff" strokeWidth={3.5} paintOrder="stroke" strokeLinejoin="round">B</text>
+      </svg>
+      <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+        <button onClick={() => setReveal(!reveal)} style={{ fontFamily: "inherit", fontWeight: 600, fontSize: 13, color: CREAM, background: NAVY, border: "none", padding: "9px 18px", cursor: "pointer" }}>{reveal ? "Hide answer" : "Show answer"}</button>
+        <button onClick={() => { setCfg(makeElCfg()); setReveal(false); }} style={{ fontFamily: "inherit", fontSize: 13, color: NAVY, background: "transparent", border: `1px solid ${NAVY}`, padding: "8px 16px", cursor: "pointer" }}>New graph</button>
+      </div>
+      {reveal && (
+        <p style={{ fontSize: 13.5, marginTop: 12, lineHeight: 1.5 }}>
+          <strong>Curve {answer}</strong> is more {ask} — the {ask === "elastic" ? "flatter" : "steeper"} curve, where a {ask === "elastic" ? "small" : "large"} price change brings a {ask === "elastic" ? "large" : "small"} quantity change.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function pickSD(control) {
+  const ok = SD_POOL.filter((p) => (control === "floor" ? p.mFloor : p.mCeil));
+  return ok[Math.floor(Math.random() * ok.length)];
+}
+
+function ControlGraphPractice({ control, ask, q, skill }) {
+  const [prob, setProb] = useState(() => pickSD(control));
+  const [reveal, setReveal] = useState(false);
+  const { Qe, Pe, a, b, c, d, xint } = prob;
+
+  const P = control === "floor" ? Pe + prob.mFloor : Pe - prob.mCeil;
+  const Qd = (a - P) / b, Qs = (P - c) / d;
+  const traded = Math.min(Qd, Qs);
+  const priceAtTraded = control === "floor" ? c + d * traded : a - b * traded;
+  const bindCurve = control === "floor" ? "supply" : "demand";
+  const dwlBase = Qe - traded;
+  const dwlHeight = control === "floor" ? P - priceAtTraded : priceAtTraded - P;
+  const dwl = 0.5 * dwlBase * dwlHeight;
+  const CSeq = 0.5 * Qe * (a - Pe), PSeq = 0.5 * Qe * (Pe - c);
+
+  // geometry
+  const W = 460, H = 360, mL = 48, mB = 42, mT = 18, mR = 36;
+  const plotW = W - mL - mR, plotH = H - mT - mB;
+  const Qmax = Math.ceil((xint + 1) / 2) * 2, Pmax = Math.ceil((a + 1) / 2) * 2;
+  const X = (q) => mL + (q / Qmax) * plotW;
+  const Y = (p) => mT + plotH - (p / Pmax) * plotH;
+  const QsupEnd = Math.min(Qmax, (Pmax - c) / d);
+  const halo = { stroke: "#fff", strokeWidth: 3, paintOrder: "stroke", strokeLinejoin: "round" };
+  const Dot = ({ q, p, color, label }) => (
+    <g>
+      <circle cx={X(q)} cy={Y(p)} r={4} fill={color} stroke="#fff" strokeWidth={1.4} />
+      {label && <text x={X(q) + 6} y={Y(p) - 6} fontSize={11.5} fontFamily="'IBM Plex Mono', monospace" fill={NAVY} fontWeight={700} {...halo}>{label}</text>}
+    </g>
+  );
+
+  const regenerate = () => { setProb(pickSD(control)); setReveal(false); };
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${GOLD}`, padding: "16px 18px", marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 }}>
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600, fontSize: 19, color: NAVY, margin: 0 }}>
+          Practice on the figure — {control === "floor" ? "price floor" : "price ceiling"}
+        </h3>
+        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#9a906f" }}>
+          {q ? `from Q${q} · ` : ""}correct numbers, generated fresh
+        </span>
+      </div>
+      {q && (
+        <p style={{ fontSize: 13, color: "#6a6450", margin: "4px 0 0" }}>
+          You missed <strong>Q{q}</strong> ({skill}). Here's a fresh figure of the same type to work through.
+        </p>
+      )}
+      <p style={{ fontSize: 14, margin: "8px 0 10px" }}>
+        Using the figure, <strong>{ask}</strong>. Read the marked points off the axes.
+      </p>
+      <div style={{ background: "#faf6ec", border: "1px solid #eadfc4", padding: "10px 12px", fontSize: 13.5, marginBottom: 12, lineHeight: 1.5 }}>
+        <strong>Scenario.</strong> In this market the free-market equilibrium is a price of <strong>${sdFmt(Pe)}</strong> at <strong>{sdFmt(Qe)} units</strong>.
+        The government sets a {control === "floor" ? "price floor" : "price ceiling"} of <strong>${sdFmt(P)}</strong> (the dashed gold line).
+        At that price, quantity demanded is {sdFmt(Qd)} and quantity supplied is {sdFmt(Qs)}, so <strong>{sdFmt(traded)} units</strong> actually trade.
+      </div>
+
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", maxWidth: 460 }}>
+        {/* ticks */}
+        {Array.from({ length: Math.floor(Qmax / 2) }, (_, i) => (i + 1) * 2).map((q) => <line key={"q" + q} x1={X(q)} y1={Y(0)} x2={X(q)} y2={Y(0) + 5} stroke="#b8ad8e" />)}
+        {Array.from({ length: Math.floor(Pmax / 2) }, (_, i) => (i + 1) * 2).map((p) => <line key={"p" + p} x1={X(0)} y1={Y(p)} x2={X(0) - 5} y2={Y(p)} stroke="#b8ad8e" />)}
+        {Array.from({ length: Math.floor(Qmax / 2) }, (_, i) => (i + 1) * 2).map((q) => <text key={"qt" + q} x={X(q)} y={Y(0) + 17} fontSize={12} textAnchor="middle" fill="#666" fontFamily="'IBM Plex Mono', monospace">{q}</text>)}
+        {Array.from({ length: Math.floor(Pmax / 2) }, (_, i) => (i + 1) * 2).map((p) => <text key={"pt" + p} x={X(0) - 8} y={Y(p) + 4} fontSize={12} textAnchor="end" fill="#666" fontFamily="'IBM Plex Mono', monospace">{p}</text>)}
+
+        {/* reveal shading */}
+        {reveal && control === "floor" && (
+          <>
+            <polygon points={`${X(0)},${Y(a)} ${X(0)},${Y(P)} ${X(traded)},${Y(P)}`} fill={CS_FILL} opacity={0.16} />
+            <polygon points={`${X(0)},${Y(P)} ${X(0)},${Y(c)} ${X(traded)},${Y(priceAtTraded)} ${X(traded)},${Y(P)}`} fill={PS_FILL} opacity={0.18} />
+            <polygon points={`${X(traded)},${Y(P)} ${X(traded)},${Y(priceAtTraded)} ${X(Qe)},${Y(Pe)}`} fill={DWL_FILL} opacity={0.26} />
+          </>
+        )}
+        {reveal && control === "ceiling" && (
+          <>
+            <polygon points={`${X(0)},${Y(a)} ${X(0)},${Y(P)} ${X(traded)},${Y(P)} ${X(traded)},${Y(priceAtTraded)}`} fill={CS_FILL} opacity={0.16} />
+            <polygon points={`${X(0)},${Y(P)} ${X(0)},${Y(c)} ${X(traded)},${Y(P)}`} fill={PS_FILL} opacity={0.18} />
+            <polygon points={`${X(traded)},${Y(priceAtTraded)} ${X(traded)},${Y(P)} ${X(Qe)},${Y(Pe)}`} fill={DWL_FILL} opacity={0.26} />
+          </>
+        )}
+
+        {/* axes */}
+        <line x1={X(0)} y1={Y(0)} x2={X(Qmax)} y2={Y(0)} stroke={NAVY} strokeWidth={1.5} />
+        <line x1={X(0)} y1={Y(0)} x2={X(0)} y2={Y(Pmax)} stroke={NAVY} strokeWidth={1.5} />
+        <text x={X(Qmax)} y={Y(0) + 33} fontSize={12} textAnchor="end" fill={NAVY} fontWeight={600}>Quantity</text>
+        <text x={X(0) - 34} y={Y(Pmax) - 4} fontSize={12} fill={NAVY} fontWeight={600}>Price</text>
+
+        {/* curves */}
+        <line x1={X(0)} y1={Y(a)} x2={X(xint)} y2={Y(0)} stroke={DEMAND} strokeWidth={2.5} />
+        <line x1={X(0)} y1={Y(c)} x2={X(QsupEnd)} y2={Y(c + d * QsupEnd)} stroke={SUPPLY} strokeWidth={2.5} />
+        <text x={X(xint) + 7} y={Y(0) - 7} fontSize={14} fill={DEMAND} fontWeight={700} {...halo}>D</text>
+        <text x={X(QsupEnd) + 7} y={Y(c + d * QsupEnd) + 5} fontSize={14} fill={SUPPLY} fontWeight={700} {...halo}>S</text>
+        {/* price-axis intercepts (needed to compute CS and PS) */}
+        <text x={X(0) - 8} y={Y(a) + 4} fontSize={12} textAnchor="end" fill={DEMAND} fontFamily="'IBM Plex Mono', monospace" fontWeight={700} {...halo}>{sdFmt(a)}</text>
+        <text x={X(0) - 8} y={Y(c) + 4} fontSize={12} textAnchor="end" fill={SUPPLY} fontFamily="'IBM Plex Mono', monospace" fontWeight={700} {...halo}>{sdFmt(c)}</text>
+        <Dot q={0} p={a} color={DEMAND} />
+        <Dot q={0} p={c} color={SUPPLY} />
+        <Dot q={xint} p={0} color={DEMAND} />
+
+        {/* equilibrium */}
+        <line x1={X(Qe)} y1={Y(0)} x2={X(Qe)} y2={Y(Pe)} stroke="#bbb" strokeDasharray="4 3" />
+        <line x1={X(0)} y1={Y(Pe)} x2={X(Qe)} y2={Y(Pe)} stroke="#bbb" strokeDasharray="4 3" />
+        <Dot q={Qe} p={Pe} color={NAVY} label={`E (${sdFmt(Qe)}, ${sdFmt(Pe)})`} />
+
+        {/* control */}
+        <line x1={X(0)} y1={Y(P)} x2={X(Qmax)} y2={Y(P)} stroke={GOLD} strokeWidth={2.5} strokeDasharray="6 4" />
+        <text x={X(0) - 8} y={Y(P) + 4} fontSize={12} textAnchor="end" fill="#9a7320" fontFamily="'IBM Plex Mono', monospace" fontWeight={700} {...halo}>{sdFmt(P)}</text>
+        <line x1={X(traded)} y1={Y(priceAtTraded)} x2={X(traded)} y2={Y(0)} stroke="#bbb" strokeDasharray="4 3" />
+        <line x1={X(traded)} y1={Y(priceAtTraded)} x2={X(0)} y2={Y(priceAtTraded)} stroke="#bbb" strokeDasharray="4 3" />
+        <text x={X(traded)} y={Y(0) + 17} fontSize={12} textAnchor="middle" fill={NAVY} fontFamily="'IBM Plex Mono', monospace" fontWeight={700} {...halo}>{sdFmt(traded)}</text>
+        <text x={X(0) - 8} y={Y(priceAtTraded) + 4} fontSize={12} textAnchor="end" fill={NAVY} fontFamily="'IBM Plex Mono', monospace" fontWeight={700} {...halo}>{sdFmt(priceAtTraded)}</text>
+        <Dot q={Qd} p={P} color={DEMAND} label={`Qd=${sdFmt(Qd)}`} />
+        <Dot q={Qs} p={P} color={SUPPLY} label={`Qs=${sdFmt(Qs)}`} />
+        <Dot q={traded} p={priceAtTraded} color={bindCurve === "supply" ? SUPPLY : DEMAND} label={`(${sdFmt(traded)}, $${sdFmt(priceAtTraded)})`} />
+      </svg>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+        <button onClick={() => setReveal(!reveal)} style={{ fontFamily: "inherit", fontWeight: 600, fontSize: 13, color: CREAM, background: NAVY, border: "none", padding: "9px 18px", cursor: "pointer" }}>
+          {reveal ? "Hide answer" : "Show answer"}
+        </button>
+        <button onClick={regenerate} style={{ fontFamily: "inherit", fontSize: 13, color: NAVY, background: "transparent", border: `1px solid ${NAVY}`, padding: "8px 16px", cursor: "pointer" }}>
+          New graph
+        </button>
+      </div>
+
+      {reveal && (
+        <div style={{ marginTop: 12, fontSize: 13.5, lineHeight: 1.6 }}>
+          <div><strong>Equilibrium:</strong> Q* = {sdFmt(Qe)}, P* = ${sdFmt(Pe)} · CS = ${sdFmt(CSeq)}, PS = ${sdFmt(PSeq)}</div>
+          <div><strong>Quantity traded (short side):</strong> {sdFmt(traded)} units at the {control}</div>
+          {control === "floor" ? (
+            <>
+              <div style={{ marginTop: 6 }}><strong>Producer surplus</strong> = rectangle + triangle</div>
+              <div>  rectangle = {sdFmt(traded)} × ${sdFmt(P - priceAtTraded)} = ${sdFmt(traded * (P - priceAtTraded))}</div>
+              <div>  triangle = ½ × {sdFmt(traded)} × ${sdFmt(priceAtTraded - c)} = ${sdFmt(0.5 * traded * (priceAtTraded - c))}</div>
+              <div>  <strong>new PS = ${sdFmt(traded * (P - priceAtTraded) + 0.5 * traded * (priceAtTraded - c))}</strong></div>
+              <div>new CS = ½ × {sdFmt(traded)} × ${sdFmt(a - P)} = ${sdFmt(0.5 * traded * (a - P))}</div>
+            </>
+          ) : (
+            <>
+              <div style={{ marginTop: 6 }}><strong>Consumer surplus</strong> = rectangle + triangle</div>
+              <div>  rectangle = {sdFmt(traded)} × ${sdFmt(priceAtTraded - P)} = ${sdFmt(traded * (priceAtTraded - P))}</div>
+              <div>  triangle = ½ × {sdFmt(traded)} × ${sdFmt(a - priceAtTraded)} = ${sdFmt(0.5 * traded * (a - priceAtTraded))}</div>
+              <div>  <strong>new CS = ${sdFmt(traded * (priceAtTraded - P) + 0.5 * traded * (a - priceAtTraded))}</strong></div>
+              <div>new PS = ½ × {sdFmt(traded)} × ${sdFmt(P - c)} = ${sdFmt(0.5 * traded * (P - c))}</div>
+            </>
+          )}
+          <div style={{ marginTop: 6, color: RED }}><strong>Deadweight loss</strong> = ½ × {sdFmt(dwlBase)} × ${sdFmt(dwlHeight)} = ${sdFmt(dwl)}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RemediationTool() {
+  const [student, setStudent] = useState("");
+  const [view, setView] = useState("student");
+  const [missed, setMissed] = useState(() => new Set());
+  const [planOpen, setPlanOpen] = useState(false);
+  const [practice, setPractice] = useState({}); // lo -> {items} | "failed" | undefined(loading)
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const planRef = useRef(null);
+
+  const toggle = (id) =>
+    setMissed((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  // Weak LOs = every LO attached to a missed checkable item, escalated to the
+  // hardest difficulty seen for that LO, with an exemplar pool for generation.
+  const weakLOs = useMemo(() => {
+    const order = { easy: 0, medium: 1, hard: 2 };
+    const map = {};
+    CHECKABLES.filter((c) => missed.has(c.id)).forEach((c) => {
+      c.los.forEach((lo) => {
+        if (!map[lo]) map[lo] = { lo, diff: c.diff, items: [], exemplars: [] };
+        if (order[c.diff] > order[map[lo].diff]) map[lo].diff = c.diff;
+        map[lo].items.push(c.qn);
+        map[lo].exemplars.push(c.ex);
+      });
+    });
+    return Object.values(map).sort((a, b) => a.lo.localeCompare(b.lo));
+  }, [missed]);
+
+  // Count of missed pure-numerical items → flags a calculation-execution pattern.
+  const numericMisses = useMemo(
+    () => CHECKABLES.filter((c) => c.numeric && missed.has(c.id)).map((c) => c.qn),
+    [missed]
+  );
+  const calcPattern = numericMisses.length >= 2;
+
+  // Price-control surplus misses → serve a real generated graph of the same control type.
+  // Q14 = PS under a price floor; Q17 = DWL under a price ceiling.
+  const graphTriggers = useMemo(() => {
+    const out = [];
+    if (missed.has("q14")) out.push({ kind: "control", q: 14, control: "floor", skill: "producer surplus under a price floor", ask: "calculate the new producer surplus" });
+    if (missed.has("q17")) out.push({ kind: "control", q: 17, control: "ceiling", skill: "deadweight loss under a price ceiling", ask: "calculate the deadweight loss" });
+    if (missed.has("q10b")) out.push({ kind: "elasticity", q: 10, skill: "identifying an elastic or inelastic curve" });
+    return out;
+  }, [missed]);
+
+  // Build the plan instantly from the static variant bank — no API, never fails.
+  // Each weak objective gets the pre-written variants of its missed (non-graph)
+  // questions; objectives whose only misses were graph questions point to the figure.
+  function generate() {
+    if (weakLOs.length === 0) return;
+    setPlanOpen(true);
+    const GRAPH_IDS = new Set(["q14", "q17", "q10b"]);
+    const next = {};
+    weakLOs.forEach((w) => {
+      const missedHere = CHECKABLES.filter((c) => missed.has(c.id) && c.los.includes(w.lo));
+      const items = missedHere
+        .filter((c) => !GRAPH_IDS.has(c.id))
+        .map((c) => VARIANTS[c.id])
+        .filter(Boolean);
+      const hadGraph = missedHere.some((c) => GRAPH_IDS.has(c.id));
+      next[w.lo] = items.length ? items : (hadGraph ? "graph" : "failed");
+    });
+    setPractice(next);
+    setTimeout(() => planRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+  }
+
+  // Build the standalone HTML for the plan (used by both print and download).
+  function planDocHTML() {
+    const node = planRef.current;
+    if (!node) return null;
+    const clone = node.cloneNode(true);
+    clone.querySelectorAll(".noprint, button").forEach((el) => el.remove());
+    return (
+      '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
+      "<title>Study Plan" + (student ? " — " + student : "") + "</title>" +
+      '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">' +
+      "<style>body{background:#fff;color:#23283b;font-family:'IBM Plex Sans',system-ui,sans-serif;margin:0;padding:34px;line-height:1.5;}" +
+      ".wrap{max-width:820px;margin:0 auto;}</style>" +
+      "</head><body><div class=\"wrap\">" + clone.outerHTML + "</div></body></html>"
+    );
+  }
+
+  // Open the plan in a fresh tab and trigger the print dialog (Save as PDF).
+  // A new tab escapes the artifact frame's block on window.print().
+  function printPlan() {
+    const doc = planDocHTML();
+    if (!doc) return;
+    const w = window.open("", "_blank");
+    if (!w) { downloadPlan(); return; } // pop-up blocked → fall back to a file
+    w.document.open();
+    w.document.write(doc);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { try { w.print(); } catch (_) {} }, 500);
+  }
+
+  // Fallback: save the plan as a self-contained HTML file.
+  function downloadPlan() {
+    const doc = planDocHTML();
+    if (!doc) return;
+    const safeName = student ? student.trim().replace(/\s+/g, "-") : "student";
+    const blob = new Blob([doc], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "study-plan-" + safeName + ".html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  // Build a real PDF by snapshotting the rendered plan (figures and all).
+  // Requires html2canvas + jsPDF, which are loaded in the standalone HTML build.
+  async function generatePDF() {
+    const node = planRef.current;
+    if (!node || !window.html2canvas || !window.jspdf) return false;
+    const { jsPDF } = window.jspdf;
+    const canvas = await window.html2canvas(node, {
+      scale: 2,
+      backgroundColor: "#ffffff",
+      useCORS: true,
+      ignoreElements: (el) => (el.classList && el.classList.contains("noprint")) || el.tagName === "BUTTON",
+    });
+    const pdf = new jsPDF({ unit: "pt", format: "letter" });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 28;
+    const imgW = pageW - margin * 2;
+    const imgH = canvas.height * (imgW / canvas.width);
+    const img = canvas.toDataURL("image/jpeg", 0.95);
+    let heightLeft = imgH;
+    let position = margin;
+    pdf.addImage(img, "JPEG", margin, position, imgW, imgH);
+    heightLeft -= pageH - margin * 2;
+    while (heightLeft > 0) {
+      pdf.addPage();
+      position = margin - (imgH - heightLeft);
+      pdf.addImage(img, "JPEG", margin, position, imgW, imgH);
+      heightLeft -= pageH - margin * 2;
+    }
+    const safeName = student ? student.trim().replace(/\s+/g, "-") : "student";
+    pdf.save("study-plan-" + safeName + ".pdf");
+    return true;
+  }
+
+  // Click handler: real PDF when the library is present (standalone HTML),
+  // otherwise fall back to print / file download (in-app preview).
+  function exportPlan() {
+    if (window.html2canvas && window.jspdf) {
+      generatePDF().catch(() => printPlan());
+    } else {
+      printPlan();
+    }
+  }
+
+  const grouped = useMemo(() => {
+    const g = { "6": [], "5": [], "8": [] };
+    QUESTIONS.forEach((q) => g[q.unit].push(q));
+    return g;
+  }, []);
+
+  // Continuous numbering of the text practice questions, so each carries a Q-number
+  // and the answer key at the end can reference them in order.
+  const numbering = useMemo(() => {
+    const map = {}; // `${lo}:${i}` -> running number
+    const key = []; // { n, lo, it }
+    weakLOs.forEach((w) => {
+      const set = practice[w.lo];
+      if (Array.isArray(set)) set.forEach((it, i) => { const n = key.length + 1; map[`${w.lo}:${i}`] = n; key.push({ n, it }); });
+    });
+    return { map, key };
+  }, [weakLOs, practice]);
+
+  const missCount = missed.size;
+
+  return (
+    <div style={{ background: CREAM, minHeight: "100vh", color: INK, fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; }
+        .qrow { transition: background .12s, border-color .12s; }
+        .qrow:hover { background: #fffdf6; }
+        @media print { .noprint { display: none !important; } body { background: #fff; } }
+        button:focus-visible, input:focus-visible { outline: 2px solid ${GOLD}; outline-offset: 2px; }
+      `}</style>
+
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "32px 22px 80px" }}>
+        {/* Masthead */}
+        <header style={{ borderBottom: `3px solid ${NAVY}`, paddingBottom: 18, marginBottom: 8 }}>
+          <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 2, color: GOLD, textTransform: "uppercase" }}>
+            Dr. Tremendous · ARE 201 · Solutions, made visible
+          </div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: 38, color: NAVY, margin: "6px 0 4px", lineHeight: 1.05 }}>
+            Exam 2 Gap Finder
+          </h1>
+          <p className="noprint" style={{ margin: 0, maxWidth: 620, fontSize: 15, color: "#555" }}>
+            Check the questions a student missed. Their weak objectives light up below, each with the exact
+            materials to revisit and fresh practice pitched at the level they actually slipped on.
+          </p>
+        </header>
+
+        {/* View toggle */}
+        <div className="noprint" style={{ display: "flex", gap: 0, margin: "18px 0 4px", border: `1px solid ${NAVY}`, width: "fit-content" }}>
+          {[
+            { k: "student", label: "Student plan" },
+            { k: "design", label: "Exam design" },
+          ].map((t) => (
+            <button
+              key={t.k}
+              onClick={() => setView(t.k)}
+              style={{
+                fontFamily: "'IBM Plex Mono', monospace",
+                fontSize: 12,
+                letterSpacing: 0.5,
+                textTransform: "uppercase",
+                padding: "8px 18px",
+                border: "none",
+                cursor: "pointer",
+                background: view === t.k ? NAVY : "transparent",
+                color: view === t.k ? CREAM : NAVY,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {view === "design" && <DesignPanel />}
+
+        {view === "student" && (
+          <>
+            {/* Student name */}
+        <div className="noprint" style={{ margin: "22px 0 10px", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 1, color: NAVY, textTransform: "uppercase" }}>
+            Student
+          </label>
+          <input
+            value={student}
+            onChange={(e) => setStudent(e.target.value)}
+            placeholder="Name (optional, prints on the plan)"
+            style={{ flex: "1 1 280px", padding: "9px 12px", border: `1px solid #ccc4ad`, background: "#fff", fontSize: 14, fontFamily: "inherit" }}
+          />
+        </div>
+
+        {/* Question checklist */}
+        <div className="noprint">
+          {["6", "5", "8"].map((u) => (
+            <section key={u} style={{ marginTop: 22 }}>
+              <h2 style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, letterSpacing: 1.5, color: NAVY, textTransform: "uppercase", borderBottom: `1px solid ${GOLD}`, paddingBottom: 6, margin: "0 0 4px" }}>
+                {UNIT_NAMES[u]}
+              </h2>
+              {grouped[u].map((q) => {
+                if (q.parts) {
+                  return (
+                    <div key={q.n} style={{ borderBottom: "1px solid #e7e0cd", padding: "8px 10px 6px" }}>
+                      <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginBottom: 4 }}>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500, color: NAVY }}>Q{q.n}</span>
+                        <span style={{ fontSize: 14, color: INK }}>{q.topic}</span>
+                        <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, color: "#9a906f" }}>check each part missed</span>
+                      </div>
+                      {q.parts.map((p) => {
+                        const on = missed.has(p.id);
+                        return (
+                          <label key={p.id} className="qrow" style={{ display: "grid", gridTemplateColumns: "30px 1fr auto", gap: 12, alignItems: "center", padding: "6px 10px 6px 26px", borderLeft: on ? `3px solid ${RED}` : "3px solid transparent", background: on ? "#fbeeea" : "transparent", cursor: "pointer" }}>
+                            <input type="checkbox" checked={on} onChange={() => toggle(p.id)} style={{ width: 16, height: 16, accentColor: RED }} />
+                            <span style={{ fontSize: 13.5 }}>
+                              {p.label}
+                              <span style={{ color: "#9a906f", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, marginLeft: 8 }}>LO {p.los.join(", ")}</span>
+                            </span>
+                            <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: 0.5, textTransform: "uppercase", color: "#fff", background: DIFF_COLOR[p.diff || q.diff], padding: "3px 7px", borderRadius: 2, whiteSpace: "nowrap" }}>
+                              {DIFF_LABEL[p.diff || q.diff]}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                const id = "q" + q.n;
+                const on = missed.has(id);
+                return (
+                  <label key={q.n} className="qrow" style={{ display: "grid", gridTemplateColumns: "30px 44px 1fr auto", gap: 12, alignItems: "center", padding: "9px 10px", borderBottom: "1px solid #e7e0cd", borderLeft: on ? `3px solid ${RED}` : "3px solid transparent", background: on ? "#fbeeea" : "transparent", cursor: "pointer" }}>
+                    <input type="checkbox" checked={on} onChange={() => toggle(id)} style={{ width: 17, height: 17, accentColor: RED }} />
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500, color: NAVY }}>Q{q.n}</span>
+                    <span style={{ fontSize: 14 }}>
+                      {q.topic}
+                      <span style={{ color: "#9a906f", fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, marginLeft: 8 }}>LO {q.los.join(", ")}</span>
+                    </span>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: 0.5, textTransform: "uppercase", color: "#fff", background: DIFF_COLOR[q.diff], padding: "3px 7px", borderRadius: 2, whiteSpace: "nowrap" }}>
+                      {DIFF_LABEL[q.diff]}
+                    </span>
+                  </label>
+                );
+              })}
+            </section>
+          ))}
+        </div>
+
+        {/* Action bar */}
+        <div className="noprint" style={{ position: "sticky", bottom: 0, background: CREAM, borderTop: `2px solid ${NAVY}`, marginTop: 26, padding: "14px 0", display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 13, color: NAVY }}>
+            {missCount} missed · {weakLOs.length} weak objective{weakLOs.length === 1 ? "" : "s"}
+          </span>
+          <button
+            onClick={generate}
+            disabled={missCount === 0 || loading}
+            style={{
+              fontFamily: "'IBM Plex Sans', sans-serif",
+              fontWeight: 600,
+              fontSize: 14,
+              color: missCount === 0 ? "#9a906f" : CREAM,
+              background: missCount === 0 ? "#e7e0cd" : NAVY,
+              border: "none",
+              padding: "11px 22px",
+              cursor: missCount === 0 || loading ? "default" : "pointer",
+              letterSpacing: 0.3,
+            }}
+          >
+            {loading ? "Building study plan…" : "Build study plan"}
+          </button>
+          {missCount > 0 && (
+            <button
+              onClick={() => { setMissed(new Set()); setPlanOpen(false); setPractice({}); setError(""); }}
+              style={{ fontFamily: "inherit", fontSize: 13, color: NAVY, background: "transparent", border: `1px solid ${NAVY}`, padding: "10px 16px", cursor: "pointer" }}
+            >
+              Clear
+            </button>
+          )}
+          {planOpen && !loading && (
+            <button
+              onClick={exportPlan}
+              style={{ fontFamily: "inherit", fontSize: 13, color: NAVY, background: GOLD, border: "none", padding: "11px 18px", cursor: "pointer", fontWeight: 600 }}
+            >
+              Save as PDF
+            </button>
+          )}
+        </div>
+
+        {error && <p style={{ color: RED, fontSize: 14, marginTop: 14 }}>{error}</p>}
+
+        {/* The plan */}
+        {(weakLOs.length > 0 && planOpen) && (
+          <div ref={planRef} style={{ marginTop: 34 }}>
+            <div style={{ borderTop: `3px solid ${NAVY}`, paddingTop: 18 }}>
+              <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 2, color: GOLD, textTransform: "uppercase" }}>
+                Personalized Study Plan{student ? ` · ${student}` : ""}
+              </div>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: 27, color: NAVY, margin: "4px 0 14px" }}>
+                {weakLOs.length} objective{weakLOs.length === 1 ? "" : "s"} to rebuild
+              </h2>
+              <button className="noprint" onClick={exportPlan} style={{ fontFamily: "inherit", fontWeight: 600, fontSize: 13, color: NAVY, background: GOLD, border: "none", padding: "9px 18px", cursor: "pointer", marginBottom: 18 }}>
+                Save as PDF for this student
+              </button>
+            </div>
+
+            {graphTriggers.map((g, i) =>
+              g.kind === "elasticity"
+                ? <ElasticityPractice key={i} q={g.q} skill={g.skill} />
+                : <ControlGraphPractice key={i} control={g.control} ask={g.ask} q={g.q} skill={g.skill} />
+            )}
+
+            {weakLOs.map((w) => {
+              const set = practice[w.lo]; // undefined = loading, "failed" = no practice, object = ready
+              return (
+                <article key={w.lo} style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${DIFF_COLOR[w.diff]}`, padding: "18px 20px", marginBottom: 18 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+                    <h3 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600, fontSize: 20, color: NAVY, margin: 0 }}>
+                      Learning Objective {w.lo}
+                    </h3>
+                    <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "#5e5640" }}>
+                      missed on Q{[...new Set(w.items)].join(", Q")}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 14.5, color: INK, margin: "8px 0 14px", lineHeight: 1.5 }}>{LO_TEXT[w.lo]}</p>
+
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 1, color: NAVY, textTransform: "uppercase", marginBottom: 6 }}>
+                    Revisit these first
+                  </div>
+                  <ul style={{ margin: "0 0 16px", paddingLeft: 18, fontSize: 14, lineHeight: 1.6 }}>
+                    {(LO_MATERIALS[w.lo] || ["See the unit module page on Moodle."]).map((m, i) => <li key={i}>{m}</li>)}
+                  </ul>
+
+                  <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, letterSpacing: 1, color: NAVY, textTransform: "uppercase", marginBottom: 8 }}>
+                    Practice questions
+                  </div>
+                  {Array.isArray(set) ? (
+                    set.map((it, i) => (
+                      <div key={i} style={{ marginBottom: 14, paddingLeft: 12, borderLeft: `2px solid ${GOLD}` }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{numbering.map[`${w.lo}:${i}`]}. {it.stem}</div>
+                        {it.table && it.table.headers && it.table.rows && (
+                          <table style={{ borderCollapse: "collapse", margin: "0 0 8px", fontSize: 13 }}>
+                            <thead>
+                              <tr>
+                                {it.table.headers.map((h, k) => (
+                                  <th key={k} style={{ border: "1px solid #d8cfb4", padding: "4px 12px", textAlign: "left", background: "#f2ecda", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: NAVY }}>{h}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {it.table.rows.map((row, r) => (
+                                <tr key={r}>
+                                  {row.map((cellv, cc) => (
+                                    <td key={cc} style={{ border: "1px solid #e7e0cd", padding: "4px 12px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5 }}>{cellv}</td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                        <ol style={{ margin: 0, paddingLeft: 22, fontSize: 13.5, lineHeight: 1.6, listStyleType: "lower-alpha" }}>
+                          {it.options.map((o, j) => (
+                            <li key={j} style={{ color: INK }}>{o}</li>
+                          ))}
+                        </ol>
+                      </div>
+                    ))
+                  ) : set === "graph" ? (
+                    <p style={{ fontSize: 13.5, color: INK, margin: 0 }}>
+                      Practice this skill on the figure above — it's a graph calculation, so work it on the generated price-control figure.
+                    </p>
+                  ) : set === "failed" ? (
+                    <p style={{ fontSize: 13.5, color: "#5e5640", margin: 0 }}>
+                      A practice variant wasn't generated — the review materials above still target this objective directly.
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: 13.5, color: "#5e5640", margin: 0, fontStyle: "italic" }}>
+                      Generating a variant of the question you missed…
+                    </p>
+                  )}
+                </article>
+              );
+            })}
+
+            {numbering.key.length > 0 && (
+              <div style={{ background: "#fff", border: "1px solid #e7e0cd", borderTop: `4px solid ${NAVY}`, padding: "18px 20px", marginBottom: 18, pageBreakBefore: "always" }}>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, letterSpacing: 2, color: GOLD, textTransform: "uppercase", marginBottom: 4 }}>
+                  Answer key
+                </div>
+                <p style={{ fontSize: 13, color: "#5e5640", margin: "0 0 14px" }}>
+                  Work the questions first, then check here.
+                </p>
+                {numbering.key.map(({ n, it }) => {
+                  const letter = String.fromCharCode(97 + it.correct);
+                  return (
+                    <div key={n} style={{ marginBottom: 11, fontSize: 13.5, lineHeight: 1.5 }}>
+                      <span style={{ fontWeight: 600, color: NAVY }}>{n}. ({letter}) {it.options[it.correct]}</span>
+                      <div style={{ color: INK, fontStyle: "italic", fontSize: 13, marginTop: 2 }}>{it.why}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <p style={{ fontSize: 12, color: "#5e5640", fontFamily: "'IBM Plex Mono', monospace", marginTop: 8 }}>
+              Practice items are generated for concept reps and are not calibrated to predict exam difficulty.
+            </p>
+          </div>
+        )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const _root = ReactDOM.createRoot(document.getElementById('root'));
+_root.render(React.createElement(RemediationTool));
+</script>
+</body>
+</html>
