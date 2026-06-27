@@ -45,10 +45,6 @@
     }
 
     .masthead {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 24px;
-      align-items: end;
       margin-bottom: 18px;
     }
 
@@ -78,39 +74,41 @@
       max-width: 720px;
     }
 
-    .scenario-card {
+    .scenario-banner {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 16px;
+      align-items: center;
       background: rgba(22, 29, 33, 0.86);
       border: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 3px solid var(--gold);
       border-radius: 8px;
-      padding: 18px 16px 16px;
-      width: 300px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: var(--shadow), 0 0 0 1px rgba(241, 195, 106, 0.16), 0 0 36px rgba(241, 195, 106, 0.10);
+      padding: 14px 18px;
+      margin: 16px 0 18px;
+      box-shadow: var(--shadow), 0 0 30px rgba(241, 195, 106, 0.08);
     }
 
-    .scenario-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--gold), var(--benefit));
+    .scenario-tag {
+      background: linear-gradient(135deg, rgba(241, 195, 106, 0.98), rgba(57, 217, 160, 0.9));
+      color: #111718;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 7px 13px;
+      border-radius: 999px;
+      white-space: nowrap;
+      box-shadow: 0 8px 22px rgba(57, 217, 160, 0.18);
     }
 
-    .scenario-card strong {
-      display: block;
-      color: var(--ink);
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
-
-    .scenario-card span {
+    .scenario-text {
       color: var(--muted);
-      display: block;
-      font-size: 13px;
-      line-height: 1.45;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .scenario-text strong {
+      color: var(--ink);
     }
 
     .controls {
@@ -878,15 +876,16 @@
     }
 
     @media (max-width: 940px) {
-      .masthead,
       .controls,
       .task-strip,
       .insight-panel {
         grid-template-columns: 1fr;
       }
 
-      .scenario-card {
-        width: auto;
+      .scenario-banner {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        justify-items: start;
       }
 
       .stakeholder-board {
@@ -920,22 +919,22 @@
 <body>
   <div class="shell">
     <header class="masthead">
-      <div>
-        <div class="eyebrow">Stakeholder Table prototype</div>
-        <h1>Who lights up when policy changes?</h1>
-        <p class="lead">
-          Pick a claim about an agricultural minimum wage. The board flips from quiet to illuminated,
-          showing who benefits, who bears pressure, who has mixed incentives, and whose concerns are missing.
-        </p>
-      </div>
-      <aside class="scenario-card">
-        <strong>Scenario: Agricultural minimum wage</strong>
-        <span>
-          A state considers raising the minimum wage for agricultural labor. Students must keep two markets in view:
-          farm labor first, then possible spillovers into food prices.
-        </span>
-      </aside>
+      <div class="eyebrow">Stakeholder Table prototype</div>
+      <h1>Who lights up when policy changes?</h1>
+      <p class="lead">
+        Pick a claim about an agricultural minimum wage. The board flips from quiet to illuminated,
+        showing who benefits, who bears pressure, who has mixed incentives, and whose concerns are missing.
+      </p>
     </header>
+
+    <section class="scenario-banner" aria-label="Scenario">
+      <span class="scenario-tag">The Scenario</span>
+      <p class="scenario-text">
+        <strong>A state considers raising the minimum wage for agricultural labor.</strong>
+        Keep two markets in view: the farm labor market first, then possible spillovers into food prices.
+        Every claim below is about this same scenario.
+      </p>
+    </section>
 
     <section class="task-strip" aria-label="Activity instructions">
       <div class="task-card">
