@@ -244,6 +244,8 @@
   }
   .draft-cue{font-size:12px;font-weight:700;color:var(--mint)}
   .card.locked .draft-cue{color:#5d5247}
+  .hotflag{font-family:"DM Mono",monospace;font-size:11px;font-weight:500;color:var(--mustard)}
+  .crow-spacer{flex:1}
 
   /* SOLD OUT cards */
   .card.down{overflow:hidden;filter:grayscale(.65);opacity:.72}
@@ -612,6 +614,20 @@ const CHAIN_EVENTS = {
   "Krispy Kreme": {type:"hot",    p:0.45, boost:3, msg:"🔥 The HOT light is ON — everything here is elite right now."},
 };
 
+/* gentle spinner weighting so the chains with the best jokes/jackpots
+   actually show up — fun chains come up a bit more than the plain ones */
+const CHAIN_WEIGHT = {
+  "Krispy Kreme":2.4, "Cook Out":2.2, "Bojangles":1.8, "Chick-fil-A":1.8,
+  "Taco Bell":1.8, "Popeyes":1.6, "McDonald's":1.6, "In-N-Out":1.5,
+};
+function weightedPick(pool){
+  const w=pool.map(c=>CHAIN_WEIGHT[c.name]||1);
+  const sum=w.reduce((a,b)=>a+b,0);
+  let r=Math.random()*sum;
+  for(let i=0;i<pool.length;i++){ if((r-=w[i])<0) return pool[i]; }
+  return pool[pool.length-1];
+}
+
 /* ============================================================ STATE */
 let tray = {};            // pos -> {n, chain, r, pos}
 let skips = 1;
@@ -743,7 +759,7 @@ function spin(useChain){
   // choose a chain that has at least one item for an open slot
   let pool=CHAINS.filter(chainHasAnyOpen);
   if(pool.length===0) pool=CHAINS;
-  const target = useChain || pool[Math.floor(Math.random()*pool.length)];
+  const target = useChain || weightedPick(pool);
 
   // find an index of target deep in the strip, land it under the pointer
   const idxInChains = CHAINS.indexOf(target);
@@ -855,7 +871,6 @@ function openCounter(chain){
     const eligibleSlots=it.s.filter(p=>open.includes(p));
     const draftable = !isDown && eligibleSlots.length>0;
     const isHot = jackpot>0 && !isDown;
-    const shownR = isHot ? Math.min(10, it.r+jackpot) : it.r;
     const card=document.createElement("div");
     card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"")+(isHot?" hot":"");
     const tags=it.s.map(p=>`<span class="pill ${open.includes(p)?"open":""}">${POS_LABEL[p]}</span>`).join("");
@@ -863,13 +878,15 @@ function openCounter(chain){
     if(isDown) cue=`<span class="draft-cue down-why">${outages[i]}</span>`;
     else if(draftable) cue=`<span class="draft-cue">Add →</span>`;
     else cue=`<span class="draft-cue">slot already filled</span>`;
+    // stars stay hidden while drafting — you pick on instinct, the receipt is the reveal
+    const leftFlag = isHot ? `<span class="hotflag">🔥 boosted</span>` : `<span class="crow-spacer"></span>`;
     card.innerHTML=`
       ${isDown?`<span class="stamp">SOLD OUT</span>`:""}
       ${isHot?`<span class="stamp hot">🔥 HOT</span>`:""}
       <div class="cname">${it.n}</div>
       <div class="ctags">${tags}</div>
       <div class="crow">
-        <span class="rating${isHot?' hot':''}">★ ${shownR}/10${isHot&&shownR>it.r?` <span class="boost">▲</span>`:''}</span>
+        ${leftFlag}
         ${cue}
       </div>`;
     if(draftable){
@@ -943,20 +960,20 @@ function labelFor(){
   const pick=a=>a[Math.floor(Math.random()*a.length)];
 
   // priority order: special compositions beat generic tiers
-  if(pct>=.94) return pick(["Drive-Thru Royalty","Certified Menu Hacker","The Spinner Whisperer"]);
-  if(S>=9 && pct>=.78) return "Elite Sauce Merchant";
-  if(distinctChains===5 && pct>=.8) return "Regional Menace";
-  if(DE>=9 && DR>=8) return "Dessert-First Fiend";
-  if(M>=9 && SI>=9) return "Burger-and-Fries Purist";
-  if(maxChainReps>=3) return "Ride-or-Die Loyalist";
-  if(blackoutsSeen>=4) return "Survivor of the Machine";
-  if(spread>=4 && pct>=.66) return "Emotional-Support Combo";
-  if(weakest<=5 && pct>=.7) return "One Tragic Slot From Greatness";
-  if(distinctChains===5) return "Cross-Country Roadtrip";
-  if(pct>=.76) return "Airport Food Court Royalty";
-  if(pct>=.6) return "Honest Gas-Station Meal";
-  if(pct<.5) return pick(["Emergency Tray","Cursed Haul","Deep-Fried Disaster"]);
-  return `The ${pick(COMBO_ADJ)} ${pick(COMBO_NOUN)}`;
+  if(pct>=.94) return pick(["Drive-Thru Royalty","Michelin Drive-Thru Inspector","Certified Tray Architect","The Combo-Meal Connoisseur"]);
+  if(S>=9 && pct>=.78) return pick(["Sauce Sommelier","Elite Sauce Merchant"]);
+  if(distinctChains===5 && pct>=.8) return pick(["Regional Menace","The Interstate Gourmand","Tour de Drive-Thru"]);
+  if(DE>=9 && DR>=8) return pick(["Dessert-First Fiend","Pro-Dessert Lobbyist","Sugar-First Strategist"]);
+  if(M>=9 && SI>=9) return pick(["Burger-and-Fries Classicist","Keeper of the Old Faithful"]);
+  if(maxChainReps>=3) return pick(["Ride-or-Die Loyalist","Brand Loyalist of the Year"]);
+  if(blackoutsSeen>=4) return pick(["Survivor of the Machine","Veteran of the Sold-Out Wars"]);
+  if(spread>=4 && pct>=.66) return pick(["Emotional-Support Combo","Chaotic-Neutral Tray","A Tray of Contradictions"]);
+  if(weakest<=5 && pct>=.7) return pick(["One Tragic Slot From Greatness","So Close, Yet One Slot Away"]);
+  if(distinctChains===5) return pick(["Cross-Country Road Trip","The Scenic Route"]);
+  if(pct>=.76) return pick(["Airport Food Court Royalty","Reliable Crowd-Pleaser","A Solid Tuesday Order"]);
+  if(pct>=.6) return pick(["Honest Gas-Station Meal","The People's Tray","Unpretentious and Proud"]);
+  // low score: celebrate the taste instead of grading it
+  return pick(["Connoisseur of the Underrated","The Crowd Isn't Ready","Certified Contrarian","Acquired Taste","Misunderstood Visionary","Ahead of Your Time","Cursed Haul"]);
 }
 
 const DARES=[
@@ -1143,7 +1160,7 @@ function finish(){
     B:"Strong order. One weak link keeps you humble.",
     C:"It feeds you. Nobody's writing home about it.",
     D:`Structurally a meal. That <b>${weakest.n}</b> is doing you dirty, though.`,
-    F:"You played yourself. Frame it anyway."
+    F:"Objectively chaos. Subjectively iconic. The crowd just isn't ready."
   };
 
   const receipt=POSITIONS.map(p=>{
