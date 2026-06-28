@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
 <title>Drive-Thru Draft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -504,14 +503,10 @@ h1 { color: #f1e3c6 !important; }
 .slot .stamp.hot{ font-size:14px !important; padding:3px 12px !important; top:46% !important; }
 /* 'boosted' flag was unreadable mustard-on-paper — make it a bold burnt orange */
 .hotflag{ color:#c2410c !important; font-weight:800 !important; font-size:12px !important; }
+.lognote{ text-align:center; color:#7a5f50; font-size:11px; font-family:"DM Mono",monospace; letter-spacing:.04em; margin-top:6px; opacity:.85; }
 </style>
 </head>
 <body>
-<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
-   style="position:fixed;top:14px;left:16px;z-index:50;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;background:rgba(20,14,9,.7);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)">
-  <img src="trex.png" alt="" style="height:24px;width:auto;display:block">
-  <span>Dr.Tremendous</span>
-</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="ic-MAIN" viewBox="0 0 24 24">
     <path d="M3.2 9.2C3.2 5.9 7.1 4.2 12 4.2s8.8 1.7 8.8 5H3.2z" fill="currentColor"/>
@@ -590,6 +585,7 @@ h1 { color: #f1e3c6 !important; }
   <div class="result hidden" id="result"></div>
 
   <footer>No refunds · no substitutions</footer>
+  <p class="lognote">Anonymous: your picks are logged to build the crowd ratings.</p>
 </div>
 
 <script>
@@ -801,9 +797,96 @@ const slotsEl=$("slots"), reelEl=$("reel"), spinBtn=$("spinBtn"), skipBtn=$("ski
       skipBadge=$("skipBadge"), roundNum=$("roundNum"), counterStatus=$("counterStatus"),
       reelWindow=$("reelWindow");
 
+/* ============================================================ DATA LOGGING
+   Crowd-stars + revealed-preference capture.
+   - stable item IDs (chain_id + item_id)
+   - two tables: events (one row per decision) + offers (one row per item shown)
+   - anonymous session id, in-memory + CSV/JSON export (works with NO network)
+   - optional Firebase: paste your config below to turn on shared crowd data
+   ============================================================ */
+
+// stable IDs: e.g. mcdonalds__world_famous_fries (never bare "Fries")
+function slug(s){ return s.toLowerCase().replace(/['’.]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,""); }
+CHAINS.forEach(c=>{ c.id=slug(c.name); c.items.forEach(it=>{ it.id=c.id+"__"+slug(it.n); }); });
+
+// shuffle the menu each visit so card position isn't confounded with the item.
+// flip to false if you'd rather keep a fixed menu order (signature item always first).
+const SHUFFLE_MENU = true;
+function shuffled(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// ▼▼▼ PASTE YOUR FIREBASE WEB CONFIG HERE to turn on shared crowd data.
+// Leave apiKey "" to run in LOCAL mode (in-memory + CSV export, no network needed).
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBvnmtHxx9-cMf9q1qLiRG9nbjilZ3EoQY",
+  authDomain: "drivethrudraft.firebaseapp.com",
+  projectId: "drivethrudraft",
+  storageBucket: "drivethrudraft.firebasestorage.app",
+  messagingSenderId: "456514556463",
+  appId: "1:456514556463:web:03a1ce2fb8bf0e379dacda"
+};
+
+const DTD_LOG = (function(){
+  const mem = { events:[], offers:[], sessions:[] };
+  let session_id = null, fb = null, ready = false;
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
+                      : "s_"+Date.now()+"_"+Math.random().toString(36).slice(2));
+  const sid = () => session_id || (session_id = uuid());
+
+  async function initFirebase(){
+    if(!FIREBASE_CONFIG.apiKey) { console.log("[DTD] local mode (no Firebase config) — data kept in-memory; press Shift+D to export CSV"); return; }
+    try{
+      const appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      const fsMod  = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const app = appMod.initializeApp(FIREBASE_CONFIG);
+      fb = { db: fsMod.getFirestore(app), addDoc: fsMod.addDoc, collection: fsMod.collection };
+      ready = true;
+      console.log("[DTD] Firebase logging ON");
+    }catch(e){ console.warn("[DTD] Firebase init failed — staying local:", e); }
+  }
+  async function write(coll, obj){
+    mem[coll].push(obj);
+    if(ready && fb){ try{ await fb.addDoc(fb.collection(fb.db, coll), obj); }
+                     catch(e){ console.warn("[DTD] write failed", coll, e); } }
+  }
+  function toCSV(rows){
+    if(!rows.length) return "";
+    const cols=[...rows.reduce((s,r)=>{Object.keys(r).forEach(k=>s.add(k));return s;}, new Set())];
+    const esc=v=>{ if(v==null)return""; v=Array.isArray(v)?v.join("|"):String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+    return cols.join(",")+"\n"+rows.map(r=>cols.map(c=>esc(r[c])).join(",")).join("\n");
+  }
+  function download(name, text, type){
+    const blob=new Blob([text],{type}); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  return {
+    init(){ initFirebase(); },
+    startGame(){ session_id = uuid(); write("sessions",{session_id, started:Date.now(), completed:false}); },
+    event(ev){ write("events", {session_id:sid(), ts:Date.now(), ...ev}); },
+    offers(rows){ rows.forEach(r=> write("offers", {session_id:sid(), ...r})); },
+    finishSession(s){ write("sessions", {session_id:sid(), completed:true, ts:Date.now(), ...s}); },
+    // display_rating: your anchor dominates early, crowd takes over with volume
+    blend(base, crowdRate, opportunities, k=50){
+      if(!opportunities) return base;
+      const w = opportunities/(opportunities+k);
+      return base*(1-w) + (crowdRate*10)*w;
+    },
+    mem,
+    exportCSV(){ download("dtd-events.csv", toCSV(mem.events), "text/csv");
+                 download("dtd-offers.csv", toCSV(mem.offers), "text/csv"); },
+    exportJSON(){ download("drive-thru-draft-data.json", JSON.stringify(mem,null,2), "application/json"); }
+  };
+})();
+DTD_LOG.init();
+let DTD_currentOffer = null;   // offer context for the chain currently on the counter
+// dev: Shift+D exports the events + offers tables as CSV (for Excel)
+addEventListener("keydown", e=>{ if(e.shiftKey && (e.key==="D"||e.key==="d")) DTD_LOG.exportCSV(); });
+
 /* ============================================================ INIT */
 function init(){
   tray={}; skips=1; dealtChain=null; pendingItem=null; pendingSlots=[]; outages={}; blackoutsSeen=0; jackpot=0; spinning=false;
+  DTD_currentOffer=null;
+  DTD_LOG.startGame();   // new anonymous session per playthrough
   POSITIONS.forEach(p=>tray[p]=null);
   resultEl.classList.add("hidden");
   machineEl.classList.remove("hidden");
@@ -948,6 +1031,13 @@ function landed(chain){
       outages={}; jackpot=0;
       counterEl.classList.add("hidden");
       renderTray();
+      DTD_currentOffer=null;
+      DTD_LOG.event({
+        round_number:filledCount()+1, chain_dealt:chain.name, action_type:"closed",
+        open_slots_before:openPositions(), chosen_item_id:null, chosen_slot:null,
+        hot_light:false, hot_boost:0, skip_available_before:skips, skip_used:false,
+        sold_out_count:0, chain_closed:true, offer_set_size:0
+      });
       msgEl.textContent = ev.msg;          // forced free re-spin, no skip burned
       spinBtn.disabled=false;
       spinBtn.textContent="Re-spin (free)";
@@ -966,6 +1056,18 @@ function landed(chain){
   updateChrome();
   // is anything actually draftable (open slot AND not 86'd)?
   if(!chainHasDraftableNow(chain,outages)){
+    // dead chain: offers were shown but none draftable -> free re-spin (NOT a rejection)
+    if(DTD_currentOffer){
+      const off=DTD_currentOffer;
+      DTD_LOG.offers(off.offers);
+      DTD_LOG.event({
+        round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"free_respin",
+        open_slots_before:off.open_slots_before, chosen_item_id:null, chosen_slot:null,
+        hot_light:off.hot_light, hot_boost:off.hot_boost, skip_available_before:off.skip_available_before,
+        skip_used:false, sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
+      });
+      DTD_currentOffer=null;
+    }
     const downCount=Object.keys(outages).length;
     msgEl.textContent = downCount
       ? `Everything you needed at ${chain.name} is sold out — free re-spin.`
@@ -1021,7 +1123,14 @@ function openCounter(chain){
   counterStatus.innerHTML=statusHTML;
 
   menuEl.innerHTML="";
-  chain.items.forEach((it,i)=>{
+  const order = SHUFFLE_MENU ? shuffled([...chain.items.keys()]) : [...chain.items.keys()];
+  const draftableCount = order.reduce((n,i)=>{
+    const it=chain.items[i]; const down=i in outages;
+    return n + ((!down && it.s.some(p=>open.includes(p))) ? 1 : 0);
+  },0);
+  const offerRows=[];
+  order.forEach((i,displayPos)=>{
+    const it=chain.items[i];
     const isDown = i in outages;
     const eligibleSlots=it.s.filter(p=>open.includes(p));
     const draftable = !isDown && eligibleSlots.length>0;
@@ -1048,12 +1157,27 @@ function openCounter(chain){
       card.onclick=()=>chooseItem(it,chain,eligibleSlots);
     }
     menuEl.appendChild(card);
+    offerRows.push({
+      round_number: filledCount()+1, chain_dealt: chain.name,
+      item_id: it.id, item_name: it.n, eligible_slots: it.s.slice(),
+      available: !isDown, sold_out: isDown, sold_out_reason: isDown?outages[i]:"",
+      draftable, base_rating: it.r, shown_rating: isHot?Math.min(10,it.r+jackpot):it.r,
+      display_position: displayPos, offer_set_size: draftableCount,
+      hot_light: jackpot>0, chosen: false, chosen_slot_if_chosen: ""
+    });
   });
+  // remember this decision's context so we can log whatever the player does next
+  DTD_currentOffer = {
+    round_number: filledCount()+1, chain_dealt: chain.name,
+    open_slots_before: open.slice(), sold_out_count: Object.keys(outages).length,
+    hot_light: jackpot>0, hot_boost: jackpot, skip_available_before: skips,
+    draftable_count: draftableCount, offers: offerRows
+  };
 }
 
 function chooseItem(it,chain,eligibleSlots){
   const boostedR = jackpot>0 ? Math.min(10, it.r+jackpot) : it.r;
-  const item={n:it.n,chain:chain.name,r:boostedR,hot:jackpot>0&&boostedR>it.r};
+  const item={id:it.id,n:it.n,chain:chain.name,r:boostedR,hot:jackpot>0&&boostedR>it.r};
   if(eligibleSlots.length===1){
     placeItem(item,eligibleSlots[0]);
   }else{
@@ -1082,6 +1206,20 @@ function chooseItem(it,chain,eligibleSlots){
 
 function placeItem(item,pos){
   tray[pos]={...item,pos};
+  // ---- log this draft decision (event + full offer set) ----
+  if(DTD_currentOffer){
+    const off=DTD_currentOffer;
+    off.offers.forEach(r=>{ if(r.item_id===item.id){ r.chosen=true; r.chosen_slot_if_chosen=pos; } });
+    DTD_LOG.offers(off.offers);
+    DTD_LOG.event({
+      round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"draft",
+      open_slots_before:off.open_slots_before, chosen_item_id:item.id, chosen_item_name:item.n,
+      chosen_slot:pos, hot_light:off.hot_light, hot_boost:off.hot_boost,
+      skip_available_before:off.skip_available_before, skip_used:false,
+      sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
+    });
+    DTD_currentOffer=null;
+  }
   dealtChain=null;
   jackpot=0;
   pendingItem=null;
@@ -1104,6 +1242,19 @@ function placeItem(item,pos){
 /* ============================================================ SKIP */
 function doSkip(){
   if(skips<=0||spinning) return;
+  // ---- log the skip: whole offer set rejected ----
+  if(DTD_currentOffer){
+    const off=DTD_currentOffer;
+    DTD_LOG.offers(off.offers);
+    DTD_LOG.event({
+      round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"skip",
+      open_slots_before:off.open_slots_before, chosen_item_id:null, chosen_item_name:null,
+      chosen_slot:null, hot_light:off.hot_light, hot_boost:off.hot_boost,
+      skip_available_before:off.skip_available_before, skip_used:true,
+      sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
+    });
+    DTD_currentOffer=null;
+  }
   skips--;
   updateChrome();
   msgEl.textContent="Skipped. New chain coming up…";
@@ -1322,6 +1473,11 @@ function finish(){
 
   const name=labelFor();
   const dare=DARES[Math.floor(Math.random()*DARES.length)];
+
+  // ---- log the completed tray (outcome context) ----
+  const items_by_slot={};
+  POSITIONS.forEach(p=>{ items_by_slot[p]= tray[p] ? tray[p].id : null; });
+  DTD_LOG.finishSession({ final_score:total, grade, final_label:name, items_by_slot, completed:true });
 
   const verdicts={
     S:"A flawless tray. The spinner blinked first.",
