@@ -9,27 +9,26 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --asphalt:#181109;
-    --asphalt2:#221a12;
-    --surface:#2a2118;
-    --surface2:#362c20;
-    --line:#473a2d;
+    --asphalt:#271c11;
+    --asphalt2:#332514;
+    --surface:#3b2c1b;
+    --surface2:#473521;
+    --line:#5a4836;
     --cream:#f7f1e3;
-    --muted:#bcae9b;
+    --muted:#c8baa5;
     --ketchup:#e8392b;
     --ketchup-dim:#a8281f;
     --mustard:#f5b82e;
     --mint:#37d2a0;
-    --shadow:0 18px 40px -18px rgba(0,0,0,.8);
+    --shadow:0 18px 40px -18px rgba(0,0,0,.7);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
     background:
-      radial-gradient(1200px 540px at 50% -4%, rgba(245,184,46,.14) 0%, transparent 58%),
-      radial-gradient(900px 520px at 50% 8%, rgba(232,57,43,.07) 0%, transparent 55%),
-      radial-gradient(1100px 900px at 50% 34%, #2c2117 0%, transparent 62%),
-      #171009;
+      radial-gradient(1300px 620px at 50% -4%, rgba(245,184,46,.22) 0%, transparent 58%),
+      radial-gradient(1000px 520px at 50% 6%, rgba(232,57,43,.10) 0%, transparent 55%),
+      linear-gradient(180deg, #33260f 0%, #2a1f12 45%, #221913 100%);
     background-attachment:fixed;
     color:var(--cream);
     font-family:"DM Sans",system-ui,sans-serif;
@@ -187,7 +186,7 @@
     border-radius:12px;border:1px solid transparent;padding:13px 18px;transition:filter .15s,transform .1s,opacity .15s;
   }
   button:active{transform:translateY(1px)}
-  button:disabled{opacity:.4;cursor:not-allowed}
+  button:disabled{opacity:.55;cursor:not-allowed}
   .btn-spin{flex:1;background:var(--ketchup);color:#fff;box-shadow:0 6px 0 var(--ketchup-dim)}
   .btn-spin:hover:not(:disabled){filter:brightness(1.07)}
   .btn-spin:active:not(:disabled){box-shadow:0 3px 0 var(--ketchup-dim);transform:translateY(3px)}
@@ -358,9 +357,160 @@
 
   .hidden{display:none!important}
   footer{text-align:center;color:#5d5247;font-size:11px;margin-top:24px;font-family:"DM Mono",monospace}
+
+/* ===== THEME: late-night drive-thru — burgundy/ketchup night + cream menu board ===== */
+:root{
+  --asphalt:#1b0d0b; --asphalt2:#24100d;
+  --surface:#2a1310; --surface2:#341711;
+  --line:#59302a;
+  --cream:#f7f1e3;
+  --muted:#d2b7a0;
+  --ketchup:#e8392b; --ketchup-dim:#b32a20;
+  --mustard:#f5b82e; --mint:#37d2a0;
+}
+/* burgundy night background, lit from the top like a menu board */
+body{ background:
+  radial-gradient(1100px 520px at 50% -6%, rgba(245,184,46,.20) 0%, transparent 52%),
+  radial-gradient(900px 460px at 50% 4%, rgba(232,57,43,.14) 0%, transparent 54%),
+  linear-gradient(180deg,#2a0f0c 0%,#160907 78%) !important; color:var(--cream); }
+body::before{ opacity:.05 !important; }
+
+/* bold neon title */
+h1{ color:#f7f1e3 !important; text-shadow:0 0 16px rgba(245,184,46,.35), 0 2px 0 rgba(0,0,0,.6) !important; }
+h1 .red{ color:#ff4634 !important; text-shadow:0 0 22px rgba(232,57,43,.6), 0 2px 0 rgba(0,0,0,.6) !important; }
+.eyebrow{ color:#f8c43e !important; font-size:13px !important; font-weight:700 !important; letter-spacing:.3em !important; text-shadow:0 0 12px rgba(245,184,46,.45) !important; }
+.tag{ color:#d2b7a0 !important; }
+.hero-badge{ background:var(--ketchup) !important; color:#fff !important;
+  box-shadow:0 0 0 3px rgba(232,57,43,.22), 0 8px 18px -8px rgba(232,57,43,.7) !important; }
+footer{ color:#dcc6b4 !important; font-size:12px !important; letter-spacing:.22em !important; text-transform:uppercase !important; font-weight:500 !important; }
+
+/* cream menu-board panels pop on asphalt */
+.tray,.machine{
+  background:#f6edd9 !important; border:1px solid #e2d3b4 !important;
+  box-shadow:0 24px 50px -18px rgba(0,0,0,.75) !important; }
+.tray-title{ color:#9a8048 !important; }
+.skip-badge{ color:#3f2d0c !important; font-weight:800 !important; border-color:#bd9f60 !important; background:rgba(245,184,46,.18) !important; }
+.slot{ background:#ece0c4 !important; border:1px solid #ddcba6 !important; }
+.slot .tab{ background:rgba(0,0,0,.05) !important; border-bottom:1px dashed #ddcba6 !important; }
+.slot .pos, .slot .tab .ico{ color:#9a8048 !important; }
+.slot.filled .tab{ background:rgba(245,184,46,.24) !important; }
+.slot.filled .tab .ico, .slot.filled .pos{ color:#b07d12 !important; }
+.slot .item-name{ color:#1d2123 !important; }
+.slot .item-chain{ color:#6a5526 !important; }
+.slot .empty-hint{ color:#7a5f2e !important; }
+.slot.eligible{ background:#e6f7ef !important;
+  box-shadow:0 0 0 1px var(--mint) inset, 0 0 18px -3px rgba(55,210,160,.5) !important; }
+.slot.eligible .tab .ico{ color:#1f9d76 !important; }
+
+/* spinner: cream board, fades to cream (not dark), bold red pointer */
+.reel-window{ background:#e3d4b4 !important; box-shadow:inset 0 2px 8px rgba(120,90,40,.3) !important; }
+.reel-mask{ background:linear-gradient(90deg,#e3d4b4 0%, transparent 16%, transparent 84%, #e3d4b4 100%) !important; }
+.cell .chip{ background:#fffdf8 !important; color:#1d2123 !important; border-color:#ddcba6 !important; }
+.cell:nth-child(odd) .chip{ border-color:rgba(245,184,46,.5) !important; }
+.cell:nth-child(even) .chip{ border-color:rgba(232,57,43,.45) !important; }
+.pay-zone{ background:linear-gradient(180deg, rgba(245,184,46,.28), rgba(232,57,43,.20)) !important;
+  border-left:1px solid rgba(232,57,43,.5) !important; border-right:1px solid rgba(232,57,43,.5) !important; }
+.pointer{ box-shadow:0 0 14px 2px rgba(232,57,43,.8) !important; }
+.msg{ color:#9a6f12 !important; font-weight:700 !important; }
+.btn-skip{ color:#3f2d0c !important; font-weight:700 !important; border-color:#bd9f60 !important; background:rgba(245,184,46,.16) !important; }
+.btn-skip:hover:not(:disabled){ border-color:#3f2d0c !important; background:rgba(245,184,46,.26) !important; }
+
+/* paper menu cards on the asphalt counter */
+.card{ background:#fffdf8 !important; border:1px solid #e2d3b4 !important;
+  box-shadow:0 12px 26px -12px rgba(0,0,0,.6) !important; }
+.card .cname{ color:#1d2123 !important; }
+.pill{ background:rgba(0,0,0,.05) !important; border-color:#ddcba6 !important; color:#7d7257 !important; }
+.pill.open{ border-color:#1f9d76 !important; color:#11633f !important; background:rgba(55,210,160,.16) !important; }
+.draft-cue{ color:#11633f !important; }
+.card.locked .draft-cue{ color:#8c8064 !important; }
+.rating{ color:#b07d12 !important; border-color:rgba(245,184,46,.5) !important; }
+.counter-status{ background:#f6edd9 !important; border:1px solid #e2d3b4 !important; }
+.counter-status b{ color:#1d2123 !important; }
+.st-need{ color:#6f6750 !important; } .st-need b{ color:#1f9d76 !important; }
+.st-can{ color:#6f6750 !important; } .st-can b{ color:#b07d12 !important; }
+.st-block{ color:#1d2123 !important; }
+.counter-head .chain-name{ color:#f7f1e3 !important; }
+.counter-head .hint{ color:#aeb6b7 !important; }
+
+/* ===== fry-paper warming: cartons & receipt paper, not white cards ===== */
+.tray,
+.machine,
+.counter-status {
+  background: #efe0bf !important;
+  border-color: #d7bd86 !important;
+}
+.slot {
+  background: #cdaa5c !important;
+  border-color: #a9863a !important;
+}
+.card,
+.cell .chip {
+  background: #f4e5c3 !important;
+  border-color: #d7bd86 !important;
+}
+.tray-title {
+  color: #1d1710 !important;
+  font-family: "DM Sans", system-ui, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  letter-spacing: .08em !important;
+}
+.slot .pos,
+.slot .tab .ico {
+  color: #6f5321 !important;
+  font-weight: 800 !important;
+}
+h1 { color: #f1e3c6 !important; }
+/* keep the reel window/edge-fade matching the warmer paper */
+.reel-window { background:#e3cf9f !important; }
+.reel-mask { background:linear-gradient(90deg,#e3cf9f 0%, transparent 16%, transparent 84%, #e3cf9f 100%) !important; }
+/* 86'd cards: keep the reason readable (red), signal 'dead' with color not a filter that greys the red */
+.card.down{ filter:none !important; opacity:1 !important; background:#e7dcc2 !important; border-color:#cdbf9a !important; }
+.card.down .cname{ color:#998e77 !important; }
+.card.down .pill{ opacity:.45 !important; }
+.card.down .rating{ opacity:.45 !important; }
+.down-why{ color:#e8392b !important; font-weight:800 !important; font-size:12.5px !important; max-width:70% !important; }
+/* action buttons match the mono SKIPS badge */
+.btn-spin, .btn-skip{ font-family:"DM Mono", ui-monospace, monospace !important; letter-spacing:.02em !important; font-weight:500 !important; }
+.btn-spin{ font-weight:500 !important; }
+/* tray slot headers read as bold labels, not washed-out text */
+.slot .tab{ background:#6f5321 !important; border-bottom:none !important; padding:7px 9px !important; }
+.slot .pos{ color:#f7e9c8 !important; font-weight:800 !important; font-size:10.5px !important; letter-spacing:.16em !important; }
+.slot .tab .ico{ color:#f7e9c8 !important; }
+.slot.filled .tab{ background:var(--mustard) !important; }
+.slot.filled .pos{ color:#3a2a06 !important; }
+.slot.filled .tab .ico{ color:#3a2a06 !important; }
+.slot .item-name{ font-size:15px !important; font-weight:800 !important; color:#1d1710 !important; }
+/* a HOT-drafted item stays special on the tray — the trophy */
+.slot.hot{ border-color:var(--ketchup) !important;
+  box-shadow:0 0 0 1px var(--mustard) inset, 0 0 22px -4px rgba(245,184,46,.75) !important; }
+.slot.hot .tab{ background:linear-gradient(90deg, var(--mustard), #ff7a1a) !important; }
+.slot.hot .pos, .slot.hot .tab .ico{ color:#3a1c00 !important; }
+.slot.hot .item-chain{ color:#7a3b0a !important; }
+.slot-fire{ margin-left:auto; font-size:13px; line-height:1; filter:drop-shadow(0 0 4px rgba(255,150,40,.8)); }
+/* multi-slot picker takes over the menu area */
+.picker{ background:#efe0bf !important; border:2px dashed #bd9f60 !important; padding:22px 18px !important; text-align:center !important; margin-bottom:0 !important; }
+.picker-q{ font-size:17px !important; color:#2a2014 !important; font-weight:700 !important; line-height:1.4 !important; margin-bottom:16px !important; font-family:"DM Sans",system-ui,sans-serif !important; }
+.picker-q b{ color:#b07d12 !important; }
+.picker-opts{ display:flex !important; flex-wrap:wrap !important; gap:12px !important; justify-content:center !important; }
+.picker-opts button{ background:#6f5321 !important; color:#f7e9c8 !important; border:none !important; font-family:"DM Mono",ui-monospace,monospace !important; font-weight:800 !important; font-size:15px !important; letter-spacing:.12em !important; padding:15px 30px !important; border-radius:10px !important; box-shadow:0 6px 0 #4a3614 !important; }
+.picker-opts button:hover{ background:var(--mustard) !important; color:#3a2a06 !important; box-shadow:0 6px 0 #b07d12 !important; }
+.picker-opts button:active{ transform:translateY(3px) !important; box-shadow:0 3px 0 #4a3614 !important; }
+.picker-back{ display:block !important; margin:16px auto 0 !important; background:none !important; border:none !important; color:#8a7758 !important; font-family:"DM Mono",ui-monospace,monospace !important; font-size:12px !important; text-decoration:underline !important; text-underline-offset:3px !important; padding:6px !important; cursor:pointer !important; box-shadow:none !important; }
+.picker-back:hover{ color:#3f2d0c !important; }
+/* HOT diagonal stamp now rides into the tray slot too */
+.slot{ position:relative !important; overflow:hidden !important; }
+.slot .stamp.hot{ font-size:14px !important; padding:3px 12px !important; top:46% !important; }
+/* 'boosted' flag was unreadable mustard-on-paper — make it a bold burnt orange */
+.hotflag{ color:#c2410c !important; font-weight:800 !important; font-size:12px !important; }
 </style>
 </head>
 <body>
+<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
+   style="position:fixed;top:14px;left:16px;z-index:50;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;background:rgba(20,14,9,.7);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)">
+  <img src="trex.png" alt="" style="height:24px;width:auto;display:block">
+  <span>Dr.Tremendous</span>
+</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="ic-MAIN" viewBox="0 0 24 24">
     <path d="M3.2 9.2C3.2 5.9 7.1 4.2 12 4.2s8.8 1.7 8.8 5H3.2z" fill="currentColor"/>
@@ -397,7 +547,7 @@
     <div class="eyebrow">Round <span id="roundNum">1</span> of 5</div>
     <h1>Drive-Thru <span class="red">Draft</span></h1>
     <div class="hero-badge">5 spins · 1 tray · no mercy</div>
-    <p class="tag">Spin five chains. Draft one item each. Build the best meal the spinner allows — and try not to get stuck.</p>
+    <p class="tag">Five spins. Each one deals you a random chain — draft one item, fill one slot. Build the best tray you can from whatever shows up.</p>
   </header>
 
   <!-- TRAY -->
@@ -699,6 +849,7 @@ function renderTray(){
     const it=tray[pos];
     const div=document.createElement("div");
     div.className="slot "+(it?"filled":"empty");
+    if(it&&it.hot) div.classList.add("hot");
     const canHighlight = !it && eligibleNow &&
       (pendingItem ? pendingSlots.includes(pos) : chainCanFill(dealtChain,pos));
     if(canHighlight) div.classList.add("eligible");
@@ -707,7 +858,7 @@ function renderTray(){
         <span class="pos">${POS_LABEL[pos]}</span>
       </div>`;
     if(it){
-      div.innerHTML=tab+`<div class="body">
+      div.innerHTML=(it.hot?`<span class="stamp hot">🔥 HOT</span>`:"")+tab+`<div class="body">
         <span class="item-name">${it.n}</span>
         <span class="item-chain">${it.chain}</span>
       </div>`;
@@ -838,6 +989,8 @@ function landed(chain){
 /* ============================================================ COUNTER */
 function openCounter(chain){
   counterEl.classList.remove("hidden");
+  menuEl.classList.remove("hidden");
+  pickerEl.classList.add("hidden");
   counterChain.textContent=chain.name;
   const open=openPositions();
 
@@ -903,17 +1056,26 @@ function chooseItem(it,chain,eligibleSlots){
   if(eligibleSlots.length===1){
     placeItem(item,eligibleSlots[0]);
   }else{
-    // ask which slot
+    // multi-slot: take over the menu area so the choice is right where you clicked
     pendingItem=item;
     pendingSlots=eligibleSlots;
+    menuEl.classList.add("hidden");
     pickerEl.classList.remove("hidden");
-    pickerEl.innerHTML=`<p><b>${it.n}</b> fits more than one spot. Where does it go? <span style="color:var(--muted)">(or tap a glowing slot above)</span></p>
-      <div class="picker-opts">${eligibleSlots.map(p=>`<button data-p="${p}">${POS_LABEL[p]}</button>`).join("")}</div>`;
-    pickerEl.querySelectorAll("button").forEach(b=>{
+    pickerEl.innerHTML=`
+      <p class="picker-q"><b>${it.n}</b> fits more than one slot.<br>Where should it go?</p>
+      <div class="picker-opts">${eligibleSlots.map(p=>`<button data-p="${p}">${POS_LABEL[p]}</button>`).join("")}</div>
+      <button class="picker-back" id="pickerBack">← pick a different item</button>`;
+    pickerEl.querySelectorAll(".picker-opts button").forEach(b=>{
       b.onclick=()=>placeItem(item,b.dataset.p);
     });
-    renderTray(); // light up eligible slots
-    pickerEl.scrollIntoView({behavior:"smooth",block:"nearest"});
+    $("pickerBack").onclick=()=>{
+      pendingItem=null; pendingSlots=[];
+      pickerEl.classList.add("hidden");
+      menuEl.classList.remove("hidden");
+      renderTray();
+    };
+    renderTray(); // light up the eligible slots in the tray too
+    pickerEl.scrollIntoView({behavior:"smooth",block:"center"});
   }
 }
 
@@ -1023,11 +1185,14 @@ async function buildShareCanvas(d){
   const c=document.createElement("canvas"); c.width=W; c.height=H;
   const x=c.getContext("2d");
 
-  // background + warm top glow
-  x.fillStyle="#171009"; x.fillRect(0,0,W,H);
+  // background + warm top glow (burgundy night)
+  x.fillStyle="#1a0a08"; x.fillRect(0,0,W,H);
   let g=x.createRadialGradient(cx,-120,80,cx,-120,1000);
-  g.addColorStop(0,"rgba(245,184,46,.16)"); g.addColorStop(1,"rgba(245,184,46,0)");
+  g.addColorStop(0,"rgba(245,184,46,.20)"); g.addColorStop(1,"rgba(245,184,46,0)");
   x.fillStyle=g; x.fillRect(0,0,W,700);
+  let g2=x.createRadialGradient(cx,40,40,cx,40,820);
+  g2.addColorStop(0,"rgba(232,57,43,.16)"); g2.addColorStop(1,"rgba(232,57,43,0)");
+  x.fillStyle=g2; x.fillRect(0,0,W,700);
   x.textBaseline="alphabetic";
 
   // title (two-tone, centered)
