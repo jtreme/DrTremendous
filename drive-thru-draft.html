@@ -335,6 +335,7 @@
   .receipt .r-row.weak{background:rgba(232,57,43,.1);margin:2px -8px;padding:5px 8px;border-radius:4px;border-bottom:none}
   .receipt .r-row:last-child{border-bottom:none}
   .receipt .r-pos{color:#9a8c74;text-transform:uppercase;font-size:9.5px;letter-spacing:.1em}
+  .receipt .r-chain{display:block;color:#9a8c74;font-size:11px;margin-top:1px;padding-left:2px}
   .receipt .r-weak-tag{color:var(--ketchup);font-weight:700}
   .receipt .r-total{display:flex;justify-content:space-between;font-weight:700;padding-top:8px;margin-top:4px;border-top:2px solid #2a2018}
   .result .verdict{font-size:14px;color:var(--cream);margin-bottom:14px}
@@ -1067,7 +1068,7 @@ async function buildShareCanvas(d){
 
   // receipt (cream)
   const rx=150, rw=W-300, ry=640;
-  const rowH=62, headH=58, totH=66;
+  const rowH=62, headH=80, totH=66;
   const rh=headH + 5*rowH + totH + 24;
   x.fillStyle="#fbf6ea"; roundRect(x,rx,ry,rw,rh,10); x.fill();
   // torn edges (triangles)
@@ -1083,15 +1084,17 @@ async function buildShareCanvas(d){
   POSITIONS.forEach(p=>{
     const it=d.tray[p];
     const isWeak = it===d.weakest;
-    if(isWeak){ x.fillStyle="rgba(232,57,43,.12)"; x.fillRect(rx+14,yy-30,rw-28,rowH-10); }
-    x.textAlign="left"; x.font="500 22px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#9a8c74";
-    x.fillText(POS_LABEL[p].toUpperCase(),rx+34,yy-4);
-    x.fillStyle="#2a2018"; x.font="700 27px 'DM Sans', system-ui, sans-serif";
-    let nm=it.n; while(x.measureText(nm).width>rw-300 && nm.length>6){ nm=nm.slice(0,-2); }
+    if(isWeak){ x.fillStyle="rgba(232,57,43,.12)"; x.fillRect(rx+14,yy-32,rw-28,rowH-6); }
+    x.textAlign="left"; x.font="500 20px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#9a8c74";
+    x.fillText(POS_LABEL[p].toUpperCase(),rx+34,yy-10);
+    x.fillStyle="#2a2018"; x.font="700 26px 'DM Sans', system-ui, sans-serif";
+    let nm=it.n; while(x.measureText(nm).width>rw-260 && nm.length>6){ nm=nm.slice(0,-2); }
     if(nm!==it.n) nm=nm.trim()+"…";
-    x.fillText(nm,rx+150,yy-2);
+    x.fillText(nm,rx+150,yy-12);
+    x.font="500 19px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#9a8c74";
+    x.fillText(it.chain,rx+150,yy+13);
     x.textAlign="right"; x.font="500 24px 'DM Mono', ui-monospace, monospace"; x.fillStyle=isWeak?"#e8392b":"#2a2018";
-    x.fillText("★"+it.r,rx+rw-34,yy-2);
+    x.fillText("★"+it.r,rx+rw-34,yy-1);
     yy+=rowH;
   });
   // total
@@ -1167,7 +1170,7 @@ function finish(){
     const it=tray[p];
     const isWeak = it===weakest;
     return `<div class="r-row${isWeak?' weak':''}">
-      <span><span class="r-pos">${POS_LABEL[p]}</span> &nbsp;${it.n}${isWeak?' <span class="r-weak-tag">◄ weak link</span>':''}</span>
+      <span><span class="r-pos">${POS_LABEL[p]}</span> &nbsp;${it.n}${isWeak?' <span class="r-weak-tag">◄ weak link</span>':''}<span class="r-chain">${it.chain}</span></span>
       <span>★${it.r}</span></div>`;
   }).join("");
 
