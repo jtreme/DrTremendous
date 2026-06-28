@@ -1,7 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en"><head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>Stakeholder Heatmap — Who Lights Up When Policy Changes?</title>
   <style>
     :root {
@@ -11,7 +12,7 @@
       --panel-2: #1d272c;
       --line: #344148;
       --ink: #f4efe2;
-      --muted: #aab4b5;
+      --muted: #bdc8c8;
       --gold: #f1c36a;
       --benefit: #39d9a0;
       --complain: #ff6b78;
@@ -201,8 +202,13 @@
     }
 
     .claim-btn.active {
-      background: rgba(241, 195, 106, 0.14);
+      background: rgba(241, 195, 106, 0.20);
       border-color: var(--gold);
+      box-shadow: 0 0 0 1px rgba(241, 195, 106, 0.45), 0 0 22px rgba(241, 195, 106, 0.18);
+    }
+
+    .claim-btn.active span:last-child {
+      opacity: 1;
     }
 
     .claim-btn span:first-child {
@@ -903,9 +909,14 @@
   </style>
 </head>
 <body>
+<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
+   style="position:fixed;top:14px;right:16px;z-index:9999;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);font-family:Georgia,serif;font-weight:700;font-size:15px;background:rgba(16,20,23,.82);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)">
+  <img src="trex.png" alt="" style="height:24px;width:auto;display:block">
+  <span>Dr.Treme<span style="color:var(--gold)">ndous</span></span>
+</a>
   <div class="shell">
     <header class="masthead">
-      <div class="eyebrow">Stakeholder Table prototype</div>
+      <div class="eyebrow">Policy Reasoning Lab</div>
       <h1>Who lights up when policy changes?</h1>
       <p class="lead">
         Pick a claim about an agricultural minimum wage. The board flips from quiet to illuminated,
@@ -968,9 +979,9 @@
         <div class="legend">
           <div class="legend-item"><span class="chip" style="background: var(--benefit)"></span><span>Benefits directly</span></div>
           <div class="legend-item"><span class="chip" style="background: var(--complain)"></span><span>Bears cost or pressure</span></div>
-          <div class="legend-item"><span class="chip" style="background: var(--mixed)"></span><span>Mixed &mdash; helped and hurt at the same time</span></div>
-          <div class="legend-item"><span class="chip" style="background: var(--watch)"></span><span>Depends &mdash; direction unknown until you have evidence</span></div>
-          <div class="legend-item"><span class="chip" style="background: var(--missing)"></span><span>Missing &mdash; not addressed by the claim (stays grey)</span></div>
+          <div class="legend-item"><span class="chip" style="background: var(--mixed)"></span><span>Mixed — helped and hurt at the same time</span></div>
+          <div class="legend-item"><span class="chip" style="background: var(--watch)"></span><span>Depends — direction unknown until you have evidence</span></div>
+          <div class="legend-item"><span class="chip" style="background: var(--missing)"></span><span>Missing — not addressed by the claim (stays grey)</span></div>
         </div>
       </div>
     </section>
@@ -1456,6 +1467,12 @@
       updatePredictionProgress();
       moveGlow();
       chatAnswer.textContent = `${summarizeReveal()} Click any stakeholder tile for the explanation behind its label.`;
+      // Bring the board back into frame so the "lights up" moment is seen, not missed above the fold.
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document.querySelector(".board-wrap").scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : "smooth",
+        block: "center"
+      });
     }
 
     function updatePredictionProgress() {
@@ -1546,6 +1563,11 @@
       scoreBadge.textContent = "Keyword scan only";
       chatAnswer.textContent = "Click any stakeholder tile to see why the keyword scan labeled it that way.";
       moveGlow();
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      document.querySelector(".board-wrap").scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "center"
+      });
     }
 
     function resetBoard() {
@@ -1598,5 +1620,6 @@
   </script>
 
 
-</body>
-</html>
+
+
+</body></html>
