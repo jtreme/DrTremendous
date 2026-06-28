@@ -336,6 +336,8 @@
   .receipt .r-pos{color:#9a8c74;text-transform:uppercase;font-size:9.5px;letter-spacing:.1em}
   .receipt .r-chain{display:block;color:#9a8c74;font-size:11px;margin-top:1px;padding-left:2px}
   .receipt .r-weak-tag{color:var(--ketchup);font-weight:700}
+  .receipt .r-misheard-tag{color:#2f6f7a;font-weight:700;font-size:11px}
+  .receipt .r-flair-tag{color:#b3300f;font-weight:700;font-size:11px;font-style:italic}
   .receipt .r-total{display:flex;justify-content:space-between;font-weight:700;padding-top:8px;margin-top:4px;border-top:2px solid #2a2018}
   .result .verdict{font-size:14px;color:var(--cream);margin-bottom:14px}
   .result .verdict b{color:var(--ketchup)}
@@ -505,6 +507,33 @@ h1 { color: #f1e3c6 !important; }
 .hotflag{ color:#c2410c !important; font-weight:800 !important; font-size:12px !important; }
 .lognote{ text-align:center; color:#7a5f50; font-size:11px; font-family:"DM Mono",monospace; letter-spacing:.04em; margin-top:6px; opacity:.85; }
 .vote-note{ text-align:center; color:#f5b82e; font-size:12.5px; font-family:"DM Mono",ui-monospace,monospace; letter-spacing:.03em; margin:14px auto 2px; max-width:34ch; line-height:1.45; }
+/* mishear marker: distinct teal so it doesn't read as SOLD OUT (red) or HOT (gold) */
+.slot.misheard{ border-color:#2f6f7a !important; box-shadow:0 0 0 1px #5fb0bd inset !important; }
+.slot.misheard .tab{ background:#2f6f7a !important; }
+.slot.misheard .pos, .slot.misheard .tab .ico{ color:#e7f6f8 !important; }
+.slot .stamp.misheard{ background:#2f6f7a !important; color:#eafafc !important; border-color:#1d4a52 !important; font-size:11px !important; padding:3px 9px !important; top:46% !important; }
+.ordered-note{ color:#2f6f7a !important; font-style:italic; }
+/* pay-it-forward: warm green 'on the house' — the kind mirror of the mishear */
+.stamp.treat{ background:linear-gradient(90deg,#2f7d4f,#3da06a) !important; color:#eafff2 !important; border-color:#1d5234 !important; }
+.slot.treat{ border-color:#2f7d4f !important; box-shadow:0 0 0 1px #5cc585 inset, 0 0 20px -6px rgba(60,160,90,.6) !important; }
+.slot.treat .tab{ background:linear-gradient(90deg,#2f7d4f,#3da06a) !important; }
+.slot.treat .pos, .slot.treat .tab .ico{ color:#eafff2 !important; }
+.slot .stamp.treat{ background:linear-gradient(90deg,#2f7d4f,#3da06a) !important; color:#eafff2 !important; border-color:#1d5234 !important; font-size:10.5px !important; padding:3px 9px !important; top:46% !important; }
+.treat-flag{ color:#2f7d4f !important; }
+/* late-night Taco Bell: purple */
+.stamp.late{ background:linear-gradient(90deg,#5b2a8c,#7c3aed) !important; color:#f3e8ff !important; border-color:#3b1a5e !important; }
+.slot.late{ border-color:#7c3aed !important; box-shadow:0 0 0 1px #a78bfa inset, 0 0 20px -6px rgba(124,58,237,.6) !important; }
+.slot.late .tab{ background:linear-gradient(90deg,#5b2a8c,#7c3aed) !important; }
+.slot.late .pos, .slot.late .tab .ico{ color:#f3e8ff !important; }
+.slot .stamp.late{ font-size:10.5px !important; padding:3px 9px !important; top:46% !important; }
+.late-flag{ color:#7c3aed !important; }
+/* Sonic happy hour: cyan */
+.stamp.happy{ background:linear-gradient(90deg,#0e7490,#06b6d4) !important; color:#ecfeff !important; border-color:#0a4d5c !important; }
+.slot.happy{ border-color:#0891b2 !important; box-shadow:0 0 0 1px #67e8f9 inset, 0 0 20px -6px rgba(8,145,178,.6) !important; }
+.slot.happy .tab{ background:linear-gradient(90deg,#0e7490,#06b6d4) !important; }
+.slot.happy .pos, .slot.happy .tab .ico{ color:#ecfeff !important; }
+.slot .stamp.happy{ font-size:10.5px !important; padding:3px 9px !important; top:46% !important; }
+.happy-flag{ color:#0891b2 !important; }
 </style>
 </head>
 <body>
@@ -716,6 +745,51 @@ const CHAINS = [
     {n:"Original Glazed Latte", s:["DRINK"], r:6},
     {n:"Coffee", s:["DRINK"], r:6},
   ]},
+  {name:"Burger King", items:[
+    {n:"Whopper", s:["MAIN"], r:7},
+    {n:"Bacon King", s:["MAIN"], r:7},
+    {n:"Chicken Fries", s:["SIDE","MAIN"], r:6},
+    {n:"French Fries", s:["SIDE"], r:5},
+    {n:"Onion Rings", s:["SIDE"], r:6},
+    {n:"Hershey's Sundae Pie", s:["DESSERT"], r:6},
+    {n:"Frozen Fanta", s:["DRINK"], r:4},
+  ]},
+  {name:"KFC", items:[
+    {n:"Original Recipe Chicken", s:["MAIN"], r:7},
+    {n:"Famous Bowl", s:["MAIN","SIDE"], r:6},
+    {n:"Extra Crispy Tenders", s:["MAIN","SIDE"], r:6},
+    {n:"Mac & Cheese", s:["SIDE"], r:6},
+    {n:"Biscuit", s:["SIDE"], r:7},
+    {n:"Cole Slaw", s:["SIDE"], r:4},
+    {n:"Chocolate Chip Cookie", s:["DESSERT"], r:5},
+  ]},
+  {name:"Shake Shack", items:[
+    {n:"ShackBurger", s:["MAIN"], r:9},
+    {n:"SmokeShack", s:["MAIN"], r:9},
+    {n:"Chicken Shack", s:["MAIN"], r:8},
+    {n:"Crinkle-Cut Fries", s:["SIDE"], r:7},
+    {n:"Cheese Fries", s:["SIDE"], r:8},
+    {n:"Hand-Spun Shake", s:["DESSERT","DRINK"], r:9},
+    {n:"ShackSauce", s:["SAUCE"], r:8},
+  ]},
+  {name:"Five Guys", items:[
+    {n:"Cheeseburger", s:["MAIN"], r:9},
+    {n:"Little Bacon Burger", s:["MAIN"], r:8},
+    {n:"Five Guys Fries", s:["SIDE"], r:9},
+    {n:"Cajun Fries", s:["SIDE"], r:8},
+    {n:"Milkshake", s:["DESSERT","DRINK"], r:8},
+  ]},
+  {name:"Starbucks", items:[
+    {n:"Bacon, Gouda & Egg Sandwich", s:["MAIN"], r:7},
+    {n:"Double-Smoked Bacon, Cheddar & Egg", s:["MAIN"], r:7},
+    {n:"Spinach, Feta & Egg White Wrap", s:["MAIN"], r:6},
+    {n:"Caramel Frappuccino", s:["DRINK","DESSERT"], r:8},
+    {n:"Brown Sugar Oat Shaken Espresso", s:["DRINK"], r:7},
+    {n:"Pumpkin Spice Latte", s:["DRINK"], r:7},
+    {n:"Cake Pop", s:["DESSERT"], r:6},
+    {n:"Cheese Danish", s:["DESSERT"], r:6},
+    {n:"Chocolate Croissant", s:["DESSERT","SIDE"], r:6},
+  ]},
 ];
 
 
@@ -742,6 +816,17 @@ const OUTAGES = {
   "Cook Out::Cook Out Milkshake":    {p:0.14, why:"Shake line's backed up"},
   "Zaxby's::Zax Sauce":              {p:0.15, why:"Out of Zax Sauce"},
   "Taco Bell::Nacho Fries":          {p:0.55, why:"Gone again — limited time only"},
+  "Burger King::Frozen Fanta":       {p:0.22, why:"Machine's down (shocker)"},
+  "Burger King::Onion Rings":        {p:0.15, why:"Fryer's tied up"},
+  "KFC::Famous Bowl":                {p:0.20, why:"Out of gravy"},
+  "KFC::Biscuit":                    {p:0.18, why:"Next batch isn't out yet"},
+  "Starbucks::Pumpkin Spice Latte":  {p:0.25, why:"Not pumpkin season 🍂"},
+  "Starbucks::Cake Pop":             {p:0.20, why:"Last one went to the car ahead of you"},
+  "Starbucks::Bacon, Gouda & Egg Sandwich": {p:0.15, why:"Oven's still warming up"},
+  "Shake Shack::Hand-Spun Shake":    {p:0.12, why:"Custard machine resetting"},
+  "Shake Shack::Cheese Fries":       {p:0.12, why:"Out of cheese sauce"},
+  "Five Guys::Milkshake":            {p:0.12, why:"Mix-in station's closed"},
+  "Five Guys::Cajun Fries":          {p:0.10, why:"Out of Cajun seasoning"},
 };
 const BASELINE_OUT = 0.05;            // everything else: occasionally sells out
 const BASELINE_WHY = ["Sold out for the day","Kitchen's out of it","Just ran out","Not available right now"];
@@ -761,6 +846,19 @@ function outageFor(chainName,item){
 const CHAIN_EVENTS = {
   "Chick-fil-A":  {type:"closed", p:0.20, msg:"It's Sunday — Chick-fil-A is closed. Spin again. (No skip used.)"},
   "Krispy Kreme": {type:"hot",    p:0.45, boost:3, msg:"🔥 The HOT light is ON — everything here is elite right now."},
+  "Starbucks":    {type:"treat",  p:0.25, boost:2, msg:"☕ The car ahead paid it forward — your order's on the house. Whatever you pick comes out a little better."},
+  "Taco Bell":    {type:"latenight", p:0.40, boost:2, minRound:4, msg:"🌙 Late-night Taco Bell hits different. The whole menu's a little better right now."},
+  "Sonic":        {type:"happyhour", p:0.35, boost:2, slots:["DRINK"], msg:"🥤 Sonic Happy Hour — drinks are half price and twice as good."},
+};
+
+/* ============================================================
+   UNRELIABLE CHAINS — the drive-thru mishears your order. ~15% of the time
+   you draft here, the speaker box garbles it and a WORSE item from the same
+   chain (that still fits your slot) lands on your tray instead.
+   Your real pick is still logged as your true preference; the swap is a
+   scoring twist on top, recorded separately. ============================================================ */
+const MISHEAR = {
+  "Burger King":0.15, "KFC":0.15, "Arby's":0.15, "Cook Out":0.15,
 };
 
 /* gentle spinner weighting so the chains with the best jokes/jackpots
@@ -768,6 +866,7 @@ const CHAIN_EVENTS = {
 const CHAIN_WEIGHT = {
   "Krispy Kreme":2.4, "Cook Out":2.2, "Bojangles":1.8, "Chick-fil-A":1.8,
   "Taco Bell":1.8, "Popeyes":1.6, "McDonald's":1.6, "In-N-Out":1.5,
+  "Shake Shack":1.7, "Five Guys":1.7, "Burger King":1.4, "Starbucks":1.3,
 };
 function weightedPick(pool){
   const w=pool.map(c=>CHAIN_WEIGHT[c.name]||1);
@@ -786,7 +885,12 @@ let pendingItem = null;   // item awaiting slot choice
 let pendingSlots = [];    // the open slots that pending item may go in
 let outages = {};         // item index in dealt chain -> blackout reason (this visit)
 let blackoutsSeen = 0;    // tally of 86'd items witnessed across the game
-let jackpot = 0;          // rating boost active this visit (HOT light); 0 = none
+let jackpot = 0;          // rating boost active this visit (HOT light or treat); 0 = none
+let boostKind = null;     // 'hot' | 'treat' | 'latenight' | 'happyhour'
+let boostSlots = null;    // if set, only items filling these slots get the boost (Sonic = DRINK)
+let hotStreak = 0;        // consecutive HOT Krispy Kreme spins; each one climbs the boost
+let misheardCount = 0;    // times the drive-thru garbled your order this game
+let hotStreakHit = false; // did you ever catch a 2+ hot streak this game
 
 const CELL_W = 200;
 
@@ -842,16 +946,60 @@ const DTD_LOG = (function(){
       fb = { db: fsMod.getFirestore(app), addDoc: fsMod.addDoc, collection: fsMod.collection };
       ready = true;
       console.log("[DTD] Firebase logging ON");
+      flushQueue();                       // send anything captured before init finished
     }catch(e){ console.warn("[DTD] Firebase init failed — staying local:", e); }
   }
-  async function write(coll, obj){
-    mem[coll].push(obj);
-    if(ready && fb){ try{ await fb.addDoc(fb.collection(fb.db, coll), obj); }
-                     catch(e){ console.warn("[DTD] write failed", coll, e); } }
+
+  // ---- write queue: never block the UI on the async Firebase import, and never
+  //      lose the early rows (startGame + first decisions) that fire before ready ----
+  const queue = [];
+  let flushing = false;
+  async function send(coll, obj, attempt){
+    attempt = attempt || 0;
+    try{ await fb.addDoc(fb.collection(fb.db, coll), obj); }
+    catch(e){
+      const code = (e && e.code) || "";
+      // permission-denied = rules rejected it (permanent) -> never requeue, it'd loop forever
+      const permanent = code.indexOf("permission-denied") !== -1 || code.indexOf("invalid-argument") !== -1;
+      if(!permanent && attempt < 3){
+        const delay = 1000 * Math.pow(2, attempt);   // 1s, 2s, 4s backoff
+        setTimeout(()=> send(coll, obj, attempt+1), delay);
+      }else{
+        console.warn("[DTD] write failed ("+(permanent?"permanent":"gave up")+")", coll, code||e);
+      }
+    }
+  }
+  async function flushQueue(){
+    if(flushing) return; flushing = true;
+    while(queue.length){ const {coll, obj} = queue.shift(); await send(coll, obj); }
+    flushing = false;
+  }
+
+  // ---- client throttle: cap writes per rolling minute so a stuck/looping or
+  //      lightly-modified client can't flood Firestore. (Not a hard defense —
+  //      Firestore rules + App Check are — but it stops the dumb cases for free.) ----
+  const WRITES_PER_MIN = 120;             // a full game is ~35 writes; 120 is generous
+  let windowStart = Date.now(), windowCount = 0;
+  function throttled(){
+    const now = Date.now();
+    if(now - windowStart > 60000){ windowStart = now; windowCount = 0; }
+    if(windowCount >= WRITES_PER_MIN) return true;
+    windowCount++; return false;
+  }
+
+  function write(coll, obj){
+    mem[coll].push(obj);                  // local mirror always kept (Shift+D still works)
+    if(throttled()) return;               // over the per-minute cap → local only
+    if(ready && fb){ send(coll, obj); }   // live → fire (don't await; non-blocking)
+    else { queue.push({coll, obj}); }     // not ready yet → queue, flushed on init
   }
   function toCSV(rows){
     if(!rows.length) return "";
-    const cols=[...rows.reduce((s,r)=>{Object.keys(r).forEach(k=>s.add(k));return s;}, new Set())];
+    // pin the join keys to the front so Excel work is painless, then the rest in first-seen order
+    const LEAD = ["event_id","session_id","round_number","chain_dealt"];
+    const seen = new Set(), cols = [];
+    LEAD.forEach(k=>{ if(rows.some(r=>k in r)){ cols.push(k); seen.add(k); } });
+    rows.forEach(r=>Object.keys(r).forEach(k=>{ if(!seen.has(k)){ seen.add(k); cols.push(k); } }));
     const esc=v=>{ if(v==null)return""; v=Array.isArray(v)?v.join("|"):String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
     return cols.join(",")+"\n"+rows.map(r=>cols.map(c=>esc(r[c])).join(",")).join("\n");
   }
@@ -862,10 +1010,11 @@ const DTD_LOG = (function(){
   }
   return {
     init(){ initFirebase(); },
-    startGame(){ session_id = uuid(); write("sessions",{session_id, started:Date.now(), completed:false}); },
+    // append-only by design: a 'start' with no matching 'finish' = an abandoned game.
+    startGame(){ session_id = uuid(); write("sessions",{session_id, event_type:"start", ts:Date.now()}); },
     event(ev){ write("events", {session_id:sid(), ts:Date.now(), ...ev}); },
     offers(rows){ rows.forEach(r=> write("offers", {session_id:sid(), ...r})); },
-    finishSession(s){ write("sessions", {session_id:sid(), completed:true, ts:Date.now(), ...s}); },
+    finishSession(s){ write("sessions", {session_id:sid(), event_type:"finish", ts:Date.now(), ...s}); },
     // display_rating: your anchor dominates early, crowd takes over with volume
     blend(base, crowdRate, opportunities, k=50){
       if(!opportunities) return base;
@@ -880,12 +1029,13 @@ const DTD_LOG = (function(){
 })();
 DTD_LOG.init();
 let DTD_currentOffer = null;   // offer context for the chain currently on the counter
+const newEventId = () => (crypto.randomUUID ? crypto.randomUUID() : "e_"+Date.now()+"_"+Math.random().toString(36).slice(2));
 // dev: Shift+D exports the events + offers tables as CSV (for Excel)
 addEventListener("keydown", e=>{ if(e.shiftKey && (e.key==="D"||e.key==="d")) DTD_LOG.exportCSV(); });
 
 /* ============================================================ INIT */
 function init(){
-  tray={}; skips=1; dealtChain=null; pendingItem=null; pendingSlots=[]; outages={}; blackoutsSeen=0; jackpot=0; spinning=false;
+  tray={}; skips=1; dealtChain=null; pendingItem=null; pendingSlots=[]; outages={}; blackoutsSeen=0; jackpot=0; boostKind=null; boostSlots=null; hotStreak=0; misheardCount=0; hotStreakHit=false; spinning=false;
   DTD_currentOffer=null;
   DTD_LOG.startGame();   // new anonymous session per playthrough
   POSITIONS.forEach(p=>tray[p]=null);
@@ -935,6 +1085,10 @@ function renderTray(){
     const div=document.createElement("div");
     div.className="slot "+(it?"filled":"empty");
     if(it&&it.hot) div.classList.add("hot");
+    if(it&&it.treat) div.classList.add("treat");
+    if(it&&it.late) div.classList.add("late");
+    if(it&&it.happy) div.classList.add("happy");
+    if(it&&it.misheard) div.classList.add("misheard");
     const canHighlight = !it && eligibleNow &&
       (pendingItem ? pendingSlots.includes(pos) : chainCanFill(dealtChain,pos));
     if(canHighlight) div.classList.add("eligible");
@@ -943,9 +1097,14 @@ function renderTray(){
         <span class="pos">${POS_LABEL[pos]}</span>
       </div>`;
     if(it){
-      div.innerHTML=(it.hot?`<span class="stamp hot">🔥 HOT</span>`:"")+tab+`<div class="body">
+      div.innerHTML=(it.hot?`<span class="stamp hot">🔥 HOT</span>`:"")
+        +(it.treat?`<span class="stamp treat">☕ ON THE HOUSE</span>`:"")
+        +(it.late?`<span class="stamp late">🌙 LATE NIGHT</span>`:"")
+        +(it.happy?`<span class="stamp happy">🥤 HAPPY HOUR</span>`:"")
+        +(it.misheard?`<span class="stamp misheard">🎙️ MISHEARD</span>`:"")
+        +tab+`<div class="body">
         <span class="item-name">${it.n}</span>
-        <span class="item-chain">${it.chain}</span>
+        <span class="item-chain">${it.chain}${it.misheard?` <span class="ordered-note">· you ordered ${it.intended}</span>`:""}</span>
       </div>`;
     }else{
       const hint = canHighlight ? "open ↓" : "empty";
@@ -1023,20 +1182,23 @@ function landed(chain){
   spinning=false;
   reelWindow.classList.remove("live");
   dealtChain=chain;
-  jackpot=0;
+  jackpot=0; boostKind=null; boostSlots=null;
 
   // chain-level event first (whole-counter closure or jackpot)
   const ev = CHAIN_EVENTS[chain.name];
-  if(ev && Math.random() < ev.p){
+  let rolledHot = false, rolledTreat = false, rolledLate = false, rolledHappy = false;
+  const curRound = filledCount()+1;
+  if(ev && Math.random() < ev.p && !(ev.minRound && curRound < ev.minRound)){
     if(ev.type==="closed"){
-      outages={}; jackpot=0;
+      outages={}; jackpot=0; boostKind=null; hotStreak=0;   // a different chain broke any hot streak
       counterEl.classList.add("hidden");
       renderTray();
       DTD_currentOffer=null;
       DTD_LOG.event({
-        round_number:filledCount()+1, chain_dealt:chain.name, action_type:"closed",
+        event_id:newEventId(), round_number:filledCount()+1, chain_dealt:chain.name, action_type:"closed",
         open_slots_before:openPositions(), chosen_item_id:null, chosen_slot:null,
-        hot_light:false, hot_boost:0, skip_available_before:skips, skip_used:false,
+        hot_light:false, hot_boost:0, boost_kind:null, boost_amount:0, boost_slots:null,
+        skip_available_before:skips, skip_used:false,
         sold_out_count:0, chain_closed:true, offer_set_size:0
       });
       msgEl.textContent = ev.msg;          // forced free re-spin, no skip burned
@@ -1045,9 +1207,24 @@ function landed(chain){
       skipBtn.disabled=true;
       return;
     }
-    if(ev.type==="hot"){
-      jackpot = ev.boost;                  // jackpot: boost every item, no outages
-    }
+    if(ev.type==="hot")       rolledHot = true;
+    if(ev.type==="treat")     rolledTreat = true;
+    if(ev.type==="latenight") rolledLate = true;
+    if(ev.type==="happyhour") rolledHappy = true;
+  }
+  if(rolledHot){
+    hotStreak++;                           // consecutive hot hit: +3, then +4, +5, …
+    if(hotStreak>=2) hotStreakHit=true;
+    jackpot = ev.boost + (hotStreak-1);    // 2nd in a row guarantees 10s, climbs from there
+    boostKind = 'hot';
+  }else if(rolledTreat){
+    jackpot = ev.boost; boostKind = 'treat'; hotStreak = 0;          // pay it forward (+2, whole menu)
+  }else if(rolledLate){
+    jackpot = ev.boost; boostKind = 'latenight'; hotStreak = 0;      // late-night Taco Bell (+2, whole menu)
+  }else if(rolledHappy){
+    jackpot = ev.boost; boostKind = 'happyhour'; boostSlots = ev.slots; hotStreak = 0; // Sonic happy hour (drinks only)
+  }else{
+    hotStreak = 0;                         // any non-boost spin breaks the streak
   }
 
   outages = jackpot ? {} : rollOutages(chain);
@@ -1062,9 +1239,11 @@ function landed(chain){
       const off=DTD_currentOffer;
       DTD_LOG.offers(off.offers);
       DTD_LOG.event({
-        round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"free_respin",
+        event_id:off.event_id, round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"free_respin",
         open_slots_before:off.open_slots_before, chosen_item_id:null, chosen_slot:null,
-        hot_light:off.hot_light, hot_boost:off.hot_boost, skip_available_before:off.skip_available_before,
+        hot_light:off.hot_light, hot_boost:off.hot_boost,
+        boost_kind:off.boost_kind, boost_amount:off.boost_amount, boost_slots:off.boost_slots,
+        skip_available_before:off.skip_available_before,
         skip_used:false, sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
       });
       DTD_currentOffer=null;
@@ -1079,7 +1258,9 @@ function landed(chain){
     return;
   }
   if(jackpot){
-    msgEl.textContent = ev.msg;            // HOT light celebration
+    msgEl.textContent = hotStreak>=2
+      ? `🔥🔥 HOT STREAK ×${hotStreak}! The light's only getting hotter — +${jackpot} boost.`
+      : ev.msg;                            // first HOT light celebration
   }else{
     const downCount=Object.keys(outages).length;
     msgEl.textContent = downCount
@@ -1130,24 +1311,37 @@ function openCounter(chain){
     return n + ((!down && it.s.some(p=>open.includes(p))) ? 1 : 0);
   },0);
   const offerRows=[];
+  const eid = newEventId();   // ties this decision's offers to its event row
   order.forEach((i,displayPos)=>{
     const it=chain.items[i];
     const isDown = i in outages;
     const eligibleSlots=it.s.filter(p=>open.includes(p));
     const draftable = !isDown && eligibleSlots.length>0;
-    const isHot = jackpot>0 && !isDown;
+    const qualifies = !boostSlots || it.s.some(p=>boostSlots.includes(p));
+    const boosted = jackpot>0 && !isDown && qualifies;
+    const isHot = boosted && boostKind==='hot';
+    const isTreat = boosted && boostKind==='treat';
+    const isLate = boosted && boostKind==='latenight';
+    const isHappy = boosted && boostKind==='happyhour';
     const card=document.createElement("div");
-    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"")+(isHot?" hot":"");
+    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"")+(isHot?" hot":"")+(isTreat?" treat":"")+(isLate?" late":"")+(isHappy?" happy":"");
     const tags=it.s.map(p=>`<span class="pill ${open.includes(p)?"open":""}">${POS_LABEL[p]}</span>`).join("");
     let cue;
     if(isDown) cue=`<span class="draft-cue down-why">${outages[i]}</span>`;
     else if(draftable) cue=`<span class="draft-cue">Add →</span>`;
     else cue=`<span class="draft-cue">slot already filled</span>`;
     // stars stay hidden while drafting — you pick on instinct, the receipt is the reveal
-    const leftFlag = isHot ? `<span class="hotflag">🔥 boosted</span>` : `<span class="crow-spacer"></span>`;
+    const leftFlag = isHot ? `<span class="hotflag">🔥 boosted</span>`
+                   : isTreat ? `<span class="hotflag treat-flag">☕ on the house</span>`
+                   : isLate ? `<span class="hotflag late-flag">🌙 late night</span>`
+                   : isHappy ? `<span class="hotflag happy-flag">🥤 happy hour</span>`
+                   : `<span class="crow-spacer"></span>`;
     card.innerHTML=`
       ${isDown?`<span class="stamp">SOLD OUT</span>`:""}
       ${isHot?`<span class="stamp hot">🔥 HOT</span>`:""}
+      ${isTreat?`<span class="stamp treat">☕ ON THE HOUSE</span>`:""}
+      ${isLate?`<span class="stamp late">🌙 LATE NIGHT</span>`:""}
+      ${isHappy?`<span class="stamp happy">🥤 HAPPY HOUR</span>`:""}
       <div class="cname">${it.n}</div>
       <div class="ctags">${tags}</div>
       <div class="crow">
@@ -1159,26 +1353,33 @@ function openCounter(chain){
     }
     menuEl.appendChild(card);
     offerRows.push({
-      round_number: filledCount()+1, chain_dealt: chain.name,
-      item_id: it.id, item_name: it.n, eligible_slots: it.s.slice(),
+      event_id: eid, round_number: filledCount()+1, chain_dealt: chain.name,
+      item_id: it.id, item_name: it.n,
+      item_slots: it.s.slice(), eligible_slots: eligibleSlots.slice(),
       available: !isDown, sold_out: isDown, sold_out_reason: isDown?outages[i]:"",
-      draftable, base_rating: it.r, shown_rating: isHot?Math.min(10,it.r+jackpot):it.r,
+      draftable, base_rating: it.r, shown_rating: boosted?Math.min(10,it.r+jackpot):it.r,
       display_position: displayPos, offer_set_size: draftableCount,
-      hot_light: jackpot>0, chosen: false, chosen_slot_if_chosen: ""
+      hot_light: isHot, boost_kind: boosted?boostKind:null, boost_amount: boosted?jackpot:0,
+      chosen: false, chosen_slot_if_chosen: ""
     });
   });
   // remember this decision's context so we can log whatever the player does next
   DTD_currentOffer = {
-    round_number: filledCount()+1, chain_dealt: chain.name,
+    event_id: eid, round_number: filledCount()+1, chain_dealt: chain.name,
     open_slots_before: open.slice(), sold_out_count: Object.keys(outages).length,
-    hot_light: jackpot>0, hot_boost: jackpot, skip_available_before: skips,
-    draftable_count: draftableCount, offers: offerRows
+    hot_light: boostKind==='hot' && jackpot>0, hot_boost: jackpot,
+    boost_kind: jackpot>0?boostKind:null, boost_amount: jackpot, boost_slots: boostSlots,
+    skip_available_before: skips, draftable_count: draftableCount, offers: offerRows
   };
 }
 
 function chooseItem(it,chain,eligibleSlots){
-  const boostedR = jackpot>0 ? Math.min(10, it.r+jackpot) : it.r;
-  const item={id:it.id,n:it.n,chain:chain.name,r:boostedR,hot:jackpot>0&&boostedR>it.r};
+  const qualifies = !boostSlots || it.s.some(p=>boostSlots.includes(p));
+  const boostedR = (jackpot>0 && qualifies) ? Math.min(10, it.r+jackpot) : it.r;
+  const gotBoost = (jackpot>0 && qualifies) && boostedR>it.r;
+  const item={id:it.id,n:it.n,chain:chain.name,r:boostedR,_base:it.r,
+              hot:gotBoost&&boostKind==='hot', treat:gotBoost&&boostKind==='treat',
+              late:gotBoost&&boostKind==='latenight', happy:gotBoost&&boostKind==='happyhour'};
   if(eligibleSlots.length===1){
     placeItem(item,eligibleSlots[0]);
   }else{
@@ -1206,21 +1407,39 @@ function chooseItem(it,chain,eligibleSlots){
 }
 
 function placeItem(item,pos){
-  tray[pos]={...item,pos};
-  // ---- log this draft decision (event + full offer set) ----
+  // ---- mishear swap: unreliable chains garble your order ----
+  const chainObj = dealtChain;
+  let received = item, misheard = false;
+  const mp = chainObj ? (MISHEAR[chainObj.name]||0) : 0;
+  if(mp && Math.random() < mp){
+    // a strictly worse item from this chain that still fits this slot and isn't sold out
+    const worse = chainObj.items.filter((x,i)=> !(i in outages) && x.s.includes(pos) && x.r < item._base && x.id!==item.id);
+    if(worse.length){
+      const pick = worse[Math.floor(Math.random()*worse.length)];
+      received = {id:pick.id, n:pick.n, chain:item.chain, r:pick.r, _base:pick.r, hot:false, treat:false, late:false, happy:false};
+      misheard = true;
+      misheardCount++;
+    }
+  }
+  tray[pos]={...received, pos, misheard, intended: misheard? item.n : null};
+  // ---- log this draft. The player's TRUE pick is `item` (revealed preference);
+  //      the mishear swap is recorded separately so the crowd data stays honest. ----
   if(DTD_currentOffer){
     const off=DTD_currentOffer;
     off.offers.forEach(r=>{ if(r.item_id===item.id){ r.chosen=true; r.chosen_slot_if_chosen=pos; } });
     DTD_LOG.offers(off.offers);
     DTD_LOG.event({
-      round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"draft",
+      event_id:off.event_id, round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"draft",
       open_slots_before:off.open_slots_before, chosen_item_id:item.id, chosen_item_name:item.n,
       chosen_slot:pos, hot_light:off.hot_light, hot_boost:off.hot_boost,
+      boost_kind:off.boost_kind, boost_amount:off.boost_amount, boost_slots:off.boost_slots,
       skip_available_before:off.skip_available_before, skip_used:false,
-      sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
+      sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count,
+      misheard, received_item_id: misheard?received.id:null, received_item_name: misheard?received.n:null
     });
     DTD_currentOffer=null;
   }
+  const wasMisheard = misheard, gotName = received.n, wantName = item.n;
   dealtChain=null;
   jackpot=0;
   pendingItem=null;
@@ -1234,7 +1453,9 @@ function placeItem(item,pos){
   if(filledCount()>=5){
     finish();
   }else{
-    msgEl.textContent="Locked in. Spin for your next slot.";
+    msgEl.textContent = wasMisheard
+      ? `🎙️ "…one ${gotName}?" — they misheard you. You ordered the ${wantName}. Spin for your next slot.`
+      : "Locked in. Spin for your next slot.";
     spinBtn.disabled=false;
     skipBtn.disabled = skips<=0;
   }
@@ -1248,9 +1469,10 @@ function doSkip(){
     const off=DTD_currentOffer;
     DTD_LOG.offers(off.offers);
     DTD_LOG.event({
-      round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"skip",
+      event_id:off.event_id, round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"skip",
       open_slots_before:off.open_slots_before, chosen_item_id:null, chosen_item_name:null,
       chosen_slot:null, hot_light:off.hot_light, hot_boost:off.hot_boost,
+      boost_kind:off.boost_kind, boost_amount:off.boost_amount, boost_slots:off.boost_slots,
       skip_available_before:off.skip_available_before, skip_used:true,
       sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
     });
@@ -1273,14 +1495,21 @@ function labelFor(){
   const rs=items.map(i=>i.r), spread=Math.max(...rs)-Math.min(...rs);
   const weakest=Math.min(...rs);
   const S=tray.SAUCE.r, M=tray.MAIN.r, SI=tray.SIDE.r, DE=tray.DESSERT.r, DR=tray.DRINK.r;
+  const PREMIUM=new Set(["Shake Shack","Five Guys","In-N-Out","Whataburger"]);
+  const premiumCount=chains.filter(c=>PREMIUM.has(c)).length;
   const pick=a=>a[Math.floor(Math.random()*a.length)];
 
-  // priority order: special compositions beat generic tiers
-  if(pct>=.94) return pick(["Drive-Thru Royalty","Michelin Drive-Thru Inspector","Certified Tray Architect","The Combo-Meal Connoisseur"]);
+  // priority order: special compositions & memorable events beat generic tiers
+  if(pct>=.94) return pick(["Drive-Thru Royalty","Michelin Drive-Thru Inspector","Certified Tray Architect","The Combo-Meal Connoisseur","Five-Star Drive-Off"]);
+  if(misheardCount>=2) return pick(["The Drive-Thru Hates You","Order Accuracy: 0%"]);
+  if(hotStreakHit) return pick(["Rode the Hot Streak","Caught the Light"]);
+  if(maxChainReps>=5) return pick(["Brand-Loyal to a Fault","Five-for-Five Stan"]);
   if(S>=9 && pct>=.78) return pick(["Sauce Sommelier","Elite Sauce Merchant"]);
+  if(premiumCount>=4 && pct>=.78) return pick(["Gourmet Burger Tour","No Notes, Just Beef"]);
   if(distinctChains===5 && pct>=.8) return pick(["Regional Menace","The Interstate Gourmand","Tour de Drive-Thru"]);
   if(DE>=9 && DR>=8) return pick(["Dessert-First Fiend","Pro-Dessert Lobbyist","Sugar-First Strategist"]);
   if(M>=9 && SI>=9) return pick(["Burger-and-Fries Classicist","Keeper of the Old Faithful"]);
+  if(misheardCount>=1) return pick(["Lost in Translation","Speaker-Box Victim"]);
   if(maxChainReps>=3) return pick(["Ride-or-Die Loyalist","Brand Loyalist of the Year"]);
   if(blackoutsSeen>=4) return pick(["Survivor of the Machine","Veteran of the Sold-Out Wars"]);
   if(spread>=4 && pct>=.66) return pick(["Emotional-Support Combo","Chaotic-Neutral Tray","A Tray of Contradictions"]);
@@ -1289,7 +1518,7 @@ function labelFor(){
   if(pct>=.76) return pick(["Airport Food Court Royalty","Reliable Crowd-Pleaser","A Solid Tuesday Order"]);
   if(pct>=.6) return pick(["Honest Gas-Station Meal","The People's Tray","Unpretentious and Proud"]);
   // low score: celebrate the taste instead of grading it
-  return pick(["Connoisseur of the Underrated","The Crowd Isn't Ready","Certified Contrarian","Acquired Taste","Misunderstood Visionary","Ahead of Your Time","Cursed Haul"]);
+  return pick(["Connoisseur of the Underrated","The Crowd Isn't Ready","Certified Contrarian","Acquired Taste","Misunderstood Visionary","Ahead of Your Time","Cursed Haul","Menu Anarchist"]);
 }
 
 const DARES=[
@@ -1411,6 +1640,11 @@ async function buildShareCanvas(d){
     x.fillText(nm,rx+150,yy-12);
     x.font="500 19px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#9a8c74";
     x.fillText(it.chain,rx+150,yy+13);
+    if(it.id==='arbys__classic_roast_beef'){
+      const cw=x.measureText(it.chain).width;
+      x.font="italic 600 18px 'DM Sans', system-ui, sans-serif"; x.fillStyle="#b3300f";
+      x.fillText("🥩 The Meat Mountain",rx+150+cw+14,yy+13);
+    }
     x.textAlign="right"; x.font="500 24px 'DM Mono', ui-monospace, monospace"; x.fillStyle=isWeak?"#e8392b":"#2a2018";
     x.fillText("★"+it.r,rx+rw-34,yy-1);
     yy+=rowH;
@@ -1478,7 +1712,7 @@ function finish(){
   // ---- log the completed tray (outcome context) ----
   const items_by_slot={};
   POSITIONS.forEach(p=>{ items_by_slot[p]= tray[p] ? tray[p].id : null; });
-  DTD_LOG.finishSession({ final_score:total, grade, final_label:name, items_by_slot, completed:true });
+  DTD_LOG.finishSession({ final_score:total, grade, final_label:name, items_by_slot });
 
   const verdicts={
     S:"A flawless tray. The spinner blinked first.",
@@ -1493,7 +1727,7 @@ function finish(){
     const it=tray[p];
     const isWeak = it===weakest;
     return `<div class="r-row${isWeak?' weak':''}">
-      <span><span class="r-pos">${POS_LABEL[p]}</span> &nbsp;${it.n}${isWeak?' <span class="r-weak-tag">◄ weak link</span>':''}<span class="r-chain">${it.chain}</span></span>
+      <span><span class="r-pos">${POS_LABEL[p]}</span> &nbsp;${it.n}${it.id==='arbys__classic_roast_beef'?' <span class="r-flair-tag">🥩 The Meat Mountain</span>':''}${isWeak?' <span class="r-weak-tag">◄ weak link</span>':''}${it.misheard?' <span class="r-misheard-tag">🎙️ misheard</span>':''}<span class="r-chain">${it.chain}${it.misheard?` · you ordered ${it.intended}`:''}</span></span>
       <span>★${it.r}</span></div>`;
   }).join("");
 
