@@ -166,7 +166,7 @@
     text-decoration: none; color: inherit;
     border: 1px solid var(--rule);
     border-radius: 4px; position: relative;
-    min-height: 320px;
+    min-height: 320px; overflow: hidden;
     transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   }
   .tool:hover {
@@ -217,6 +217,59 @@
   }
   .tool-launch::after { content: '→'; color: var(--gold); transition: transform 0.2s; }
   .tool:hover .tool-launch::after { transform: translateX(5px); }
+
+  /* Preview window: poster on load, clip plays on hover */
+  .tool-preview {
+    position: relative;
+    margin: -36px -32px 22px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--cream-deep);
+    border-bottom: 1px solid var(--rule);
+  }
+  .tool-preview .tp-poster,
+  .tool-preview .tp-video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .tool-preview .tp-video { opacity: 0; transition: opacity 0.3s ease; }
+  .tool:hover .tool-preview .tp-video { opacity: 1; }
+  /* portrait (mobile-format) clips: letterbox instead of crop */
+  .tool-preview.portrait { background: #120c07; }
+  .tool-preview.portrait .tp-poster,
+  .tool-preview.portrait .tp-video { object-fit: contain; }
+  .tp-what {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 22px 14px 11px;
+    background: linear-gradient(transparent, rgba(20, 27, 52, 0.86));
+    color: #fff; font-size: 12.5px; line-height: 1.4;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .tool:hover .tp-what { opacity: 1; transform: none; }
+  .tp-what b {
+    display: block; margin-bottom: 2px;
+    color: var(--gold-soft); font-weight: 700;
+    font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  /* coming-soon poster */
+  .tool-soon { overflow: hidden; }
+  .tool-soon .soon-preview {
+    position: relative; margin: -24px -22px 16px;
+    aspect-ratio: 16 / 9; overflow: hidden;
+    border-bottom: 1px dashed rgba(20, 27, 52, 0.22);
+  }
+  .tool-soon .soon-preview img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; filter: grayscale(0.3) brightness(0.92);
+  }
+  .tool-soon .soon-preview .soon-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--navy); color: var(--cream);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 5px 9px; border-radius: 2px;
+  }
 
   .tools-coming {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
@@ -375,6 +428,11 @@
       <div class="group-label">Featured Teaching Tools <span class="lede">· Start Here</span></div>
       <div class="tools-live">
         <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/paw-plan.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/paw-plan.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Build a four-year plan, semester by semester.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Advising · Live</div>
           </div>
@@ -389,6 +447,11 @@
         </a>
 
         <a href="multicollinearity.html" class="tool">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/multicollinearity.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/multicollinearity.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Crank the correlation, draw samples, watch β̂ swing.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Visualizer · Live</div>
           </div>
@@ -403,6 +466,11 @@
         </a>
 
         <a href="sound-toy.html" class="tool">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/sound-toy.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/sound-toy.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Drag the price through shortage, equilibrium, surplus.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Sound Toy · Live</div>
           </div>
@@ -417,6 +485,11 @@
         </a>
 
         <a href="drowning-skyline.html" class="tool">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/drowning-skyline.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/drowning-skyline.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Raise the waterline and watch the short firms drown.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Simulation · Live</div>
           </div>
@@ -431,6 +504,11 @@
         </a>
 
         <a href="aisle-economics.html" class="tool">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/aisle-economics.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/aisle-economics.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Open a product to split its price: farm vs. marketing.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Simulation · Live</div>
           </div>
@@ -600,6 +678,11 @@
         </a>
 
         <a href="stakeholder-heatmap.html" class="tool">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/stakeholder-heatmap.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/stakeholder-heatmap.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Predict each stakeholder, then reveal the board.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Simulation · Live</div>
           </div>
@@ -718,6 +801,11 @@
       <div class="group-label">Just for Fun</div>
       <div class="tools-live">
         <a href="drive-thru-draft.html" target="_blank" rel="noopener" class="tool">
+          <div class="tool-preview portrait">
+            <img class="tp-poster" src="previews/drive-thru-draft.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/drive-thru-draft.mp4" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Spin five chains, draft a five-item tray, get a grade.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Game · Live</div>
           </div>
@@ -743,6 +831,16 @@
     </div>
 
     <div class="tools-coming">
+      <div class="tool-soon">
+        <div class="soon-preview">
+          <img src="previews/grain-throne.jpg" alt="The Grain Throne — coming soon">
+          <span class="soon-badge">Coming Soon</span>
+        </div>
+        <div class="tool-title-sm">The Grain Throne</div>
+        <div class="tool-desc-sm">Choose a coalition, face pressure, and survive the Farm Bill — a journey through 90 years of US agricultural policy.</div>
+        <div class="tool-course-sm">Ag Policy · Simulation</div>
+      </div>
+
       <div class="tool-soon">
         <div class="tool-tag">Coming Soon</div>
         <div class="tool-title-sm">The Margin &amp; Bookmark</div>
@@ -796,6 +894,16 @@
   </footer>
 
 </div>
+
+<script>
+  // Preview clips: play on hover, reset on leave (poster shows otherwise)
+  document.querySelectorAll('.tool').forEach(function (card) {
+    var v = card.querySelector('.tp-video');
+    if (!v) return;
+    card.addEventListener('mouseenter', function () { var p = v.play(); if (p) p.catch(function () {}); });
+    card.addEventListener('mouseleave', function () { v.pause(); v.currentTime = 0; });
+  });
+</script>
 
 </body>
 </html>

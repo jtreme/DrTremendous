@@ -326,48 +326,30 @@
     }
 
     .board-marquee {
-      align-items: center;
-      background:
-        linear-gradient(90deg, rgba(241,195,106,0.13), rgba(255,255,255,0.045), rgba(89,184,255,0.10));
-      border: 1px solid rgba(241, 195, 106, 0.24);
-      border-radius: 8px;
-      display: grid;
-      gap: 12px;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      display: flex;
+      justify-content: center;
       margin-bottom: 14px;
-      padding: 10px 12px;
       position: relative;
       z-index: 1;
     }
 
-    .marquee-bulbs {
-      display: flex;
-      gap: 6px;
-    }
-
-    .bulb {
-      background: rgba(255,255,255,0.20);
-      border-radius: 999px;
-      box-shadow: 0 0 12px rgba(255,255,255,0.12);
-      height: 8px;
-      width: 8px;
-    }
-
-    .bulb:nth-child(2) { background: rgba(57,217,160,0.82); box-shadow: 0 0 16px rgba(57,217,160,0.56); }
-    .bulb:nth-child(4) { background: rgba(255,107,120,0.78); box-shadow: 0 0 16px rgba(255,107,120,0.50); }
-    .bulb:nth-child(6) { background: rgba(89,184,255,0.78); box-shadow: 0 0 16px rgba(89,184,255,0.50); }
-
     .marquee-title {
-      font-size: 13px;
-      font-weight: 950;
-      letter-spacing: 0.16em;
-      text-align: center;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, rgba(241, 195, 106, 0.98), rgba(57, 217, 160, 0.9));
+      color: #111718;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
+      text-align: center;
+      padding: 8px 16px;
+      border-radius: 999px;
+      box-shadow: 0 8px 22px rgba(57, 217, 160, 0.18);
     }
 
-    .marquee-title span {
-      color: var(--gold);
-    }
+    .marquee-title span { color: #111718; }
 
     .stakeholder-board {
       display: grid;
@@ -986,24 +968,16 @@
         <div class="legend">
           <div class="legend-item"><span class="chip" style="background: var(--benefit)"></span><span>Benefits directly</span></div>
           <div class="legend-item"><span class="chip" style="background: var(--complain)"></span><span>Bears cost or pressure</span></div>
-          <div class="legend-item"><span class="chip" style="background: var(--mixed)"></span><span>Mixed or conditional effect</span></div>
-          <div class="legend-item"><span class="chip" style="background: var(--watch)"></span><span>Depends / needs evidence</span></div>
-          <div class="legend-item"><span class="chip" style="background: var(--missing)"></span><span>Missing from the claim</span></div>
+          <div class="legend-item"><span class="chip" style="background: var(--mixed)"></span><span>Mixed &mdash; helped and hurt at the same time</span></div>
+          <div class="legend-item"><span class="chip" style="background: var(--watch)"></span><span>Depends &mdash; direction unknown until you have evidence</span></div>
+          <div class="legend-item"><span class="chip" style="background: var(--missing)"></span><span>Missing &mdash; not addressed by the claim (stays grey)</span></div>
         </div>
       </div>
     </section>
 
     <section class="board-wrap" aria-label="Stakeholder heatmap">
       <div class="board-marquee">
-        <div class="marquee-bulbs" aria-hidden="true">
-          <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
-          <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
-        </div>
-        <div class="marquee-title">Who <span>benefits</span>? Who <span>bears pressure</span>? Who is <span>missing</span>?</div>
-        <div class="marquee-bulbs" aria-hidden="true">
-          <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
-          <span class="bulb"></span><span class="bulb"></span><span class="bulb"></span>
-        </div>
+        <div class="marquee-title">Who benefits? Who bears pressure? Who is missing?</div>
       </div>
       <div class="stakeholder-board" id="board">
           <article class="stakeholder dim" data-id="worker">
@@ -1377,7 +1351,7 @@
           </div>
         ` : "";
         return `
-          <article class="stakeholder ${lit ? `lit ${status}` : "dim"}" data-id="${s.id}" ${cardAction}>
+          <article class="stakeholder ${lit ? (status === "missing" ? "dim missing" : `lit ${status}`) : "dim"}" data-id="${s.id}" ${cardAction}>
             <div class="portrait"><div class="avatar">${s.face}</div></div>
             <div class="stakeholder-body">
               <div class="role-row">

@@ -259,6 +259,21 @@
     box-shadow:0 3px 12px rgba(0,0,0,.55);
     animation:stampIn .35s cubic-bezier(.3,1.4,.5,1) both;
   }
+  /* HOT-light jackpot cards */
+  .card.hot{
+    border-color:var(--mustard);
+    background:linear-gradient(180deg, #3a2c14, #2a2012);
+    box-shadow:0 0 0 1px rgba(245,184,46,.5) inset, 0 0 22px -6px rgba(245,184,46,.7);
+  }
+  .card.hot .cname{color:#ffe7a8}
+  .rating.hot{color:#1a140a;background:var(--mustard);border-color:var(--mustard);font-weight:700}
+  .rating .boost{color:var(--mint);font-weight:700}
+  .stamp.hot{
+    background:var(--mustard);color:#1a140a;
+    border-color:#fff5dd;
+    transform:translate(-50%,-50%) rotate(-9deg);
+    box-shadow:0 3px 14px rgba(245,184,46,.6);
+  }
 
   /* slot picker */
   .picker{
@@ -331,6 +346,12 @@
   .btn-share.pulse{animation:pulse .4s ease}
   .btn-again{background:transparent;color:var(--cream);border-color:var(--line);font-size:14px}
   .btn-again:hover{border-color:var(--cream)}
+  .btn-copytext{
+    display:block;margin:12px auto 0;background:none;border:none;
+    color:var(--muted);font-family:"DM Mono",monospace;font-size:12px;
+    text-decoration:underline;text-underline-offset:3px;padding:6px;cursor:pointer;
+  }
+  .btn-copytext:hover{color:var(--cream)}
 
   .hidden{display:none!important}
   footer{text-align:center;color:#5d5247;font-size:11px;margin-top:24px;font-family:"DM Mono",monospace}
@@ -368,11 +389,6 @@
     <ellipse cx="12" cy="8.9" rx="4.4" ry="1.3" fill="var(--asphalt2)"/>
   </symbol>
 </svg>
-<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
-   style="position:fixed;top:14px;left:16px;z-index:50;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;background:rgba(20,14,9,.7);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)">
-  <img src="trex.png" alt="" style="height:24px;width:auto;display:block">
-  <span>Dr.Tremendous</span>
-</a>
 <div class="wrap">
   <header>
     <div class="eyebrow">Round <span id="roundNum">1</span> of 5</div>
@@ -419,7 +435,7 @@
   <!-- RESULT -->
   <div class="result hidden" id="result"></div>
 
-  <footer>No refunds · no substitutions · v0.1</footer>
+  <footer>No refunds · no substitutions</footer>
 </div>
 
 <script>
@@ -508,7 +524,49 @@ const CHAINS = [
     {n:"Dr Pepper Shake", s:["DESSERT","DRINK"], r:7},
     {n:"Spicy Ketchup", s:["SAUCE"], r:7},
   ]},
+  {name:"Cook Out", items:[
+    {n:"Cookout Style Burger", s:["MAIN"], r:8},
+    {n:"BBQ Sandwich", s:["MAIN"], r:8},
+    {n:"Hush Puppies", s:["SIDE"], r:8},
+    {n:"Quesadilla", s:["SIDE","MAIN"], r:7},
+    {n:"Cook Out Milkshake", s:["DESSERT","DRINK"], r:10},
+    {n:"Cheerwine", s:["DRINK"], r:8},
+    {n:"Cook Out Sauce", s:["SAUCE"], r:8},
+  ]},
+  {name:"Bojangles", items:[
+    {n:"Cajun Filet Biscuit", s:["MAIN"], r:9},
+    {n:"Supremes Tenders", s:["MAIN","SIDE"], r:8},
+    {n:"Bo-Tato Rounds", s:["SIDE"], r:8},
+    {n:"Dirty Rice", s:["SIDE"], r:7},
+    {n:"Legendary Sweet Tea", s:["DRINK"], r:9},
+    {n:"Bo-Berry Biscuit", s:["DESSERT"], r:8},
+    {n:"Bo's Sauce", s:["SAUCE"], r:7},
+  ]},
+  {name:"Zaxby's", items:[
+    {n:"Chicken Finger Plate", s:["MAIN"], r:3},
+    {n:"Nibblers", s:["MAIN","SIDE"], r:2},
+    {n:"Fried White Cheddar Bites", s:["SIDE"], r:3},
+    {n:"Crinkle Fries", s:["SIDE"], r:2},
+    {n:"Zax Sauce", s:["SAUCE"], r:9},
+    {n:"Sweet Tea", s:["DRINK"], r:5},
+  ]},
+  {name:"Hardee's", items:[
+    {n:"Original Thickburger", s:["MAIN"], r:8},
+    {n:"Famous Star", s:["MAIN"], r:7},
+    {n:"Hand-Breaded Tenders", s:["MAIN","SIDE"], r:7},
+    {n:"Curly Fries", s:["SIDE"], r:8},
+    {n:"Hand-Scooped Shake", s:["DESSERT","DRINK"], r:8},
+    {n:"Cinnamon Roll", s:["DESSERT"], r:7},
+  ]},
+  {name:"Krispy Kreme", items:[
+    {n:"Original Glazed", s:["DESSERT"], r:7},
+    {n:"Chocolate Iced Kreme-Filled", s:["DESSERT"], r:7},
+    {n:"Glazed Doughnut Holes", s:["DESSERT","SIDE"], r:6},
+    {n:"Original Glazed Latte", s:["DRINK"], r:6},
+    {n:"Coffee", s:["DRINK"], r:6},
+  ]},
 ];
+
 
 const COMBO_ADJ = ["Greasy","Golden","Forbidden","Regional","Unstoppable","Cursed","Elite","Drive-Thru","Late-Night","Highway"];
 const COMBO_NOUN = ["Gauntlet","Special","Order","Lineup","Tray","Combo","Situation","Haul","Run","Masterpiece"];
@@ -529,6 +587,10 @@ const OUTAGES = {
   "Chick-fil-A::Frosted Lemonade":   {p:0.12, why:"Lemonade machine down"},
   "In-N-Out::Neapolitan Shake":      {p:0.10, why:"Shake machine acting up"},
   "Arby's::Jamocha Shake":           {p:0.12, why:"Shake machine down"},
+  "Bojangles::Cajun Filet Biscuit":  {p:0.28, why:"Out of biscuits 'til the next batch"},
+  "Cook Out::Cook Out Milkshake":    {p:0.14, why:"Shake line's backed up"},
+  "Zaxby's::Zax Sauce":              {p:0.15, why:"Out of Zax Sauce"},
+  "Taco Bell::Nacho Fries":          {p:0.55, why:"Gone again — limited time only"},
 };
 const BASELINE_OUT = 0.05;            // everything else: occasionally sells out
 const BASELINE_WHY = ["Sold out for the day","Kitchen's out of it","Just ran out","Not available right now"];
@@ -539,6 +601,17 @@ function outageFor(chainName,item){
   return {p:BASELINE_OUT, why:BASELINE_WHY[Math.floor(Math.random()*BASELINE_WHY.length)]};
 }
 
+/* ============================================================
+   CHAIN-LEVEL EVENTS — fire occasionally when you land on the chain.
+   "closed"  = whole counter shut, forced free re-spin (no skip burned).
+   "hot"     = jackpot: every item on the chain gets a rating boost.
+   Rare overall because you only land on any one chain now and then.
+   ============================================================ */
+const CHAIN_EVENTS = {
+  "Chick-fil-A":  {type:"closed", p:0.20, msg:"It's Sunday — Chick-fil-A is closed. Spin again. (No skip used.)"},
+  "Krispy Kreme": {type:"hot",    p:0.45, boost:3, msg:"🔥 The HOT light is ON — everything here is elite right now."},
+};
+
 /* ============================================================ STATE */
 let tray = {};            // pos -> {n, chain, r, pos}
 let skips = 1;
@@ -548,6 +621,7 @@ let pendingItem = null;   // item awaiting slot choice
 let pendingSlots = [];    // the open slots that pending item may go in
 let outages = {};         // item index in dealt chain -> blackout reason (this visit)
 let blackoutsSeen = 0;    // tally of 86'd items witnessed across the game
+let jackpot = 0;          // rating boost active this visit (HOT light); 0 = none
 
 const CELL_W = 200;
 
@@ -561,7 +635,7 @@ const slotsEl=$("slots"), reelEl=$("reel"), spinBtn=$("spinBtn"), skipBtn=$("ski
 
 /* ============================================================ INIT */
 function init(){
-  tray={}; skips=1; dealtChain=null; pendingItem=null; pendingSlots=[]; outages={}; blackoutsSeen=0; spinning=false;
+  tray={}; skips=1; dealtChain=null; pendingItem=null; pendingSlots=[]; outages={}; blackoutsSeen=0; jackpot=0; spinning=false;
   POSITIONS.forEach(p=>tray[p]=null);
   resultEl.classList.add("hidden");
   machineEl.classList.remove("hidden");
@@ -696,7 +770,27 @@ function landed(chain){
   spinning=false;
   reelWindow.classList.remove("live");
   dealtChain=chain;
-  outages=rollOutages(chain);
+  jackpot=0;
+
+  // chain-level event first (whole-counter closure or jackpot)
+  const ev = CHAIN_EVENTS[chain.name];
+  if(ev && Math.random() < ev.p){
+    if(ev.type==="closed"){
+      outages={}; jackpot=0;
+      counterEl.classList.add("hidden");
+      renderTray();
+      msgEl.textContent = ev.msg;          // forced free re-spin, no skip burned
+      spinBtn.disabled=false;
+      spinBtn.textContent="Re-spin (free)";
+      skipBtn.disabled=true;
+      return;
+    }
+    if(ev.type==="hot"){
+      jackpot = ev.boost;                  // jackpot: boost every item, no outages
+    }
+  }
+
+  outages = jackpot ? {} : rollOutages(chain);
   blackoutsSeen += Object.keys(outages).length;
   renderTray();
   openCounter(chain);
@@ -712,10 +806,14 @@ function landed(chain){
     skipBtn.disabled=true;
     return;
   }
-  const downCount=Object.keys(outages).length;
-  msgEl.textContent = downCount
-    ? `Dealt: ${chain.name}. Heads up — ${downCount} item${downCount>1?"s":""} sold out today.`
-    : `Dealt: ${chain.name}. Pick one item.`;
+  if(jackpot){
+    msgEl.textContent = ev.msg;            // HOT light celebration
+  }else{
+    const downCount=Object.keys(outages).length;
+    msgEl.textContent = downCount
+      ? `Dealt: ${chain.name}. Heads up — ${downCount} item${downCount>1?"s":""} sold out today.`
+      : `Dealt: ${chain.name}. Pick one item.`;
+  }
   spinBtn.disabled=true;
   skipBtn.disabled = skips<=0;
 }
@@ -756,8 +854,10 @@ function openCounter(chain){
     const isDown = i in outages;
     const eligibleSlots=it.s.filter(p=>open.includes(p));
     const draftable = !isDown && eligibleSlots.length>0;
+    const isHot = jackpot>0 && !isDown;
+    const shownR = isHot ? Math.min(10, it.r+jackpot) : it.r;
     const card=document.createElement("div");
-    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"");
+    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"")+(isHot?" hot":"");
     const tags=it.s.map(p=>`<span class="pill ${open.includes(p)?"open":""}">${POS_LABEL[p]}</span>`).join("");
     let cue;
     if(isDown) cue=`<span class="draft-cue down-why">${outages[i]}</span>`;
@@ -765,10 +865,11 @@ function openCounter(chain){
     else cue=`<span class="draft-cue">slot already filled</span>`;
     card.innerHTML=`
       ${isDown?`<span class="stamp">SOLD OUT</span>`:""}
+      ${isHot?`<span class="stamp hot">🔥 HOT</span>`:""}
       <div class="cname">${it.n}</div>
       <div class="ctags">${tags}</div>
       <div class="crow">
-        <span class="rating">★ ${it.r}/10</span>
+        <span class="rating${isHot?' hot':''}">★ ${shownR}/10${isHot&&shownR>it.r?` <span class="boost">▲</span>`:''}</span>
         ${cue}
       </div>`;
     if(draftable){
@@ -779,7 +880,8 @@ function openCounter(chain){
 }
 
 function chooseItem(it,chain,eligibleSlots){
-  const item={n:it.n,chain:chain.name,r:it.r};
+  const boostedR = jackpot>0 ? Math.min(10, it.r+jackpot) : it.r;
+  const item={n:it.n,chain:chain.name,r:boostedR,hot:jackpot>0&&boostedR>it.r};
   if(eligibleSlots.length===1){
     placeItem(item,eligibleSlots[0]);
   }else{
@@ -800,6 +902,7 @@ function chooseItem(it,chain,eligibleSlots){
 function placeItem(item,pos){
   tray[pos]={...item,pos};
   dealtChain=null;
+  jackpot=0;
   pendingItem=null;
   pendingSlots=[];
   pickerEl.classList.add("hidden");
@@ -843,16 +946,16 @@ function labelFor(){
   if(pct>=.94) return pick(["Drive-Thru Royalty","Certified Menu Hacker","The Spinner Whisperer"]);
   if(S>=9 && pct>=.78) return "Elite Sauce Merchant";
   if(distinctChains===5 && pct>=.8) return "Regional Menace";
-  if(DE>=9 && DR>=8) return "Dessert-First Degenerate";
+  if(DE>=9 && DR>=8) return "Dessert-First Fiend";
   if(M>=9 && SI>=9) return "Burger-and-Fries Purist";
   if(maxChainReps>=3) return "Ride-or-Die Loyalist";
   if(blackoutsSeen>=4) return "Survivor of the Machine";
-  if(spread>=4 && pct>=.66) return "Emotionally Unstable Combo";
+  if(spread>=4 && pct>=.66) return "Emotional-Support Combo";
   if(weakest<=5 && pct>=.7) return "One Tragic Slot From Greatness";
   if(distinctChains===5) return "Cross-Country Roadtrip";
   if(pct>=.76) return "Airport Food Court Royalty";
   if(pct>=.6) return "Honest Gas-Station Meal";
-  if(pct<.5) return pick(["Emergency Tray","Cursed Haul","A Cry For Help, Battered & Fried"]);
+  if(pct<.5) return pick(["Emergency Tray","Cursed Haul","Deep-Fried Disaster"]);
   return `The ${pick(COMBO_ADJ)} ${pick(COMBO_NOUN)}`;
 }
 
@@ -862,6 +965,163 @@ const DARES=[
   "Run it back — beat your own grade.",
   "Screenshot it or it didn't happen.",
 ];
+
+/* ============================================================ SHARE IMAGE
+   Hand-drawn on a canvas so it looks identical everywhere, needs no
+   library, and works offline. Produces a PNG to share or download.
+   ============================================================ */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function wrapLines(ctx,text,maxW){
+  const words=text.split(" "); const lines=[]; let line="";
+  for(const w of words){
+    const t=line?line+" "+w:w;
+    if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=w; }
+    else line=t;
+  }
+  if(line) lines.push(line);
+  return lines;
+}
+async function buildShareCanvas(d){
+  // make sure the display fonts are ready before drawing text
+  try{
+    await Promise.all([
+      document.fonts.load("400 200px Anton"),
+      document.fonts.load("500 24px 'DM Mono'"),
+      document.fonts.load("700 26px 'DM Sans'"),
+      document.fonts.load("400 27px 'DM Sans'")
+    ]);
+    await document.fonts.ready;
+  }catch(e){}
+
+  const W=1080, H=1500, cx=W/2;
+  const c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d");
+
+  // background + warm top glow
+  x.fillStyle="#171009"; x.fillRect(0,0,W,H);
+  let g=x.createRadialGradient(cx,-120,80,cx,-120,1000);
+  g.addColorStop(0,"rgba(245,184,46,.16)"); g.addColorStop(1,"rgba(245,184,46,0)");
+  x.fillStyle=g; x.fillRect(0,0,W,700);
+  x.textBaseline="alphabetic";
+
+  // title (two-tone, centered)
+  x.font="400 64px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  const t1="DRIVE-THRU ", t2="DRAFT";
+  const w1=x.measureText(t1).width, w2=x.measureText(t2).width;
+  let tx=cx-(w1+w2)/2;
+  x.textAlign="left";
+  x.fillStyle="#f7f1e3"; x.fillText(t1,tx,150);
+  x.fillStyle="#e8392b"; x.fillText(t2,tx+w1,150);
+
+  // ORDER COMPLETE
+  x.textAlign="center"; x.fillStyle="#f5b82e";
+  x.font="500 24px 'DM Mono', ui-monospace, monospace";
+  if("letterSpacing" in x) x.letterSpacing="8px";
+  x.fillText("ORDER COMPLETE",cx,205);
+  if("letterSpacing" in x) x.letterSpacing="0px";
+
+  // grade (ghost + bright)
+  x.textAlign="center";
+  x.font="400 330px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  x.fillStyle="rgba(245,184,46,.08)";
+  x.fillText(d.grade,cx,460);
+  x.font="400 190px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  x.fillStyle="#f5b82e";
+  x.fillText(d.grade,cx,440);
+
+  // label badge
+  x.font="400 36px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  const lw=x.measureText(d.name.toUpperCase()).width;
+  const bw=lw+56, bx=cx-bw/2, by=485, bh=58;
+  x.fillStyle="#f5b82e"; roundRect(x,bx,by,bw,bh,bh/2); x.fill();
+  x.fillStyle="#1a140a"; x.fillText(d.name.toUpperCase(),cx,by+42);
+
+  // score line
+  x.font="500 24px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#bcae9b";
+  x.fillText(`CROWD SCORE  ${d.total} / 50`,cx,600);
+
+  // receipt (cream)
+  const rx=150, rw=W-300, ry=640;
+  const rowH=62, headH=58, totH=66;
+  const rh=headH + 5*rowH + totH + 24;
+  x.fillStyle="#fbf6ea"; roundRect(x,rx,ry,rw,rh,10); x.fill();
+  // torn edges (triangles)
+  x.fillStyle="#fbf6ea";
+  for(let i=0;i<rw;i+=24){
+    x.beginPath(); x.moveTo(rx+i,ry); x.lineTo(rx+i+12,ry-12); x.lineTo(rx+i+24,ry); x.closePath(); x.fill();
+    x.beginPath(); x.moveTo(rx+i,ry+rh); x.lineTo(rx+i+12,ry+rh+12); x.lineTo(rx+i+24,ry+rh); x.closePath(); x.fill();
+  }
+  // receipt header
+  x.fillStyle="#2a2018"; x.textAlign="center"; x.font="700 26px 'DM Mono', ui-monospace, monospace";
+  x.fillText("— YOUR TRAY —",cx,ry+40);
+  let yy=ry+headH+8;
+  POSITIONS.forEach(p=>{
+    const it=d.tray[p];
+    const isWeak = it===d.weakest;
+    if(isWeak){ x.fillStyle="rgba(232,57,43,.12)"; x.fillRect(rx+14,yy-30,rw-28,rowH-10); }
+    x.textAlign="left"; x.font="500 22px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#9a8c74";
+    x.fillText(POS_LABEL[p].toUpperCase(),rx+34,yy-4);
+    x.fillStyle="#2a2018"; x.font="700 27px 'DM Sans', system-ui, sans-serif";
+    let nm=it.n; while(x.measureText(nm).width>rw-300 && nm.length>6){ nm=nm.slice(0,-2); }
+    if(nm!==it.n) nm=nm.trim()+"…";
+    x.fillText(nm,rx+150,yy-2);
+    x.textAlign="right"; x.font="500 24px 'DM Mono', ui-monospace, monospace"; x.fillStyle=isWeak?"#e8392b":"#2a2018";
+    x.fillText("★"+it.r,rx+rw-34,yy-2);
+    yy+=rowH;
+  });
+  // total
+  x.strokeStyle="#2a2018"; x.lineWidth=3;
+  x.beginPath(); x.moveTo(rx+24,yy-18); x.lineTo(rx+rw-24,yy-18); x.stroke();
+  x.textAlign="left"; x.font="700 28px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#2a2018";
+  x.fillText("TOTAL",rx+34,yy+24);
+  x.textAlign="right";
+  x.fillText(`${d.total}/50 · ${d.grade}`,rx+rw-34,yy+24);
+
+  // verdict (wrapped)
+  let vy=ry+rh+70;
+  x.textAlign="center"; x.fillStyle="#f7f1e3"; x.font="400 27px 'DM Sans', system-ui, sans-serif";
+  wrapLines(x,d.verdict,W-220).forEach(ln=>{ x.fillText(ln,cx,vy); vy+=38; });
+
+  // dare + brand
+  vy+=24;
+  x.fillStyle="#f5b82e"; x.font="500 24px 'DM Mono', ui-monospace, monospace";
+  x.fillText(d.dare,cx,vy);
+  vy+=52;
+  x.font="400 30px 'Anton', Impact, 'Arial Narrow', sans-serif"; x.fillStyle="#7d6f5c";
+  x.fillText("DRIVE-THRU DRAFT",cx,vy);
+
+  return c;
+}
+
+async function shareTray(btn,d){
+  let canvas;
+  try{ canvas=await buildShareCanvas(d); }
+  catch(e){ btn.textContent="Couldn't build image"; return; }
+  canvas.toBlob(async (blob)=>{
+    if(!blob){ btn.textContent="Couldn't build image"; return; }
+    const file=new File([blob],"drive-thru-draft.png",{type:"image/png"});
+    // mobile: native share sheet with the image; desktop: download the PNG
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:"Drive-Thru Draft", text:`${d.name} — Grade ${d.grade}. ${d.dare}`}); }
+      catch(e){ /* user dismissed */ }
+    }else{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download="drive-thru-draft.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      btn.textContent="Saved ✓"; btn.classList.add("pulse");
+      setTimeout(()=>{ btn.textContent="Share my tray"; btn.classList.remove("pulse"); },1800);
+    }
+  },"image/png");
+}
 
 function finish(){
   machineEl.classList.add("hidden");
@@ -882,7 +1142,7 @@ function finish(){
     A:"Genuinely elite. You'd defend this in a parking lot.",
     B:"Strong order. One weak link keeps you humble.",
     C:"It feeds you. Nobody's writing home about it.",
-    D:`Structurally a meal. Spiritually, that <b>${weakest.n}</b> is a cry for help.`,
+    D:`Structurally a meal. That <b>${weakest.n}</b> is doing you dirty, though.`,
     F:"You played yourself. Frame it anyway."
   };
 
@@ -907,20 +1167,24 @@ function finish(){
     <div class="verdict">${verdicts[grade]}</div>
     <div class="dare">${dare}</div>
     <div class="result-btns">
-      <button class="btn-share" id="shareBtn">Copy my tray</button>
+      <button class="btn-share" id="shareBtn">Share my tray</button>
       <button class="btn-again" id="againBtn">Run it back</button>
-    </div>`;
+    </div>
+    <button class="btn-copytext" id="copyBtn">Copy as text instead</button>`;
   resultEl.classList.remove("hidden");
   resultEl.scrollIntoView({behavior:"smooth",block:"start"});
 
+  const shareData={grade,name,total,dare,weakest,tray:{...tray},verdict:verdicts[grade].replace(/<[^>]+>/g,"")};
+
   $("againBtn").onclick=init;
-  $("shareBtn").onclick=()=>{
+  $("shareBtn").onclick=()=>{ const b=$("shareBtn"); b.textContent="Building…"; shareTray(b,shareData); };
+  $("copyBtn").onclick=()=>{
     const txt=`${name} — Grade ${grade} (${total}/50)\n`+
       POSITIONS.map(p=>`${POS_LABEL[p]}: ${tray[p].n} (${tray[p].chain})`).join("\n")+
-      `\n${dare} 🍟 Drive-Thru Draft`;
+      `\n${dare} · Drive-Thru Draft`;
     navigator.clipboard?.writeText(txt).then(
-      ()=>{ const b=$("shareBtn"); b.textContent="Copied ✓"; b.classList.remove("pulse"); void b.offsetWidth; b.classList.add("pulse"); setTimeout(()=>b.textContent="Copy my tray",1600); },
-      ()=>{ $("shareBtn").textContent="Copy failed"; }
+      ()=>{ const b=$("copyBtn"); b.textContent="Copied ✓"; setTimeout(()=>b.textContent="Copy as text instead",1600); },
+      ()=>{ $("copyBtn").textContent="Copy failed"; }
     );
   };
 }
