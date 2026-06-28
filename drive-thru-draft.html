@@ -504,6 +504,7 @@ h1 { color: #f1e3c6 !important; }
 /* 'boosted' flag was unreadable mustard-on-paper — make it a bold burnt orange */
 .hotflag{ color:#c2410c !important; font-weight:800 !important; font-size:12px !important; }
 .lognote{ text-align:center; color:#7a5f50; font-size:11px; font-family:"DM Mono",monospace; letter-spacing:.04em; margin-top:6px; opacity:.85; }
+.vote-note{ text-align:center; color:#f5b82e; font-size:12.5px; font-family:"DM Mono",ui-monospace,monospace; letter-spacing:.03em; margin:14px auto 2px; max-width:34ch; line-height:1.45; }
 </style>
 </head>
 <body>
@@ -1506,6 +1507,7 @@ function finish(){
       ${receipt}
       <div class="r-total"><span>TOTAL</span><span>${total}/50 · ${grade}</span></div>
     </div>
+    <div class="vote-note">These stars move with every play — your picks just counted.</div>
     <div class="verdict">${verdicts[grade]}</div>
     <div class="dare">${dare}</div>
     <div class="result-btns">
