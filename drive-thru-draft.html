@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
 <title>Drive-Thru Draft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -534,9 +535,21 @@ h1 { color: #f1e3c6 !important; }
 .slot.happy .pos, .slot.happy .tab .ico{ color:#ecfeff !important; }
 .slot .stamp.happy{ font-size:10.5px !important; padding:3px 9px !important; top:46% !important; }
 .happy-flag{ color:#0891b2 !important; }
+/* seasonal 'limited time': festive magenta — distinct from hot/treat/late/happy/misheard */
+.stamp.seasonal{ background:linear-gradient(90deg,#be1d6e,#e84393) !important; color:#fff0f7 !important; border-color:#7d1247 !important; }
+.slot.seasonal{ border-color:#d6337c !important; box-shadow:0 0 0 1px #f78fbb inset, 0 0 20px -6px rgba(214,51,124,.6) !important; }
+.slot.seasonal .tab{ background:linear-gradient(90deg,#be1d6e,#e84393) !important; }
+.slot.seasonal .pos, .slot.seasonal .tab .ico{ color:#fff0f7 !important; }
+.slot .stamp.seasonal{ font-size:10px !important; padding:3px 8px !important; top:46% !important; }
+.seasonal-flag{ color:#be1d6e !important; }
 </style>
 </head>
 <body>
+<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
+   style="position:fixed;top:14px;left:16px;z-index:50;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;background:rgba(20,14,9,.7);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)">
+  <img src="trex.png" alt="" style="height:24px;width:auto;display:block">
+  <span>Dr.Tremendous</span>
+</a>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="ic-MAIN" viewBox="0 0 24 24">
     <path d="M3.2 9.2C3.2 5.9 7.1 4.2 12 4.2s8.8 1.7 8.8 5H3.2z" fill="currentColor"/>
@@ -632,8 +645,11 @@ const CHAINS = [
     {n:"10pc McNuggets", s:["MAIN","SIDE"], r:8},
     {n:"World Famous Fries", s:["SIDE"], r:9},
     {n:"McFlurry", s:["DESSERT"], r:7},
-    {n:"Sprite", s:["DRINK"], r:6},
+    {n:"Coca-Cola", s:["DRINK"], r:7},
     {n:"Sweet 'N Sour", s:["SAUCE"], r:7},
+    {n:"McRib", s:["MAIN"], r:8, season:[10,11,12]},
+    {n:"Shamrock Shake", s:["DESSERT","DRINK"], r:8, season:[2,3]},
+    {n:"Holiday Pie", s:["DESSERT"], r:7, season:[11,12]},
   ]},
   {name:"Chick-fil-A", items:[
     {n:"Chicken Sandwich", s:["MAIN"], r:9},
@@ -641,9 +657,11 @@ const CHAINS = [
     {n:"8ct Nuggets", s:["MAIN","SIDE"], r:8},
     {n:"Frosted Lemonade", s:["DRINK","DESSERT"], r:9},
     {n:"CFA Sauce", s:["SAUCE"], r:9},
+    {n:"Peach Milkshake", s:["DESSERT","DRINK"], r:9, season:[6,7,8]},
   ]},
   {name:"Taco Bell", items:[
     {n:"Crunchwrap Supreme", s:["MAIN"], r:8},
+    {n:"Cheesy Gordita Crunch", s:["MAIN"], r:8},
     {n:"Mexican Pizza", s:["MAIN"], r:8},
     {n:"Doritos Locos Taco", s:["MAIN","SIDE"], r:7},
     {n:"Nacho Fries", s:["SIDE"], r:8},
@@ -653,10 +671,12 @@ const CHAINS = [
   ]},
   {name:"Wendy's", items:[
     {n:"Dave's Single", s:["MAIN"], r:8},
+    {n:"Baconator", s:["MAIN"], r:9},
     {n:"Spicy Nuggets", s:["MAIN","SIDE"], r:8},
     {n:"Frosty", s:["DESSERT","DRINK"], r:9},
     {n:"Seasoned Fries", s:["SIDE"], r:6},
     {n:"S'Awesome Sauce", s:["SAUCE"], r:6},
+    {n:"Peppermint Frosty", s:["DESSERT","DRINK"], r:8, season:[11,12]},
   ]},
   {name:"In-N-Out", items:[
     {n:"Double-Double", s:["MAIN"], r:9},
@@ -680,6 +700,7 @@ const CHAINS = [
   ]},
   {name:"Arby's", items:[
     {n:"Classic Roast Beef", s:["MAIN"], r:6},
+    {n:"Beef 'n Cheddar", s:["MAIN"], r:8},
     {n:"Curly Fries", s:["SIDE"], r:9},
     {n:"Jamocha Shake", s:["DESSERT","DRINK"], r:8},
     {n:"Mozzarella Sticks", s:["SIDE"], r:7},
@@ -696,6 +717,7 @@ const CHAINS = [
     {n:"Fries", s:["SIDE"], r:5},
     {n:"Blizzard", s:["DESSERT"], r:9},
     {n:"MisterMisty", s:["DRINK"], r:6},
+    {n:"Pumpkin Pie Blizzard", s:["DESSERT"], r:9, season:[9,10,11]},
   ]},
   {name:"Whataburger", items:[
     {n:"Whataburger", s:["MAIN"], r:8},
@@ -723,12 +745,12 @@ const CHAINS = [
     {n:"Bo's Sauce", s:["SAUCE"], r:7},
   ]},
   {name:"Zaxby's", items:[
-    {n:"Chicken Finger Plate", s:["MAIN"], r:3},
-    {n:"Nibblers", s:["MAIN","SIDE"], r:2},
-    {n:"Fried White Cheddar Bites", s:["SIDE"], r:3},
-    {n:"Crinkle Fries", s:["SIDE"], r:2},
+    {n:"Chicken Finger Plate", s:["MAIN"], r:6},
+    {n:"Nibblers", s:["MAIN","SIDE"], r:5},
+    {n:"Fried White Cheddar Bites", s:["SIDE"], r:6},
+    {n:"Crinkle Fries", s:["SIDE"], r:4},
     {n:"Zax Sauce", s:["SAUCE"], r:9},
-    {n:"Sweet Tea", s:["DRINK"], r:5},
+    {n:"Sweet Tea", s:["DRINK"], r:6},
   ]},
   {name:"Hardee's", items:[
     {n:"Original Thickburger", s:["MAIN"], r:8},
@@ -785,7 +807,8 @@ const CHAINS = [
     {n:"Spinach, Feta & Egg White Wrap", s:["MAIN"], r:6},
     {n:"Caramel Frappuccino", s:["DRINK","DESSERT"], r:8},
     {n:"Brown Sugar Oat Shaken Espresso", s:["DRINK"], r:7},
-    {n:"Pumpkin Spice Latte", s:["DRINK"], r:7},
+    {n:"Pumpkin Spice Latte", s:["DRINK"], r:8, season:[8,9,10,11]},
+    {n:"Peppermint Mocha", s:["DRINK"], r:8, season:[11,12]},
     {n:"Cake Pop", s:["DESSERT"], r:6},
     {n:"Cheese Danish", s:["DESSERT"], r:6},
     {n:"Chocolate Croissant", s:["DESSERT","SIDE"], r:6},
@@ -820,7 +843,6 @@ const OUTAGES = {
   "Burger King::Onion Rings":        {p:0.15, why:"Fryer's tied up"},
   "KFC::Famous Bowl":                {p:0.20, why:"Out of gravy"},
   "KFC::Biscuit":                    {p:0.18, why:"Next batch isn't out yet"},
-  "Starbucks::Pumpkin Spice Latte":  {p:0.25, why:"Not pumpkin season 🍂"},
   "Starbucks::Cake Pop":             {p:0.20, why:"Last one went to the car ahead of you"},
   "Starbucks::Bacon, Gouda & Egg Sandwich": {p:0.15, why:"Oven's still warming up"},
   "Shake Shack::Hand-Spun Shake":    {p:0.12, why:"Custard machine resetting"},
@@ -918,6 +940,8 @@ CHAINS.forEach(c=>{ c.id=slug(c.name); c.items.forEach(it=>{ it.id=c.id+"__"+slu
 // flip to false if you'd rather keep a fixed menu order (signature item always first).
 const SHUFFLE_MENU = true;
 function shuffled(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+// seasonal items only appear in their real-world months (player's local date)
+function inSeason(it){ return !it.season || it.season.includes(new Date().getMonth()+1); }
 
 // ▼▼▼ PASTE YOUR FIREBASE WEB CONFIG HERE to turn on shared crowd data.
 // Leave apiKey "" to run in LOCAL mode (in-memory + CSV export, no network needed).
@@ -1088,6 +1112,7 @@ function renderTray(){
     if(it&&it.treat) div.classList.add("treat");
     if(it&&it.late) div.classList.add("late");
     if(it&&it.happy) div.classList.add("happy");
+    if(it&&it.seasonal) div.classList.add("seasonal");
     if(it&&it.misheard) div.classList.add("misheard");
     const canHighlight = !it && eligibleNow &&
       (pendingItem ? pendingSlots.includes(pos) : chainCanFill(dealtChain,pos));
@@ -1101,6 +1126,7 @@ function renderTray(){
         +(it.treat?`<span class="stamp treat">☕ ON THE HOUSE</span>`:"")
         +(it.late?`<span class="stamp late">🌙 LATE NIGHT</span>`:"")
         +(it.happy?`<span class="stamp happy">🥤 HAPPY HOUR</span>`:"")
+        +(it.seasonal?`<span class="stamp seasonal">✨ LIMITED TIME</span>`:"")
         +(it.misheard?`<span class="stamp misheard">🎙️ MISHEARD</span>`:"")
         +tab+`<div class="body">
         <span class="item-name">${it.n}</span>
@@ -1263,9 +1289,15 @@ function landed(chain){
       : ev.msg;                            // first HOT light celebration
   }else{
     const downCount=Object.keys(outages).length;
-    msgEl.textContent = downCount
-      ? `Dealt: ${chain.name}. Heads up — ${downCount} item${downCount>1?"s":""} sold out today.`
-      : `Dealt: ${chain.name}. Pick one item.`;
+    // "it's BACK!" — hype a seasonal item that's in season right now
+    const seasonalItem = chain.items.find(it=> it.season && inSeason(it));
+    if(seasonalItem){
+      msgEl.textContent = `🎉 The ${seasonalItem.n} is BACK at ${chain.name} — limited time only!`;
+    }else{
+      msgEl.textContent = downCount
+        ? `Dealt: ${chain.name}. Heads up — ${downCount} item${downCount>1?"s":""} sold out today.`
+        : `Dealt: ${chain.name}. Pick one item.`;
+    }
   }
   spinBtn.disabled=true;
   skipBtn.disabled = skips<=0;
@@ -1305,7 +1337,9 @@ function openCounter(chain){
   counterStatus.innerHTML=statusHTML;
 
   menuEl.innerHTML="";
-  const order = SHUFFLE_MENU ? shuffled([...chain.items.keys()]) : [...chain.items.keys()];
+  // out-of-season seasonal items simply aren't on the menu today
+  const inSeasonIdx = [...chain.items.keys()].filter(i=> inSeason(chain.items[i]));
+  const order = SHUFFLE_MENU ? shuffled(inSeasonIdx) : inSeasonIdx;
   const draftableCount = order.reduce((n,i)=>{
     const it=chain.items[i]; const down=i in outages;
     return n + ((!down && it.s.some(p=>open.includes(p))) ? 1 : 0);
@@ -1323,8 +1357,9 @@ function openCounter(chain){
     const isTreat = boosted && boostKind==='treat';
     const isLate = boosted && boostKind==='latenight';
     const isHappy = boosted && boostKind==='happyhour';
+    const isSeasonal = !!it.season;   // only in-season items reach here
     const card=document.createElement("div");
-    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"")+(isHot?" hot":"")+(isTreat?" treat":"")+(isLate?" late":"")+(isHappy?" happy":"");
+    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"")+(isHot?" hot":"")+(isTreat?" treat":"")+(isLate?" late":"")+(isHappy?" happy":"")+(isSeasonal?" seasonal":"");
     const tags=it.s.map(p=>`<span class="pill ${open.includes(p)?"open":""}">${POS_LABEL[p]}</span>`).join("");
     let cue;
     if(isDown) cue=`<span class="draft-cue down-why">${outages[i]}</span>`;
@@ -1335,6 +1370,7 @@ function openCounter(chain){
                    : isTreat ? `<span class="hotflag treat-flag">☕ on the house</span>`
                    : isLate ? `<span class="hotflag late-flag">🌙 late night</span>`
                    : isHappy ? `<span class="hotflag happy-flag">🥤 happy hour</span>`
+                   : isSeasonal ? `<span class="hotflag seasonal-flag">✨ back for now</span>`
                    : `<span class="crow-spacer"></span>`;
     card.innerHTML=`
       ${isDown?`<span class="stamp">SOLD OUT</span>`:""}
@@ -1342,6 +1378,7 @@ function openCounter(chain){
       ${isTreat?`<span class="stamp treat">☕ ON THE HOUSE</span>`:""}
       ${isLate?`<span class="stamp late">🌙 LATE NIGHT</span>`:""}
       ${isHappy?`<span class="stamp happy">🥤 HAPPY HOUR</span>`:""}
+      ${isSeasonal&&!isDown?`<span class="stamp seasonal">✨ LIMITED TIME</span>`:""}
       <div class="cname">${it.n}</div>
       <div class="ctags">${tags}</div>
       <div class="crow">
@@ -1360,6 +1397,7 @@ function openCounter(chain){
       draftable, base_rating: it.r, shown_rating: boosted?Math.min(10,it.r+jackpot):it.r,
       display_position: displayPos, offer_set_size: draftableCount,
       hot_light: isHot, boost_kind: boosted?boostKind:null, boost_amount: boosted?jackpot:0,
+      seasonal: isSeasonal,
       chosen: false, chosen_slot_if_chosen: ""
     });
   });
@@ -1379,7 +1417,8 @@ function chooseItem(it,chain,eligibleSlots){
   const gotBoost = (jackpot>0 && qualifies) && boostedR>it.r;
   const item={id:it.id,n:it.n,chain:chain.name,r:boostedR,_base:it.r,
               hot:gotBoost&&boostKind==='hot', treat:gotBoost&&boostKind==='treat',
-              late:gotBoost&&boostKind==='latenight', happy:gotBoost&&boostKind==='happyhour'};
+              late:gotBoost&&boostKind==='latenight', happy:gotBoost&&boostKind==='happyhour',
+              seasonal:!!it.season};
   if(eligibleSlots.length===1){
     placeItem(item,eligibleSlots[0]);
   }else{
