@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Content Editor</title>
+<style>
+  :root{
+    --bg:#141b34; --panel:#1b2444; --surface:#0f1729; --border:#2a3a5c;
+    --text:#e8e6df; --text-dim:#8a99b8; --accent:#d8a249; --accent-hover:#e8b45a;
+    --code-bg:#0b1120; --success:#4ade80; --warn:#f0b35a; --danger:#f87171;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .topbar{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--panel);
+    border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+  .topbar h1{font-size:15px;font-weight:600;color:var(--accent);letter-spacing:.4px;margin-right:auto;
+    font-family:'Playfair Display',Georgia,serif;}
+  button{background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 13px;
+    border-radius:6px;font-size:13px;cursor:pointer;transition:all .15s;font-family:inherit;}
+  button:hover{border-color:var(--accent);color:var(--accent-hover);}
+  button.primary{background:var(--accent);color:#141b34;border-color:var(--accent);font-weight:600;}
+  button.primary:hover{background:var(--accent-hover);}
+  button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+
+  .seg{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .seg button{border:none;border-radius:0;padding:6px 12px;}
+  .seg button.active{background:var(--accent);color:#141b34;font-weight:600;}
+  .seg button:not(:last-child){border-right:1px solid var(--border);}
+
+  .workspace{flex:1;display:flex;min-height:0;position:relative;}
+  .pane{display:flex;flex-direction:column;min-width:0;min-height:0;flex:1;}
+  .pane.hidden{display:none;}
+  .pane-head{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--panel);
+    border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.8px;
+    color:var(--text-dim);font-family:'IBM Plex Mono',ui-monospace,monospace;flex-shrink:0;min-height:33px;}
+  .badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:99px;letter-spacing:.5px;font-weight:600;}
+  .badge.ok{background:rgba(74,222,128,.15);color:var(--success);}
+
+  #code{flex:1;width:100%;border:none;resize:none;outline:none;background:var(--code-bg);color:#cdd6e8;
+    font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace;font-size:13px;line-height:1.55;padding:14px;
+    tab-size:2;white-space:pre;}
+
+  .preview-wrap{flex:1;background:#fff;position:relative;min-height:0;}
+  #preview{width:100%;height:100%;border:none;background:#fff;}
+  .pane-head .seg{margin-left:auto;}
+  .pane-head .seg button{font-size:10px;padding:4px 9px;text-transform:none;letter-spacing:.3px;}
+
+  .banner{display:none;align-items:center;gap:8px;padding:7px 12px;font-size:12px;
+    background:rgba(216,162,73,.12);border-bottom:1px solid var(--border);color:var(--accent-hover);}
+  .banner.show{display:flex;}
+  .banner b{color:var(--accent);}
+
+  .hint{position:absolute;bottom:10px;right:12px;z-index:5;background:rgba(20,27,52,.85);color:var(--accent);
+    font-size:11px;padding:4px 10px;border-radius:6px;pointer-events:none;font-family:'IBM Plex Mono',monospace;}
+
+  .divider{width:5px;background:var(--border);cursor:col-resize;flex-shrink:0;transition:background .15s;}
+  .divider:hover,.divider.dragging{background:var(--accent);}
+  .divider.hidden{display:none;}
+
+  .drop{position:fixed;inset:0;z-index:100;display:none;background:rgba(20,27,52,.92);align-items:center;
+    justify-content:center;border:3px dashed var(--accent);font-size:20px;color:var(--accent);
+    font-family:'Playfair Display',Georgia,serif;}
+  .drop.show{display:flex;}
+
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--panel);
+    color:var(--text);border:1px solid var(--accent);padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;
+    transition:all .25s;pointer-events:none;z-index:200;max-width:84vw;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.warn{border-color:var(--warn);}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous" style="display:inline-flex;align-items:center;gap:6px;color:var(--accent);text-decoration:none;font-size:13px;white-space:nowrap;font-family:'IBM Plex Mono',ui-monospace,monospace">&larr; Dr.Tremendous</a>
+    <h1>Content Editor</h1>
+    <button id="btnOpen">Open file</button>
+    <button id="btnPaste">Paste HTML</button>
+    <button id="btnStrip" title="Remove browser-extension tags">Strip extension tags</button>
+    <button id="btnDownload" class="primary">Download</button>
+    <div class="seg" role="group" aria-label="Layout">
+      <button data-mode="split" class="active">Split</button>
+      <button data-mode="code">Code</button>
+      <button data-mode="preview">Preview</button>
+    </div>
+    <input type="file" id="fileInput" accept=".html,.htm" hidden>
+  </div>
+
+  <div class="banner" id="banner">
+    <span>This page builds its content with JavaScript. <b>Edit text and values by clicking them in the preview</b> &mdash; the editor tests matching source locations before saving. Structural layout edits still belong in the code pane.</span>
+  </div>
+
+  <div class="workspace" id="workspace">
+    <div class="pane" id="paneCode">
+      <div class="pane-head">Code <span class="badge ok" id="codeBadge">source</span></div>
+      <textarea id="code" spellcheck="false" placeholder="Open or paste an HTML file.&#10;&#10;In the preview, switch to Edit text, click any text, and type. The matching source string updates here automatically. Download saves the updated source."></textarea>
+    </div>
+
+    <div class="divider" id="divider"></div>
+
+    <div class="pane" id="panePreview">
+      <div class="pane-head">
+        Preview
+        <div class="seg" role="group" aria-label="Preview mode">
+          <button id="modeInteract" class="active">Interact</button>
+          <button id="modeEdit">Edit text</button>
+        </div>
+      </div>
+      <div class="preview-wrap">
+        <iframe id="preview" title="Live preview"></iframe>
+        <div class="hint" id="hint">Interact mode</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drop" id="drop">Drop an .html file to open</div>
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ===== Extension-fingerprint sanitizer ===== */
+const FP = {
+  tags:['grammarly-desktop-integration','grammarly-extension','grammarly-card','grammarly-popups',
+        'grammarly-mce-component','scribe-shadow','text-blaze-app-reference','lastpass-com-root'],
+  ids:['convert-heic-to-jpg'],
+  attrPrefixes:['data-gr-','data-new-gr-c-s-','data-scribe-','data-lt-','data-darkreader-'],
+  exactAttrs:['bis_skin_checked','cz-shortcut-listen'],
+  classTokens:['brand-refresh']
+};
+function removeMatchedElement(html, openSrc, tag){
+  let out=html,m,guard=0;const re=new RegExp(openSrc,'gi');
+  while((m=re.exec(out))&&guard++<1000){
+    const start=m.index,open=m[0];
+    if(/\/>\s*$/.test(open)){out=out.slice(0,start)+out.slice(start+open.length);re.lastIndex=start;continue;}
+    const tre=new RegExp('<\\/?'+tag+'(\\s[^>]*)?>','gi');tre.lastIndex=start+open.length;
+    let depth=1,t,end=-1;
+    while((t=tre.exec(out))){if(t[0][1]==='/'){depth--;if(depth===0){end=t.index+t[0].length;break;}}
+      else if(!/\/>\s*$/.test(t[0]))depth++;}
+    if(end===-1)end=out.length;out=out.slice(0,start)+out.slice(end);re.lastIndex=start;
+  }
+  return out;
+}
+function stripExtensionArtifacts(html){
+  let s=html;const before=s;
+  FP.tags.forEach(t=>{s=removeMatchedElement(s,'<'+t+'(\\s[^>]*)?>',t);});
+  FP.ids.forEach(id=>{const r=new RegExp('<([a-zA-Z][\\w-]*)\\b[^>]*\\bid=("|\')'+id+'\\2[^>]*>','i');
+    const m=r.exec(s);if(m)s=removeMatchedElement(s,'<'+m[1]+'\\b[^>]*\\bid=("|\')'+id+'\\1[^>]*>',m[1]);});
+  [...FP.attrPrefixes.map(p=>p.replace(/-/g,'\\-')+'[\\w-]*'),...FP.exactAttrs.map(a=>a.replace(/-/g,'\\-'))]
+    .forEach(np=>{s=s.replace(new RegExp('\\s+'+np+'(\\s*=\\s*("[^"]*"|\'[^\']*\'|[^\\s>]+))?','gi'),'');});
+  FP.classTokens.forEach(tok=>{s=s.replace(/\sclass\s*=\s*("|')([^"']*)\1/gi,(f,q,v)=>{
+    const k=v.split(/\s+/).filter(c=>c&&c!==tok);return k.length?' class='+q+k.join(' ')+q:'';});});
+  s=s.replace(/(<body[^>]*?)\s+contenteditable=("|')true\2/gi,'$1');
+  s=s.replace(/(\r?\n[ \t]*){3,}/g,'\n\n');
+  return {html:s,changed:s!==before};
+}
+
+/* ===== nth-occurrence source replace ===== */
+function replaceNth(str,find,repl,n){
+  let i=-1,from=0,c=0;
+  while((i=str.indexOf(find,from))!==-1){if(c===n)return str.slice(0,i)+repl+str.slice(i+find.length);from=i+find.length;c++;}
+  return null;
+}
+function countOcc(str,find){let c=0,from=0,i;if(!find)return 0;while((i=str.indexOf(find,from))!==-1){c++;from=i+find.length;}return c;}
+function occurrenceIndexes(str,find,limit=120){
+  const out=[];let from=0,i;
+  if(!find)return out;
+  while((i=str.indexOf(find,from))!==-1 && out.length<limit){out.push(i);from=i+find.length;}
+  return out;
+}
+function replaceAt(str,start,find,repl){return str.slice(0,start)+repl+str.slice(start+find.length);}
+function escapeHtmlText(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function sourceNeedles(text){
+  const vals=[text,escapeHtmlText(text)];
+  return [...new Set(vals.filter(Boolean))];
+}
+
+/* ===== Elements ===== */
+const code=document.getElementById('code');
+const preview=document.getElementById('preview');
+const codeBadge=document.getElementById('codeBadge');
+const banner=document.getElementById('banner');
+const hint=document.getElementById('hint');
+const toast=document.getElementById('toast');
+const btnInteract=document.getElementById('modeInteract');
+const btnEdit=document.getElementById('modeEdit');
+
+let debounce, editMode=false, currentName='edited', isAppFile=false;
+
+/* ===== Render ===== */
+function detectApp(src){
+  return /ReactDOM|createRoot\s*\(|hydrateRoot\s*\(|getElementById\(['"]root['"]\)/.test(src);
+}
+function render(){
+  const doc=preview.contentDocument||preview.contentWindow.document;
+  doc.open();doc.write(code.value);doc.close();
+  isAppFile=detectApp(code.value);
+  banner.classList.toggle('show', isAppFile);
+  if(editMode){ setTimeout(enableEdit, 80); }
+}
+function scheduleRender(){codeBadge.className='badge ok';codeBadge.textContent='source';clearTimeout(debounce);debounce=setTimeout(render,400);}
+code.addEventListener('input',scheduleRender);
+
+/* ===== Live text editing (preview -> source) ===== */
+function previewDoc(){return preview.contentDocument||preview.contentWindow.document;}
+function inSvg(el){return !!(el.closest && el.closest('svg'));}
+function isEditableLeaf(el){
+  if(!el||el.nodeType!==1)return false;
+  const skip=['INPUT','TEXTAREA','SELECT','OPTION','SCRIPT','STYLE','IMG','BR','HR','SVG','PATH','G','RECT','LINE','CANVAS'];
+  if(skip.includes(el.tagName))return false;
+  if(inSvg(el))return false;
+  if(el.children.length>0)return false;
+  return !!(el.textContent && el.textContent.trim());
+}
+function nearestLeaf(node){
+  let el=node.nodeType===3?node.parentElement:node;
+  while(el && !isEditableLeaf(el)) el=el.parentElement;
+  return el;
+}
+
+let activeEl=null, activeOrig='', activeIndex=0, activeLeafIndex=0, activeLeafTexts=[], pendingCommit=null;
+
+function editableLeaves(doc){
+  return [...doc.body.querySelectorAll('*')].filter(isEditableLeaf);
+}
+function leafTexts(doc){
+  return editableLeaves(doc).map(n=>n.textContent);
+}
+function diffCount(a,b){
+  const n=Math.max(a.length,b.length);let c=0;
+  for(let i=0;i<n;i++){if(a[i]!==b[i])c++;}
+  return c;
+}
+function doctypeString(doc){
+  const d=doc.doctype;
+  if(!d)return '<!DOCTYPE html>';
+  return '<!DOCTYPE '+d.name+(d.publicId?' PUBLIC "'+d.publicId+'"':'')+(d.systemId?' "'+d.systemId+'"':'')+'>';
+}
+function serializePreviewDocument(doc){
+  const root=doc.documentElement.cloneNode(true);
+  root.querySelectorAll('#__ce_styles').forEach(n=>n.remove());
+  root.querySelectorAll('[data-ce-edit]').forEach(n=>n.removeAttribute('data-ce-edit'));
+  root.querySelectorAll('[contenteditable]').forEach(n=>n.removeAttribute('contenteditable'));
+  return doctypeString(doc)+'\n'+root.outerHTML;
+}
+function updateStaticSourceFromPreview(){
+  const doc=previewDoc();
+  code.value=serializePreviewDocument(doc);
+  return true;
+}
+function renderCandidateTexts(src){
+  return new Promise(resolve=>{
+    const frame=document.createElement('iframe');
+    frame.style.cssText='position:absolute;width:0;height:0;border:0;left:-9999px;top:-9999px;';
+    frame.setAttribute('aria-hidden','true');
+    document.body.appendChild(frame);
+    const cleanup=()=>{try{frame.remove();}catch{}};
+    try{
+      const doc=frame.contentDocument||frame.contentWindow.document;
+      doc.open();doc.write(src);doc.close();
+      setTimeout(()=>{
+        try{resolve(leafTexts(doc));}
+        catch{resolve([]);}
+        cleanup();
+      },180);
+    }catch{
+      cleanup();
+      resolve([]);
+    }
+  });
+}
+async function findVerifiedGeneratedSource(src,orig,next){
+  const baseline=activeLeafTexts;
+  const needles=sourceNeedles(orig);
+  const candidates=[];
+  needles.forEach(needle=>{
+    occurrenceIndexes(src,needle).forEach(pos=>{
+      candidates.push({needle,pos,out:replaceAt(src,pos,needle,next)});
+    });
+  });
+  if(candidates.length===0)return {out:null, reason:'not-found'};
+  if(candidates.length>=120)return {out:null, reason:'too-many'};
+
+  const matches=[];
+  for(const cand of candidates){
+    const texts=await renderCandidateTexts(cand.out);
+    if(texts[activeLeafIndex]!==next)continue;
+    const diffs=diffCount(baseline,texts);
+    const neighborOk=(activeLeafIndex===0||texts[activeLeafIndex-1]===baseline[activeLeafIndex-1]) &&
+      (activeLeafIndex>=baseline.length-1||texts[activeLeafIndex+1]===baseline[activeLeafIndex+1]);
+    matches.push({...cand,diffs,neighborOk});
+  }
+  matches.sort((a,b)=>(b.neighborOk-a.neighborOk)||(a.diffs-b.diffs));
+  const strong=matches.filter(m=>m.neighborOk && m.diffs===1);
+  if(strong.length===1)return {out:strong[0].out, note:''};
+  if(strong.length>1)return {out:null, reason:'ambiguous'};
+  if(matches.length>0)return {out:null, reason:'weak-match'};
+  return {out:null, reason:'unverified'};
+}
+function injectEditStyles(doc){
+  if(doc.getElementById('__ce_styles'))return;
+  const st=doc.createElement('style');
+  st.id='__ce_styles';
+  st.textContent=`
+    [data-ce-edit]{ outline:1px dashed rgba(216,162,73,.6); outline-offset:2px; border-radius:2px; cursor:text; transition:background .12s, outline-color .12s; }
+    [data-ce-edit]:hover{ outline:2px solid #d8a249; background:rgba(216,162,73,.12); }
+    [data-ce-edit][contenteditable="true"]{ outline:2px solid #d8a249; background:rgba(216,162,73,.06); }
+  `;
+  (doc.head||doc.body).appendChild(st);
+}
+function hasSourceCandidate(text){
+  const src=code.value;
+  return sourceNeedles(text).some(needle=>occurrenceIndexes(src,needle,2).length>0);
+}
+function sourceCandidateCount(text,limit=12){
+  const src=code.value;
+  let total=0;
+  sourceNeedles(text).forEach(needle=>{total+=occurrenceIndexes(src,needle,limit).length;});
+  return Math.min(total,limit);
+}
+function diagnoseLockedText(el){
+  if(!el)return 'No editable text found here \u2014 click a dashed item or edit in code';
+  const text=(el.textContent||'').trim();
+  if(!text)return 'No editable text found here \u2014 edit it in code';
+
+  const numbered=text.match(/^(\d+[\.)]\s+)(.+)$/);
+  if(numbered && hasSourceCandidate(numbered[2].trim())){
+    return 'The "'+numbered[1].trim()+'" is added automatically \u2014 edit the wording in code or remove auto-numbering';
+  }
+
+  const count=sourceCandidateCount(text);
+  const inCell=!!(el.closest && el.closest('td,th,[role="cell"],[role="gridcell"],[role="columnheader"],[role="rowheader"]'));
+  const shortValue=/^[\s$€£¥+-]*[\d.,:%/]+[a-zA-Z%]*\s*$/.test(text) || text.length<=4;
+  if(inCell || (shortValue && count!==1)){
+    return 'This looks like a data value rendered from a table or array \u2014 edit it in the data block in code';
+  }
+
+  if(count>1){
+    return 'This label appears in '+count+' source places \u2014 edit it in code so the target is unambiguous';
+  }
+
+  const stripped=text.replace(/^["'`]|["'`]$/g,'').trim();
+  if(stripped!==text && hasSourceCandidate(stripped)){
+    return 'This text is wrapped or assembled at runtime \u2014 edit the underlying source string in code';
+  }
+
+  if(!hasSourceCandidate(text)){
+    return 'This text is assembled at runtime and has no single source string \u2014 edit it in code';
+  }
+
+  return 'This text has a source candidate, but cannot be safely verified from the preview \u2014 edit it in code';
+}
+function markEditable(){
+  const doc=previewDoc();
+  if(!doc||!doc.body)return 0;
+  injectEditStyles(doc);
+  let n=0;
+  editableLeaves(doc).forEach(el=>{
+    const ok=!isAppFile || hasSourceCandidate(el.textContent);
+    if(ok){el.setAttribute('data-ce-edit','1');n++;}
+    else el.removeAttribute('data-ce-edit');
+  });
+  return n;
+}
+
+function beginEdit(el, clientX, clientY){
+  const doc=previewDoc();
+  activeEl=el; activeOrig=el.textContent;
+  const allLeaves=editableLeaves(doc);
+  activeLeafIndex=Math.max(0,allLeaves.indexOf(el));
+  activeLeafTexts=allLeaves.map(n=>n.textContent);
+  const leaves=allLeaves.filter(n=>n.textContent===activeOrig);
+  activeIndex=Math.max(0,leaves.indexOf(el));
+  el.setAttribute('contenteditable','true');
+  el.style.outline='2px solid #d8a249';
+  el.focus();
+  if(typeof clientX==='number' && doc.caretRangeFromPoint){
+    const r=doc.caretRangeFromPoint(clientX,clientY);
+    if(r){const sel=doc.getSelection();sel.removeAllRanges();sel.addRange(r);}
+  }
+}
+async function commitEdit(){
+  if(!activeEl)return;
+  const el=activeEl, orig=activeOrig, idx=activeIndex;
+  el.removeAttribute('contenteditable'); el.style.outline='';
+  activeEl=null;
+  const next=el.textContent;
+  if(next===orig)return;
+  const src=code.value;
+  let out=null, note='';
+  if(!isAppFile){
+    updateStaticSourceFromPreview();
+    showToast('Saved preview edit to source');
+    return;
+  }
+
+  showToast('Checking source match...');
+  const verified=await findVerifiedGeneratedSource(src,orig,next);
+  out=verified.out; note=verified.note||'';
+  if(out!==null){
+    code.value=out;
+    markEditable();
+    showToast('Saved to source');
+  }else{
+    el.textContent=orig;
+    markEditable();
+    const msg=verified.reason==='ambiguous' ? 'Multiple verified source matches \u2014 edit this one in code' :
+      verified.reason==='weak-match' ? 'Couldn\u2019t verify one exact source match \u2014 edit it in code' :
+      verified.reason==='too-many' ? 'Too many matching source values \u2014 edit this one in code' :
+      verified.reason==='unverified' ? 'Couldn\u2019t verify the right source value \u2014 edit it in code' :
+      'Couldn\u2019t find this text in the source \u2014 edit it in the code pane';
+    showToast(msg, true);
+  }
+}
+function saveActiveEdit(){
+  if(activeEl){
+    pendingCommit=commitEdit().finally(()=>{pendingCommit=null;});
+    return pendingCommit;
+  }
+  return pendingCommit||Promise.resolve();
+}
+async function clickHandler(e){
+  if(!editMode)return;
+  const leaf=nearestLeaf(e.target);
+  e.preventDefault(); e.stopPropagation();
+  if(activeEl && activeEl!==leaf) await saveActiveEdit();
+  if(leaf && leaf.hasAttribute('data-ce-edit') && leaf!==activeEl) beginEdit(leaf, e.clientX, e.clientY);
+  else if(!leaf || !leaf.hasAttribute('data-ce-edit')) showToast(diagnoseLockedText(leaf), true);
+}
+function keyHandler(e){
+  if(!editMode||!activeEl)return;
+  if(e.key==='Enter' && !e.shiftKey){e.preventDefault();saveActiveEdit();}
+  if(e.key==='Escape'){const o=activeOrig,el=activeEl;activeEl=null;el.removeAttribute('contenteditable');el.style.outline='';el.textContent=o;}
+}
+function blurHandler(){
+  saveActiveEdit();
+}
+function enableEdit(){
+  const doc=previewDoc();
+  if(!doc||!doc.body)return;
+  doc.body.style.cursor='text';
+  markEditable();
+  doc.removeEventListener('click',clickHandler,true);
+  doc.removeEventListener('keydown',keyHandler,true);
+  doc.removeEventListener('blur',blurHandler,true);
+  doc.addEventListener('click',clickHandler,true);
+  doc.addEventListener('keydown',keyHandler,true);
+  doc.addEventListener('blur',blurHandler,true);
+}
+async function disableEdit(){
+  await saveActiveEdit();
+  const doc=previewDoc();
+  if(doc){
+    doc.removeEventListener('click',clickHandler,true);
+    doc.removeEventListener('keydown',keyHandler,true);
+    doc.removeEventListener('blur',blurHandler,true);
+    if(doc.body)doc.body.style.cursor='';
+  }
+}
+async function setMode(edit){
+  editMode=edit;
+  btnEdit.classList.toggle('active',edit);
+  btnInteract.classList.toggle('active',!edit);
+  hint.textContent=edit?'Edit text \u00b7 dashed items are editable':'Interact mode';
+  if(edit){ render(); }
+  else { await disableEdit(); render(); }
+}
+btnInteract.addEventListener('click',()=>setMode(false));
+btnEdit.addEventListener('click',()=>setMode(true));
+
+/* ===== Strip / Download ===== */
+function stemOf(n){return (n||'edited').replace(/\.[^.]+$/,'')||'edited';}
+document.getElementById('btnStrip').addEventListener('click',async()=>{
+  await saveActiveEdit();
+  const {html,changed}=stripExtensionArtifacts(code.value);
+  code.value=html;
+  if(changed){render();showToast('Extension tags stripped');}else{showToast('Nothing to strip \u2014 already clean');}
+});
+document.getElementById('btnDownload').addEventListener('click',async()=>{
+  await saveActiveEdit();
+  const {html,changed}=stripExtensionArtifacts(code.value);
+  if(changed)code.value=html;
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  const stamp=`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const fname=currentName+'-'+stamp+'.html';
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;a.click();URL.revokeObjectURL(a.href);
+  showToast('Saved '+fname+' \u00b7 '+(blob.size/1024).toFixed(1)+' KB');
+});
+
+/* ===== Open / paste / drop ===== */
+document.getElementById('btnOpen').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{code.value=r.result;currentName=stemOf(f.name);render();showToast('Opened '+f.name);};r.readAsText(f);});
+document.getElementById('btnPaste').addEventListener('click',async()=>{
+  try{const t=await navigator.clipboard.readText();code.value=t;render();showToast('Pasted from clipboard');}
+  catch{showToast('Clipboard blocked \u2014 paste into the code pane directly',true);}});
+const drop=document.getElementById('drop');
+['dragenter','dragover'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('show');}));
+['dragleave','drop'].forEach(ev=>window.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'||e.target===drop)drop.classList.remove('show');}));
+window.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{code.value=r.result;currentName=stemOf(f.name);render();showToast('Opened '+f.name);};r.readAsText(f);});
+
+/* ===== Divider + layout ===== */
+const divider=document.getElementById('divider'),workspace=document.getElementById('workspace'),
+  paneCode=document.getElementById('paneCode'),panePreview=document.getElementById('panePreview');
+let dragging=false;
+divider.addEventListener('mousedown',()=>{dragging=true;divider.classList.add('dragging');
+  document.body.style.cursor='col-resize';document.body.style.userSelect='none';
+  panePreview.querySelector('.preview-wrap').style.pointerEvents='none';});
+document.addEventListener('mousemove',e=>{if(!dragging)return;const r=workspace.getBoundingClientRect();
+  const pct=Math.max(15,Math.min(85,((e.clientX-r.left)/r.width)*100));
+  paneCode.style.flex='none';paneCode.style.width=pct+'%';panePreview.style.flex='1';});
+document.addEventListener('mouseup',()=>{if(!dragging)return;dragging=false;divider.classList.remove('dragging');
+  document.body.style.cursor='';document.body.style.userSelect='';
+  panePreview.querySelector('.preview-wrap').style.pointerEvents='';});
+document.querySelectorAll('.seg [data-mode]').forEach(btn=>{btn.addEventListener('click',()=>{
+  document.querySelectorAll('.seg [data-mode]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  const m=btn.dataset.mode;paneCode.classList.toggle('hidden',m==='preview');panePreview.classList.toggle('hidden',m==='code');
+  divider.classList.toggle('hidden',m!=='split');if(m!=='code'){paneCode.style.width='';paneCode.style.flex='';}});});
+
+/* ===== Toast + shortcuts ===== */
+function showToast(msg,warn){toast.textContent=msg;toast.className='toast show'+(warn?' warn':'');
+  clearTimeout(showToast._t);showToast._t=setTimeout(()=>toast.classList.remove('show'),2600);}
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();document.getElementById('btnDownload').click();}});
+
+render();
+</script>
+</body>
+</html>
