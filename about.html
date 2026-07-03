@@ -7,7 +7,7 @@
 <title>About Dr. Tremendous</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,500&family=Lora:ital,wght@1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..700,0..60;1,9..144,400..600,0..40&family=Lora:ital,wght@1,500&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --cream: #f9f2e2;
@@ -27,7 +27,7 @@
 
   /* NAV */
   nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid var(--rule); }
-  .nav-logo { display: flex; align-items: center; gap: 10px; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em; text-decoration: none; line-height: 1; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; letter-spacing: -0.01em; text-decoration: none; line-height: 1; }
   .nav-logo img { height: 38px; width: auto; display: block; }
   .nav-logo .navy { color: var(--navy); }
   .nav-logo .gold { color: var(--gold); }
@@ -39,14 +39,14 @@
   .article { max-width: 720px; margin: 0 auto; padding: 72px 0 40px; }
   .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 24px; display: flex; align-items: center; gap: 14px; }
   .eyebrow::before { content: ''; display: block; width: 32px; height: 2px; background: var(--gold); }
-  h1 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 60px; line-height: 1.04; letter-spacing: -0.02em; color: var(--navy); margin-bottom: 40px; }
+  h1 { font-family: 'Fraunces', serif; font-weight: 700; font-size: 60px; line-height: 1.04; letter-spacing: -0.02em; color: var(--navy); margin-bottom: 40px; }
 
-  .lede { font-family: 'Playfair Display', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--gold-deep); margin-bottom: 40px; }
+  .lede { font-family: 'Fraunces', serif; font-style: italic; font-size: 26px; line-height: 1.4; color: var(--gold-deep); margin-bottom: 40px; }
 
   .article p { font-size: 18px; line-height: 1.75; color: var(--navy-soft); margin-bottom: 24px; }
   .article p strong { color: var(--navy); font-weight: 600; }
 
-  .section-label { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 30px; color: var(--navy); letter-spacing: -0.01em; margin: 56px 0 24px; }
+  .section-label { font-family: 'Fraunces', serif; font-weight: 700; font-size: 30px; color: var(--navy); letter-spacing: -0.01em; margin: 56px 0 24px; }
 
   /* Pulled examples list */
   .examples { margin: 32px 0; padding-left: 0; list-style: none; }
@@ -69,7 +69,7 @@
   .rex-flourish img { width: 104px; height: auto; opacity: 0.95; }
 
   footer { margin-top: 0; padding: 48px 0 64px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; }
-  .footer-logo { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 20px; }
+  .footer-logo { font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; }
   .footer-logo .navy { color: var(--navy); }
   .footer-logo .gold { color: var(--gold); }
   .footer-tag { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gray); }
@@ -85,6 +85,17 @@
     .nav-logo { font-size: 17px; }
     .nav-logo img { height: 30px; }
   }
+
+  /* --- de-AI pass (match homepage): Fraunces + mono labels + paper grain --- */
+  body { font-optical-sizing: auto; }
+  h1, .lede, .section-label, .footer-logo { font-variation-settings: "SOFT" 28; }
+  .eyebrow, .nav-links a, .footer-tag {
+    font-family: 'Space Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: 0.08em;
+  }
+  body::before { content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
+    opacity:0.045; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 </style>
 </head>
 <body>
