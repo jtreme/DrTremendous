@@ -96,6 +96,14 @@
   body::before { content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
     opacity:0.045; mix-blend-mode:multiply;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* design principles + who's-behind */
+  .principles { display:flex; flex-wrap:wrap; gap:16px; margin:30px 0 8px; }
+  .p-item { flex:1 1 180px; border-top:2px solid var(--gold); padding:12px 0 0;
+    font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:var(--navy); line-height:1.3; }
+  .p-item span { display:block; font-family:'Space Mono',monospace; font-size:11px;
+    color:var(--gold-deep); letter-spacing:0.12em; margin-bottom:7px; }
+  .who { margin-top:8px; }
 </style>
 </head>
 <body>
@@ -133,6 +141,12 @@
 
     <p>But I have always had ideas about how economics should be taught: what students need to see, what they should try to predict before the answer is revealed, and which moments of confusion are worth creating because they lead to understanding.</p>
 
+    <div class="principles">
+      <div class="p-item"><span>PRINCIPLE 01</span>Predict before reveal</div>
+      <div class="p-item"><span>PRINCIPLE 02</span>Make the invisible mechanism visible</div>
+      <div class="p-item"><span>PRINCIPLE 03</span>Confusion on purpose</div>
+    </div>
+
     <p>For most of my career, many of those ideas stayed ideas. The distance between imagining a teaching tool and actually building one required a team, a budget, and technical skills I did not have.</p>
 
     <p><strong>For the first time, I can get much closer to the thing I imagined.</strong></p>
@@ -152,6 +166,11 @@
     <p>None of these were available off the shelf. If I wanted them to exist, I had to make them.</p>
 
     <p>And it turns out that making things students can actually use is the most fun I have had in this job.</p>
+
+    <div class="who">
+      <div class="section-label">Who&rsquo;s behind this</div>
+      <p>Julianne Treme, Ph.D., directs the undergraduate program in Agricultural Business Management in NC State&rsquo;s Department of Agricultural &amp; Resource Economics. Recognition includes the <strong>2026 AAEA Distinguished Teaching Award</strong> &mdash; the association&rsquo;s top honor for undergraduate teaching &mdash; along with Alumni Distinguished Undergraduate Professor, the USDA Southern Region Teaching Award, and NC State Outstanding Teacher. She co-coaches the AAEA Academic Quiz Bowl team and has led spreadsheet-competition teams to 3rd place nationally (AAEA, Denver 2025) and 3rd at SAEA (Louisville 2026).</p>
+    </div>
 
     <div class="closer">That is the whole project, really:<br>I have an idea, and now there is almost nothing<br>between the idea and the thing existing.</div>
 
