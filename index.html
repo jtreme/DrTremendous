@@ -205,6 +205,12 @@
     font-size: 12.5px; font-weight: 600; color: var(--gold-deep);
     margin: -10px 0 20px; line-height: 1.4;
   }
+  .tool-principle {
+    font-family: 'Space Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--gold-deep); border-top: 1px solid var(--rule);
+    padding-top: 12px; margin-bottom: 14px;
+  }
   .tool-foot {
     display: flex; justify-content: space-between; align-items: center;
     padding-top: 18px; border-top: 1px solid var(--rule);
@@ -326,7 +332,7 @@
     color: var(--cream); max-width: 780px;
     margin: 0 auto; letter-spacing: -0.01em;
   }
-  .pull-band blockquote::before { content: '"'; color: var(--gold); margin-right: 4px; }
+  .pull-band blockquote::before { content: '"'; color: var(--gold); margin-right: 1px; }
   .pull-band blockquote::after { content: '"'; color: var(--gold); margin-left: 4px; }
   .pull-band .attr {
     margin-top: 24px;
@@ -427,6 +433,9 @@
   .quote figcaption span { color:#8a6414; }
   /* contrast: darker gold for small labels on cream */
   .section-head .eyebrow, .group-label, .tool-tag { color:#8a6414; }
+  .opensource-band { text-align:center; font-size:15px; color:var(--navy-soft);
+    max-width:680px; margin:8px auto 0; padding:0 24px; line-height:1.6; }
+  .opensource-band strong { color:var(--navy); font-weight:600; }
 </style>
 </head>
 <body>
@@ -485,6 +494,7 @@
             Students walk into advising with a real four-year plan instead of a list of boxes — drag courses across semesters, catch prerequisite conflicts before they happen, and see the whole degree at once.
           </div>
           <div class="tool-use">The preferred four-year planner for ~580 ABM majors.</div>
+          <div class="tool-principle">Learning by doing</div>
           <div class="tool-foot">
             <div class="tool-course">ABM Advising</div>
             <div class="tool-launch">Launch</div>
@@ -505,6 +515,7 @@
             A walkable grocery store that turns prices, substitutes, and shocks into something you can see on a shelf.
           </div>
           <div class="tool-use">Used in courses with ~200 students a year.</div>
+          <div class="tool-principle">Make the invisible visible</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Intro Micro</div>
             <div class="tool-launch">Launch</div>
@@ -524,6 +535,7 @@
             A tutor that refuses to hand over the answer — it walks students to it one Socratic question at a time, so they leave understanding the mistake, not just the fix.
           </div>
           <div class="tool-use">Used with ~40 students a year.</div>
+          <div class="tool-principle">Productive struggle</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 455 · Analytics</div>
             <div class="tool-launch">Launch</div>
@@ -544,6 +556,7 @@
             Firm selection and industry productivity, made cinematic. Each tower is a firm; its height is productivity. When the storm surge rises, watch which firms drown, which survive — and why the industry's average rises not because anyone improved, but because the weakest exited.
           </div>
           <div class="tool-use">Used with ~200 students a year.</div>
+          <div class="tool-principle">Make the invisible visible</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Firm Selection</div>
             <div class="tool-launch">Launch</div>
@@ -577,6 +590,7 @@
           <div class="tool-desc">
             Watch variance in Y get sorted into bins for each predictor. Crank the correlation and draw new samples to see coefficients swing — and flip sign — while R² holds steady. Multicollinearity, made visible.
           </div>
+          <div class="tool-principle">Make the invisible visible</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 455 · Analytics</div>
             <div class="tool-launch">Launch</div>
@@ -596,6 +610,7 @@
           <div class="tool-desc">
             Drag the price and hear the market respond. Shortage sounds anxious, surplus sounds heavy, equilibrium resolves to a calm chord — learn to hear disequilibrium before you read the graph.
           </div>
+          <div class="tool-principle">Make the invisible visible</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Supply &amp; Demand</div>
             <div class="tool-launch">Launch</div>
@@ -614,6 +629,7 @@
           <div class="tool-desc">
             Five levels of curve-dragging, from classifying shifts up to simultaneous shocks and real news scenarios. Drag the curves, watch equilibrium move, check your reasoning.
           </div>
+          <div class="tool-principle">Predict before reveal</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Supply and Demand</div>
             <div class="tool-launch">Launch</div>
@@ -632,6 +648,7 @@
           <div class="tool-desc">
             Sort each cost as paid-out or given-up, compute accounting vs. economic profit, then reveal an animated waterfall and a balance scale that weighs the venture against the owner's next-best life. Opportunity cost, made visible.
           </div>
+          <div class="tool-principle">Predict before reveal</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Opportunity Cost</div>
             <div class="tool-launch">Launch</div>
@@ -651,6 +668,7 @@
             A bridge is out and costs are climbing. Interview four AI stakeholders, build an evidence board, watch the market model shift, then write a policy memo an AI instructor assesses on economic reasoning.
           </div>
           <div class="tool-credit">Developed with Matt Smith</div>
+          <div class="tool-principle">Learning by doing</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Market Shock</div>
             <div class="tool-launch">Launch</div>
@@ -670,6 +688,7 @@
           <div class="tool-desc">
             Pick a claim about an agricultural minimum wage. The board flips from quiet to illuminated, showing who benefits, who bears pressure, who has mixed incentives, and whose concerns are missing.
           </div>
+          <div class="tool-principle">Predict before reveal</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Labor Markets</div>
             <div class="tool-launch">Launch</div>
@@ -688,6 +707,7 @@
           <div class="tool-desc">
             Convene a four-person advisory panel on an ag-policy fight, brief them, and watch them disagree on your behalf. Question any panelist, let another seat chime in, then have the Chair read the room — and walk out with a deliberation record.
           </div>
+          <div class="tool-principle">Learning by doing</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 433 · Ag Policy</div>
             <div class="tool-launch">Launch</div>
@@ -725,6 +745,7 @@
           <div class="tool-desc">
             Estimate a fair cropland cash rent several ways at once — tenant's residual, share of gross revenue, and county benchmark — then see where the landowner's floor and the tenant's ceiling leave room to deal. NC county rent data built in.
           </div>
+          <div class="tool-principle">Learning by doing</div>
           <div class="tool-foot">
             <div class="tool-course">Farm Management</div>
             <div class="tool-launch">Launch</div>
@@ -743,6 +764,7 @@
           <div class="tool-desc">
             Build a per-acre budget for corn, soybeans, or wheat, then stress-test it — break-evens, tornado sensitivity, and price &amp; yield scenarios, all charted. Pre-filled with NC State enterprise-budget numbers.
           </div>
+          <div class="tool-principle">Learning by doing</div>
           <div class="tool-foot">
             <div class="tool-course">Farm Management</div>
             <div class="tool-launch">Launch</div>
@@ -761,6 +783,7 @@
           <div class="tool-desc">
             A practice trainer for the AAEA Academic Quiz Bowl — timed practice rounds, spaced-repetition review, performance analytics, and a Fact Cards deck. Built for the team headed to Kansas City.
           </div>
+          <div class="tool-principle">Retrieval practice</div>
           <div class="tool-foot">
             <div class="tool-course">Quiz Bowl</div>
             <div class="tool-launch">Launch</div>
@@ -779,6 +802,7 @@
           <div class="tool-desc">
             A host-run Jeopardy board for practice: twelve rounds plus a potpourri and tiebreaker, buzz-in timer, steal logic, live scoreboard, and an explain panel for every clue. Project it and run a session.
           </div>
+          <div class="tool-principle">Retrieval practice</div>
           <div class="tool-foot">
             <div class="tool-course">Quiz Bowl</div>
             <div class="tool-launch">Launch</div>
@@ -851,6 +875,7 @@
           <div class="tool-desc">
             You chair the House Ag Committee as the farm bill opens: mark up Title I, whip a coalition, weather CBO scores and shock events, then survive a roll-call vote and earn an ending. Act I — Committee Markup; future acts: floor debate, conference.
           </div>
+          <div class="tool-principle">Learning by doing</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 433 · Ag Policy</div>
             <div class="tool-launch">Launch</div>
@@ -873,6 +898,8 @@
       </div>
     </div>
   </section>
+
+  <div class="opensource-band">Every tool here is <strong>open source</strong>. Take one, adapt it, teach with it.</div>
 
   <section id="coming">
     <div class="section-head">
@@ -909,7 +936,7 @@
 
   <section class="pull-band">
     <blockquote>
-      there is almost nothing between the idea and the <span style="color: var(--gold); font-style: normal; font-weight: 700;">thing existing</span>.
+      I have an idea, and now there is almost nothing between the idea and the <span style="color: var(--gold); font-style: normal; font-weight: 700;">thing existing</span>.
     </blockquote>
     <div class="attr">— Dr. Tremendous</div>
   </section>
@@ -920,7 +947,7 @@
         <span class="navy">Dr.Treme</span><span class="gold">ndous</span>
       </div>
       <div class="footer-tag">Solutions, made visible.</div>
-      <div style="font-size:11px; color:var(--gray); margin-top:10px; max-width:360px; line-height:1.55;">Every tool here is open source and available for adoption on request.</div>
+      <div style="font-size:11px; color:var(--gray); margin-top:10px; max-width:360px; line-height:1.55;">Every tool here is open source. Take one, adapt it, teach with it.</div>
     </div>
     <div class="footer-col">
       <h4>Browse</h4>
