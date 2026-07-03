@@ -402,6 +402,27 @@
   body::before { content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
     opacity:0.045; mix-blend-mode:multiply;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* --- collection: philosophy intro, filter pills, quotes, contrast --- */
+  .collection-sub { font-family:'Fraunces',serif; font-size:19px; line-height:1.5; color:var(--navy-soft); max-width:640px; margin:-14px 0 12px; }
+  .collection-origin { font-size:13.5px; line-height:1.6; color:var(--navy-mute); max-width:640px; margin:0 0 4px; }
+  .collection-origin em { font-family:'Fraunces',serif; font-style:italic; color:var(--navy); }
+  .filter-pills { display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 22px; }
+  .pill { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.05em; text-transform:uppercase;
+    padding:7px 13px; border:1px solid var(--rule); border-radius:999px; background:transparent; color:var(--navy-mute);
+    cursor:pointer; transition:background .15s, color .15s, border-color .15s; }
+  .pill:hover { border-color:var(--gold); color:var(--navy); }
+  .pill.active { background:var(--navy); color:var(--cream); border-color:var(--navy); }
+  .tool.hide { display:none; }
+  .tool-credit { font-size:12px; font-style:italic; color:var(--navy-mute); margin:-6px 0 16px; }
+  .quotes-strip { margin-top:60px; }
+  .quotes { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; }
+  .quote { background:var(--cream-warm); border-left:3px solid var(--gold); border-radius:0 4px 4px 0; padding:22px 24px; }
+  .quote blockquote { font-family:'Fraunces',serif; font-size:18px; line-height:1.45; color:var(--navy); font-style:italic; margin-bottom:14px; }
+  .quote figcaption { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.03em; color:var(--navy-mute); }
+  .quote figcaption span { color:#8a6414; }
+  /* contrast: darker gold for small labels on cream */
+  .section-head .eyebrow, .group-label, .tool-tag { color:#8a6414; }
 </style>
 </head>
 <body>
@@ -437,15 +458,17 @@
   <section id="collection">
     <div class="section-head">
       <div class="left">
-        <div class="eyebrow">The Collection · Live now</div>
-        <h2>Open the <em>door</em>.</h2>
+        <div class="eyebrow" id="collCount">THE COLLECTION</div>
+        <h2>Care, built into the <em>structure.</em></h2>
       </div>
     </div>
+    <p class="collection-sub">In a course of hundreds, care can’t depend on proximity. Each tool asks students to predict before the answer is revealed.</p>
+    <p class="collection-origin"><em>I build the things that do not exist yet</em> — the economics and the teaching are mine; the building is collaborative.</p>
 
-    <div class="tool-group featured" id="featured">
+    <div class="tool-group featured">
       <div class="group-label">Featured Teaching Tools <span class="lede">· Start Here</span></div>
       <div class="tools-live">
-        <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
+        <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool" data-cat="advising">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/paw-plan.jpg" alt="" loading="lazy">
             <video class="tp-video" src="previews/paw-plan.webm" muted loop playsinline preload="none"></video>
@@ -464,7 +487,77 @@
           </div>
         </a>
 
-        <a href="multicollinearity.html" class="tool">
+        <a href="aisle-economics.html" class="tool" data-cat="markets">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/aisle-economics.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/aisle-economics.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Open a product to split its price: farm vs. marketing.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">Aisle<br>Economics</div>
+          <div class="tool-desc">
+            A walkable grocery store that turns prices, substitutes, and shocks into something you can see on a shelf.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Intro Micro</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="https://drtremendous-analytics-tutor.netlify.app" target="_blank" rel="noopener" class="tool" data-cat="analytics">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/analytics-tutor.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Work a stats problem one Socratic question at a time.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Live</div>
+          </div>
+          <div class="tool-title"></div>
+          <div class="tool-desc">
+            
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course"></div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="drowning-skyline.html" class="tool" data-cat="markets">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/drowning-skyline.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/drowning-skyline.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Raise the waterline and watch the short firms drown.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">The Drowning<br>Skyline</div>
+          <div class="tool-desc">
+            Firm selection and industry productivity, made cinematic. Each tower is a firm; its height is productivity. When the storm surge rises, watch which firms drown, which survive — and why the industry's average rises not because anyone improved, but because the weakest exited.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Firm Selection</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="tool-group" id="all-tools">
+      <div class="group-label">The Full Collection <span class="lede">· Filter by area</span></div>
+      <div class="filter-pills" id="pills">
+        <button class="pill active" data-f="all">All</button>
+        <button class="pill" data-f="analytics">Analytics</button>
+        <button class="pill" data-f="markets">Markets &amp; Micro</button>
+        <button class="pill" data-f="farm">Farm &amp; Extension</button>
+        <button class="pill" data-f="quizbowl">Quiz Bowl</button>
+        <button class="pill" data-f="faculty">Faculty</button>
+        <button class="pill" data-f="fun">Fun</button>
+      </div>
+      <div class="tools-live" id="grid">
+        <a href="multicollinearity.html" class="tool" data-cat="analytics">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/multicollinearity.jpg" alt="" loading="lazy">
             <video class="tp-video" src="previews/multicollinearity.webm" muted loop playsinline preload="none"></video>
@@ -483,155 +576,12 @@
           </div>
         </a>
 
-
-        <a href="drowning-skyline.html" class="tool">
+        <a href="sound-toy.html" class="tool" data-cat="markets">
           <div class="tool-preview">
-            <img class="tp-poster" src="previews/drowning-skyline.jpg" alt="" loading="lazy">
-            <video class="tp-video" src="previews/drowning-skyline.webm" muted loop playsinline preload="none"></video>
-            <div class="tp-what"><b>What students do</b>Raise the waterline and watch the short firms drown.</div>
+            <img class="tp-poster" src="previews/sound-toy.jpg" alt="" loading="lazy">
+            <video class="tp-video" src="previews/sound-toy.webm" muted loop playsinline preload="none"></video>
+            <div class="tp-what"><b>What students do</b>Drag the price through shortage, equilibrium, surplus.</div>
           </div>
-          <div class="tool-top">
-            <div class="tool-tag">Simulation · Live</div>
-          </div>
-          <div class="tool-title">The Drowning<br>Skyline</div>
-          <div class="tool-desc">
-            A city of gothic towers rising from a stormy sea. Each tower is a firm; its height is productivity. Raise the waterline and watch the survivors' average rise — not because anyone improved, but because the short towers drowned. Melitz selection, made cinematic.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Firm Selection</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
-        <a href="aisle-economics.html" class="tool">
-          <div class="tool-preview">
-            <img class="tp-poster" src="previews/aisle-economics.jpg" alt="" loading="lazy">
-            <video class="tp-video" src="previews/aisle-economics.webm" muted loop playsinline preload="none"></video>
-            <div class="tp-what"><b>What students do</b>Open a product to split its price: farm vs. marketing.</div>
-          </div>
-          <div class="tool-top">
-            <div class="tool-tag">Simulation · Live</div>
-          </div>
-          <div class="tool-title">Aisle<br>Economics</div>
-          <div class="tool-desc">
-            A walkable grocery store that turns prices, substitutes, and shocks into something you can see on a shelf.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Intro Micro</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-        <a href="https://drtremendous-quick-fix.netlify.app/" target="_blank" rel="noopener" class="tool">
-          <div class="tool-preview">
-            <img class="tp-poster" src="previews/quick-fix.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What students do</b>Interview four stakeholders, then write the policy memo.</div>
-          </div>
-          <div class="tool-top">
-            <div class="tool-tag">Simulation · Live</div>
-          </div>
-          <div class="tool-title">The Quick Fix<br>Simulator</div>
-          <div class="tool-desc">
-            A bridge is out and costs are climbing. Interview four AI stakeholders, build an evidence board, watch the market model shift, then write a policy memo an AI instructor assesses on economic reasoning.
-          </div>
-          <div style="font-size:12px;font-style:italic;color:var(--navy-mute);margin:-6px 0 16px">Developed with Matt Smith</div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Market Shock</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
-        <a href="stakeholder-heatmap.html" class="tool">
-          <div class="tool-preview">
-            <img class="tp-poster" src="previews/stakeholder-heatmap.jpg" alt="" loading="lazy">
-            <video class="tp-video" src="previews/stakeholder-heatmap.webm" muted loop playsinline preload="none"></video>
-            <div class="tp-what"><b>What students do</b>Predict each stakeholder, then reveal the board.</div>
-          </div>
-          <div class="tool-top">
-            <div class="tool-tag">Simulation · Live</div>
-          </div>
-          <div class="tool-title">Stakeholder Heatmap</div>
-          <div class="tool-desc">
-            Pick a claim about an agricultural minimum wage. The board flips from quiet to illuminated, showing who benefits, who bears pressure, who has mixed incentives, and whose concerns are missing.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Labor Markets</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
-      </div>
-    </div>
-
-    <div class="tool-group">
-      <div class="group-label">Advising &amp; Program</div>
-      <div class="tools-live">
-        <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Advising · Live</div>
-          </div>
-          <div class="tool-title">Paw Plan</div>
-          <div class="tool-desc">
-            A four-year degree planner for ABM students. Drag courses across semesters, auto-check prerequisites, save your plan, and bring it to advising. Mobile-friendly.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ABM Advising</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <div class="tool-group">
-      <div class="group-label">Analytics</div>
-      <div class="tools-live">
-        <a href="https://drtremendous-analytics-tutor.netlify.app/" target="_blank" rel="noopener" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Tutor · Live</div>
-          </div>
-          <div class="tool-title">Dr. Tremendous<br>Analytics Tutor</div>
-          <div class="tool-desc">
-            A patient, slightly deadpan tutor that walks students through analytics one Socratic question at a time.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 455 · Analytics</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
-        <a href="multicollinearity.html" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Visualizer · Live</div>
-          </div>
-          <div class="tool-title">The OLS<br>Sorting Machine</div>
-          <div class="tool-desc">
-            Watch variance in Y get sorted into bins for each predictor. Crank the correlation and draw new samples to see coefficients swing — and flip sign — while R² holds steady. Multicollinearity, made visible.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 455 · Analytics</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <div class="tool-group">
-      <div class="group-label">Markets &amp; Micro</div>
-      <div class="tools-live">
-        <a href="supply-demand-practice.html" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Practice · Live</div>
-          </div>
-          <div class="tool-title">Supply &amp; Demand<br>Practice</div>
-          <div class="tool-desc">
-            Five levels of curve-dragging, from classifying shifts up to simultaneous shocks and real news scenarios. Drag the curves, watch equilibrium move, check your reasoning.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Supply and Demand</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
-        <a href="sound-toy.html" class="tool">
           <div class="tool-top">
             <div class="tool-tag">Sound Toy · Live</div>
           </div>
@@ -645,35 +595,25 @@
           </div>
         </a>
 
-        <a href="drowning-skyline.html" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Simulation · Live</div>
+        <a href="supply-demand-practice.html" class="tool" data-cat="markets">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/supply-demand-practice.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Drag the curves; watch equilibrium move.</div>
           </div>
-          <div class="tool-title">The Drowning<br>Skyline</div>
+          <div class="tool-top">
+            <div class="tool-tag">Practice · Live</div>
+          </div>
+          <div class="tool-title">Supply &amp; Demand<br>Practice</div>
           <div class="tool-desc">
-            A city of gothic towers rising from a stormy sea. Each tower is a firm; its height is productivity. Raise the waterline and watch the survivors' average rise — not because anyone improved, but because the short towers drowned. Melitz selection, made cinematic.
+            Five levels of curve-dragging, from classifying shifts up to simultaneous shocks and real news scenarios. Drag the curves, watch equilibrium move, check your reasoning.
           </div>
           <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Firm Selection</div>
+            <div class="tool-course">ARE 201 · Supply and Demand</div>
             <div class="tool-launch">Launch</div>
           </div>
         </a>
 
-        <a href="aisle-economics.html" class="tool">
-          <div class="tool-top">
-            <div class="tool-tag">Simulation · Live</div>
-          </div>
-          <div class="tool-title">Aisle<br>Economics</div>
-          <div class="tool-desc">
-            A walkable grocery store that turns prices, substitutes, and shocks into something you can see on a shelf.
-          </div>
-          <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Intro Micro</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
-        <a href="economic-profit-lab.html" class="tool">
+        <a href="economic-profit-lab.html" class="tool" data-cat="markets">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/economic-profit-lab.jpg" alt="" loading="lazy">
             <div class="tp-what"><b>What students do</b>Sort each cost, compute both profits, reveal the waterfall.</div>
@@ -691,7 +631,11 @@
           </div>
         </a>
 
-        <a href="https://drtremendous-quick-fix.netlify.app/" target="_blank" rel="noopener" class="tool">
+        <a href="https://drtremendous-quick-fix.netlify.app/" target="_blank" rel="noopener" class="tool" data-cat="markets">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/quick-fix.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Interview four stakeholders, then write the policy memo.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Simulation · Live</div>
           </div>
@@ -699,15 +643,14 @@
           <div class="tool-desc">
             A bridge is out and costs are climbing. Interview four AI stakeholders, build an evidence board, watch the market model shift, then write a policy memo an AI instructor assesses on economic reasoning.
           </div>
-          <div style="font-size:12px;font-style:italic;color:var(--navy-mute);margin:-6px 0 16px">Developed with Matt Smith</div>
+          <div class="tool-credit">Developed with Matt Smith</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Market Shock</div>
             <div class="tool-launch">Launch</div>
           </div>
         </a>
 
-
-        <a href="stakeholder-heatmap.html" class="tool">
+        <a href="stakeholder-heatmap.html" class="tool" data-cat="markets">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/stakeholder-heatmap.jpg" alt="" loading="lazy">
             <video class="tp-video" src="previews/stakeholder-heatmap.webm" muted loop playsinline preload="none"></video>
@@ -726,7 +669,7 @@
           </div>
         </a>
 
-        <a href="https://drtremendous-standing-committee.netlify.app/" target="_blank" rel="noopener" class="tool">
+        <a href="https://drtremendous-standing-committee.netlify.app/" target="_blank" rel="noopener" class="tool" data-cat="markets">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/standing-committee.jpg" alt="" loading="lazy">
             <div class="tp-what"><b>What students do</b>Brief a four-person panel, then question their positions.</div>
@@ -743,13 +686,30 @@
             <div class="tool-launch">Launch</div>
           </div>
         </a>
-      </div>
-    </div>
 
-    <div class="tool-group">
-      <div class="group-label">Farm &amp; Extension</div>
-      <div class="tools-live">
-        <a href="cash-rent-estimator.html" class="tool">
+        <a href="grain-throne.html" class="tool" data-cat="farm">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/grain-throne.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Mark up the farm bill, whip votes, survive the floor.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">The Grain<br>Throne</div>
+          <div class="tool-desc">
+            You chair the House Ag Committee as the farm bill opens: mark up Title I, whip a coalition, weather CBO scores and shock events, then survive a roll-call vote and earn an ending. Act I — Committee Markup; future acts: floor debate, conference.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 433 · Ag Policy</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="cash-rent-estimator.html" class="tool" data-cat="farm">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/cash-rent-estimator.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Estimate a fair rent three ways; find the deal zone.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Calculator · Live</div>
           </div>
@@ -763,7 +723,11 @@
           </div>
         </a>
 
-        <a href="crop-budget-builder.html" class="tool">
+        <a href="crop-budget-builder.html" class="tool" data-cat="farm">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/crop-budget-builder.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Build a per-acre budget; stress-test break-evens.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Calculator · Live</div>
           </div>
@@ -777,13 +741,11 @@
           </div>
         </a>
 
-      </div>
-    </div>
-
-    <div class="tool-group">
-      <div class="group-label">Quiz Bowl &amp; Coaching</div>
-      <div class="tools-live">
-        <a href="https://jtreme.github.io/QBTrainer/" target="_blank" rel="noopener" class="tool">
+        <a href="https://jtreme.github.io/QBTrainer/" target="_blank" rel="noopener" class="tool" data-cat="quizbowl">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/quizbowl-trainer.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Run timed rounds and spaced-repetition review.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Trainer · Live</div>
           </div>
@@ -797,7 +759,11 @@
           </div>
         </a>
 
-        <a href="quizbowl-jeopardy.html" target="_blank" rel="noopener" class="tool">
+        <a href="quizbowl-jeopardy.html" class="tool" data-cat="quizbowl">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/quizbowl-jeopardy.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Host a live board: buzz, score, explain.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Game Board · Live</div>
           </div>
@@ -810,13 +776,12 @@
             <div class="tool-launch">Launch</div>
           </div>
         </a>
-      </div>
-    </div>
 
-    <div class="tool-group" id="faculty">
-      <div class="group-label">Faculty &amp; Department</div>
-      <div class="tools-live">
-        <a href="peer-review-navigator.html" target="_blank" rel="noopener" class="tool">
+        <a href="peer-review-navigator.html" class="tool" data-cat="faculty">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/peer-review-navigator.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Follow the review workflow for your rank and role.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Navigator · Live</div>
           </div>
@@ -830,7 +795,11 @@
           </div>
         </a>
 
-        <a href="supply-demand-generator.html" target="_blank" rel="noopener" class="tool">
+        <a href="supply-demand-generator.html" class="tool" data-cat="faculty">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/supply-demand-generator.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Generate a problem; print student + key versions.</div>
+          </div>
           <div class="tool-top">
             <div class="tool-tag">Generator · Live</div>
           </div>
@@ -844,10 +813,10 @@
           </div>
         </a>
 
-        <a href="content-editor.html" target="_blank" rel="noopener" class="tool">
+        <a href="content-editor.html" class="tool" data-cat="faculty">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/content-editor.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What it does</b>Click visible text, fix it, download a clean file.</div>
+            <div class="tp-what"><b>What students do</b>Click visible text, fix it, download a clean file.</div>
           </div>
           <div class="tool-top">
             <div class="tool-tag">HTML Editor · Live</div>
@@ -861,30 +830,43 @@
             <div class="tool-launch">Launch</div>
           </div>
         </a>
-      </div>
-    </div>
 
-    <div class="tool-group">
-      <div class="group-label">Just for Fun</div>
-      <div class="tools-live">
-        <a href="drive-thru-draft.html" target="_blank" rel="noopener" class="tool">
-          <div class="tool-preview portrait">
+        <a href="drive-thru-draft.html" class="tool" data-cat="fun">
+          <div class="tool-preview">
             <img class="tp-poster" src="previews/drive-thru-draft.jpg" alt="" loading="lazy">
             <video class="tp-video" src="previews/drive-thru-draft.mp4" muted loop playsinline preload="none"></video>
-            <div class="tp-what"><b>What students do</b>Spin five chains, draft a five-item tray, get a grade.</div>
+            <div class="tp-what"><b>What students do</b>Spin five chains; draft the best tray you can.</div>
           </div>
           <div class="tool-top">
             <div class="tool-tag">Game · Live</div>
           </div>
           <div class="tool-title">Drive-Thru<br>Draft</div>
           <div class="tool-desc">
-            Spin five fast-food chains, draft one item each into a five-slot tray, and dodge the sold-out machine. Build the best meal the spinner allows, earn a grade and a label, and share your tray. Pure fun.
+            Spin five fast-food chains, draft one item per slot, and dodge the sold-out machine — then get graded and share your tray. No learning objectives; some tools exist because building them is the fun part.
           </div>
           <div class="tool-foot">
             <div class="tool-course">Icebreaker</div>
             <div class="tool-launch">Launch</div>
           </div>
         </a>
+      </div>
+    </div>
+
+    <div class="quotes-strip">
+      <div class="group-label">What students say</div>
+      <div class="quotes">
+        <figure class="quote">
+          <blockquote>The platform is fantastic and will be a huge help for students and advisors.</blockquote>
+          <figcaption>— Academic advisor, CALS <span>· Paw Plan</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>Much easier than trying to do this on MyPack Portal's planning options.</blockquote>
+          <figcaption>— ABM student <span>· Paw Plan</span></figcaption>
+        </figure>
+        <figure class="quote">
+          <blockquote>It explained the topics in enough detail to understand my mistakes and fix them.</blockquote>
+          <figcaption>— ARE Analytics student <span>· Analytics Tutor</span></figcaption>
+        </figure>
       </div>
     </div>
   </section>
@@ -972,5 +954,23 @@
   });
 </script>
 
+<script>
+(function(){
+  var n=document.querySelectorAll('#collection a.tool').length;
+  var el=document.getElementById('collCount');
+  if(el) el.textContent=n+' TOOLS · ~600 STUDENTS A YEAR';
+  var grid=document.getElementById('grid');
+  document.querySelectorAll('#pills .pill').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('#pills .pill').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      var f=btn.dataset.f;
+      grid.querySelectorAll('a.tool').forEach(function(c){
+        c.classList.toggle('hide', f!=='all' && c.dataset.cat!==f);
+      });
+    });
+  });
+})();
+</script>
 </body>
 </html>

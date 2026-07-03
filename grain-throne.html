@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>The Grain Throne — Congressional Farm Bill Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Special+Elite&family=Libre+Baskerville:ital@0;1&family=Oswald:wght@400;600&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c8a84b;--gold-dim:rgba(200,168,75,0.35);--gold-bg:rgba(200,168,75,0.08);
+  --green:#6aad5a;--red:#e24b4a;--orange:#e08060;
+  --bg0:#0a0e16;--bg1:#0d1420;--bg2:#111827;--bg3:#141e2e;
+  --text:rgba(232,224,208,0.95);--text-dim:rgba(232,224,208,0.72);--text-muted:rgba(232,224,208,0.75);
+  --border:rgba(255,255,255,0.07);--border-gold:rgba(200,168,75,0.2);
+}
+html,body{height:100%;background:#0a0e16;font-family:'Source Sans 3',sans-serif;color:var(--text)}
+
+/* ── LAYOUT SHELL ── */
+#app{display:flex;flex-direction:column;min-height:100vh;max-width:960px;margin:0 auto}
+
+/* ── PERSISTENT HEADER ── */
+#game-header{background:var(--bg2);border-bottom:1px solid var(--border-gold);padding:0;flex-shrink:0;position:sticky;top:0;z-index:100}
+.header-top{background:var(--gold);padding:6px 20px;display:flex;align-items:center;justify-content:space-between}
+.game-wordmark{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#1a1208;letter-spacing:4px;text-transform:uppercase}
+.phase-indicator{font-family:'Special Elite',monospace;font-size:9px;color:rgba(26,18,8,0.55);letter-spacing:2px;text-transform:uppercase}
+.scoreboards-bar{display:grid;grid-template-columns:1fr 1px 1fr 1px auto;padding:0}
+.sb-half{padding:8px 20px;display:flex;align-items:center;gap:12px}
+.sb-label{font-family:'Special Elite',monospace;font-size:8px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;white-space:nowrap}
+.sb-score{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;line-height:1;transition:all 0.5s}
+.sb-bar-wrap{flex:1;display:flex;flex-direction:column;gap:3px}
+.sb-bar-track{height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden}
+.sb-bar-fill{height:100%;border-radius:2px;transition:width 0.6s cubic-bezier(.4,0,.2,1)}
+.sb-sublabel{font-family:'Special Elite',monospace;font-size:8px;color:var(--text-muted);letter-spacing:1px}
+.sb-divider{background:var(--border-gold)}
+.sb-gap{padding:8px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.gap-num{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;transition:color 0.4s}
+.gap-label{font-family:'Special Elite',monospace;font-size:7px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase}
+.phase-dots{display:flex;gap:4px;padding:6px 20px;border-top:1px solid var(--border);align-items:center}
+.phase-dot{width:80px;height:3px;border-radius:2px;background:rgba(255,255,255,0.08);transition:background 0.4s;position:relative}
+.phase-dot.done{background:var(--green)}
+.phase-dot.active{background:var(--gold)}
+.phase-dot-label{font-family:'Special Elite',monospace;font-size:7px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;position:absolute;top:6px;left:0;white-space:nowrap}
+
+/* ── PHASE SCREENS ── */
+.phase{display:none;flex:1;flex-direction:column;animation:fadeIn 0.5s ease}
+.phase.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── COMMON COMPONENTS ── */
+.section-header{background:var(--bg3);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+.section-title{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+.section-sub{font-family:'Special Elite',monospace;font-size:9px;color:var(--text-muted);letter-spacing:1px}
+.persona-strip{background:var(--bg3);padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.persona-badge{width:38px;height:38px;border-radius:50%;background:#1a3a6e;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#a0c4f8;flex-shrink:0}
+.persona-name{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600}
+.persona-detail{font-family:'Special Elite',monospace;font-size:8px;color:var(--gold);letter-spacing:1px;margin-top:1px;opacity:0.6}
+.ptag{font-family:'Special Elite',monospace;font-size:8px;letter-spacing:1px;padding:2px 7px;border-radius:3px;text-transform:uppercase;margin-left:auto}
+.ptag-r{background:rgba(200,80,50,0.15);color:#e08060;border:1px solid rgba(200,80,50,0.2)}
+.nav-bar{padding:12px 20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;margin-top:auto;flex-shrink:0}
+.nav-note{font-family:'Special Elite',monospace;font-size:9px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase}
+.btn{font-family:'Source Sans 3',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:8px 20px;border-radius:4px;cursor:pointer;border:none;transition:all 0.2s}
+.btn-pri{background:var(--gold);color:#1a1208;font-weight:600}
+.btn-pri:hover{background:#dfc060}
+.btn-sec{background:transparent;border:1px solid var(--gold-dim);color:var(--gold)}
+.btn-sec:hover{background:var(--gold-bg)}
+.btn:disabled{opacity:0.25;cursor:default}
+
+/* ── PHASE 0: TITLE ── */
+#phase-title{background:var(--bg0);justify-content:center;align-items:center;text-align:center;padding:60px 40px}
+.title-game{font-family:'Playfair Display',serif;font-size:64px;font-weight:700;color:var(--gold);letter-spacing:8px;text-transform:uppercase;line-height:1}
+.title-tagline{font-family:'Libre Baskerville',serif;font-style:italic;font-size:17px;color:rgba(232,224,208,0.85);letter-spacing:2px;margin:14px 0 40px}
+.title-divider{width:80px;height:1px;background:var(--gold);margin:0 auto 36px}
+.title-intro{font-family:'Libre Baskerville',serif;font-size:15px;line-height:2.1;color:rgba(232,224,208,0.88);max-width:500px;margin:0 auto 48px;font-weight:400}
+.title-intro em{color:var(--gold);font-style:normal}
+
+/* ── Title screen: warm archival override, scoped entirely to #phase-title. ──
+   Two-token rule: parchment ground, ink for text, gold demoted from text-color
+   to foil (the rule line only — gold text on cream fails contrast). One dark
+   element on the page: the start button. That's the only object on this warm
+   archival screen that previews the game's grammar — dark is where consequence
+   lives — and clicking it is the player's first step into it. Door to the
+   dungeon, not the dungeon itself. Wins by specificity (#id .class beats bare
+   .class), so it overrides nothing above and nothing outside this phase inherits it. */
+#phase-title{
+  background:#f4ecd8;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, rgba(0,0,0,0.012) 1px, transparent 1px, transparent 3px),
+    radial-gradient(ellipse at 50% 30%, #f9f3e3 0%, #f4ecd8 55%, #e8dcc0 100%);
+}
+#phase-title .title-game{color:#2a2118;}
+#phase-title .title-tagline{color:#6a5a44;}
+#phase-title .title-divider{background:#a67c00;height:2px;}
+#phase-title .title-intro{color:#4a3c2e;}
+#phase-title .title-intro em{color:#8a6d1f;}
+#phase-title .btn-pri{
+  background:#141a24; color:#f0e8d0; border:1px solid #a67c00;
+}
+#phase-title .btn-pri:hover{background:#1e2836;}
+
+/* ── PHASE 1: PROLOGUE ── */
+#phase-prologue{flex-direction:column}
+.era-slides{flex:1;overflow:hidden;position:relative}
+.era-slide{display:none;flex-direction:column;height:100%;animation:fadeIn 0.6s ease}
+.era-slide.on{display:flex}
+
+/* Newsprint 1932 */
+.np-header{background:#1a1208;color:#f5f0e0;padding:10px 24px;text-align:center;border-bottom:3px double var(--gold)}
+.np-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;letter-spacing:8px;text-transform:uppercase}
+.np-date{font-family:'Special Elite',monospace;font-size:9px;color:rgba(240,232,208,0.5);letter-spacing:3px;margin-top:2px}
+.np-body{background:#f5f0e0;flex:1;padding:16px 24px;display:grid;grid-template-columns:1fr 1px 1fr;gap:0 16px}
+.np-col-div{background:#1a1208;opacity:0.15}
+.np-headline{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;line-height:1.2;margin-bottom:10px;color:#1a1208;text-transform:uppercase}
+.np-text{font-family:'Libre Baskerville',serif;font-size:12px;line-height:1.8;color:#2a1e0a}
+.np-stat{border:2px solid #1a1208;padding:10px;margin:10px 0;text-align:center}
+.np-stat-num{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:#8b1a1a;display:block}
+.np-stat-lab{font-family:'Special Elite',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:#5a4a2a}
+
+/* Portrait — cream background, large readable text */
+.portrait-slide{background:#f5f0e4;justify-content:center;align-items:center;text-align:center;padding:36px 32px}
+.port-era{font-family:'Special Elite',monospace;font-size:11px;letter-spacing:4px;color:#7a5c1a;text-transform:uppercase;margin-bottom:20px}
+.port-frame{width:88px;height:88px;border-radius:50%;border:3px solid #b8922a;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;background:#e8dfc8}
+.port-ini{font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#7a5c1a}
+.port-name{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:#1a1208;margin-bottom:4px}
+.port-title-role{font-family:'Special Elite',monospace;font-size:11px;letter-spacing:2px;color:#7a5c1a;text-transform:uppercase;margin-bottom:18px}
+.port-quote{font-family:'Libre Baskerville',serif;font-style:italic;font-size:18px;line-height:1.8;color:#2a1e0a;max-width:520px;margin:0 auto 8px}
+.port-src{font-family:'Special Elite',monospace;font-size:10px;color:#8a7a5a;letter-spacing:1px;margin-bottom:14px}
+.atag{display:inline-block;padding:2px 8px;border-radius:3px;font-family:'Special Elite',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase}
+.atag-doc{background:rgba(60,120,60,0.12);color:#2a6a2a;border:1px solid rgba(60,120,60,0.3)}
+.atag-att{background:rgba(140,100,20,0.1);color:#7a5c1a;border:1px solid rgba(140,100,20,0.3)}
+.port-bio{font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.9;color:#2a2018;max-width:520px;margin:0 auto}
+.port-legacy{margin-top:16px;padding:10px 16px;border-left:4px solid #b8922a;text-align:left;max-width:520px;margin-left:auto;margin-right:auto;background:rgba(184,146,42,0.08)}
+.port-leg-l{font-family:'Special Elite',monospace;font-size:10px;letter-spacing:2px;color:#7a5c1a;text-transform:uppercase;margin-bottom:4px}
+.port-leg-t{font-family:'Source Sans 3',sans-serif;font-size:14px;color:#2a2018;line-height:1.7}
+
+/* Decision */
+.dec-slide{background:#0f1a0f;padding:32px;justify-content:center}
+.dec-era{font-family:'Special Elite',monospace;font-size:11px;letter-spacing:4px;color:#6aad5a;text-transform:uppercase;margin-bottom:18px;text-align:center}
+.dec-q{font-family:'Oswald',sans-serif;font-size:22px;font-weight:400;color:#d4e8c4;text-align:center;margin-bottom:8px;line-height:1.4}
+.dec-ctx{font-family:'Source Sans 3',sans-serif;font-size:14px;color:rgba(212,232,196,0.65);text-align:center;margin-bottom:24px}
+.dec-choice{display:block;width:100%;background:rgba(106,173,90,0.07);border:1px solid rgba(106,173,90,0.2);border-radius:8px;padding:14px 18px;margin-bottom:10px;color:#d4e8c4;font-family:'Source Sans 3',sans-serif;font-size:15px;line-height:1.6;text-align:left;cursor:pointer;transition:all 0.2s}
+.dec-choice:hover{background:rgba(106,173,90,0.15);border-color:#6aad5a;transform:translateX(3px)}
+.dec-letter{font-family:'Oswald',sans-serif;font-size:16px;color:#6aad5a;margin-right:10px;font-weight:600}
+.dec-result{display:none;background:rgba(106,173,90,0.06);border:1px solid rgba(106,173,90,0.15);border-radius:8px;padding:18px;margin-top:14px;animation:slideUp 0.3s ease}
+.dec-result.show{display:block}
+.dec-res-title{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;color:#6aad5a;text-transform:uppercase;margin-bottom:8px}
+.dec-res-body{font-family:'Libre Baskerville',serif;font-size:14px;line-height:1.9;color:rgba(212,232,196,0.9)}
+.mseed{margin-top:10px;padding:8px 12px;border-left:3px solid var(--gold);font-family:'Special Elite',monospace;font-size:11px;color:var(--gold);letter-spacing:1px}
+
+/* Bridge */
+.bridge-slide{background:#1a0f08;justify-content:center;align-items:center;text-align:center;padding:48px 32px}
+.bridge-line{width:1px;height:32px;background:var(--gold);opacity:0.4;margin:0 auto 18px}
+.bridge-txt{font-family:'Playfair Display',serif;font-style:italic;font-size:20px;line-height:2.1;color:rgba(232,224,208,0.88);max-width:540px;margin:0 auto 20px}
+.bridge-txt em{color:var(--gold);font-style:normal}
+.bridge-mech{display:inline-block;padding:6px 18px;border:1px solid var(--gold-dim);border-radius:20px;font-family:'Special Elite',monospace;font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+
+/* Handoff */
+.handoff-slide{background:var(--bg0);justify-content:center;align-items:center;text-align:center;padding:48px 32px}
+.handoff-year{font-family:'Playfair Display',serif;font-size:80px;font-weight:700;color:var(--gold);line-height:1;margin-bottom:10px}
+.handoff-txt{font-family:'Libre Baskerville',serif;font-style:italic;font-size:18px;line-height:2.1;color:rgba(232,224,208,0.88);max-width:520px;margin:0 auto 28px}
+.handoff-txt em{color:var(--gold);font-style:normal}
+.handoff-warn{font-family:'Special Elite',monospace;font-size:13px;letter-spacing:3px;color:var(--gold);border:1px solid var(--gold-dim);display:inline-block;padding:10px 24px;margin-bottom:28px}
+
+/* ── PHASE 2: ACT 1 MARKUP ── */
+#phase-act1{flex-direction:column}
+.act1-grid{display:grid;grid-template-columns:1fr 260px;flex:1;overflow:hidden}
+.titles-panel{padding:16px 20px;overflow-y:auto}
+.panel-heading{font-family:'Oswald',sans-serif;font-size:12px;letter-spacing:3px;color:var(--gold);opacity:0.7;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.title-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;transition:border-color 0.2s}
+.title-card:hover{border-color:var(--gold-dim)}
+.tc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tc-name{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600}
+.tc-share{font-family:'Special Elite',monospace;font-size:10px;color:var(--gold);opacity:0.6;letter-spacing:1px}
+.tc-desc{font-family:'Source Sans 3',sans-serif;font-size:13px;color:var(--text-dim);line-height:1.6;margin-bottom:10px}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-label{font-family:'Special Elite',monospace;font-size:9px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;width:56px;flex-shrink:0}
+input[type=range]{flex:1;accent-color:var(--gold);height:20px;cursor:pointer}
+.slider-val{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;min-width:48px;text-align:right}
+.impact-tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.itag{font-family:'Special Elite',monospace;font-size:9px;letter-spacing:1px;padding:3px 8px;border-radius:3px;text-transform:uppercase}
+.itag-pos{background:rgba(106,173,90,0.1);color:#6aad5a;border:1px solid rgba(106,173,90,0.2)}
+.itag-neg{background:rgba(226,75,74,0.1);color:#e24b4a;border:1px solid rgba(226,75,74,0.2)}
+.itag-neu{background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold-dim)}
+
+.sidebar{background:var(--bg1);border-left:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.sidebar-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px}
+.sc-title{font-family:'Oswald',sans-serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;opacity:0.7;margin-bottom:10px}
+.news-item{padding:8px 0;border-bottom:1px solid var(--border)}
+.news-item:last-child{border-bottom:none}
+.news-src{font-family:'Special Elite',monospace;font-size:9px;letter-spacing:1px;color:var(--gold);text-transform:uppercase;margin-bottom:3px}
+.news-txt{font-family:'Libre Baskerville',serif;font-size:13px;line-height:1.6;color:var(--text-dim);font-style:italic}
+.cbo-row{display:flex;justify-content:space-between;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--border)}
+.cbo-row:last-child{border-bottom:none}
+.cbo-name{font-family:'Source Sans 3',sans-serif;font-size:13px;color:var(--text-dim)}
+.cbo-num{font-family:'Oswald',sans-serif;font-size:14px;font-weight:600;transition:color 0.3s}
+.cbo-total-row{display:flex;justify-content:space-between;padding:7px 0 0;margin-top:5px;border-top:1px solid var(--border-gold)}
+.cbo-total-label{font-family:'Special Elite',monospace;font-size:10px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;opacity:0.7}
+.ig-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)}
+.ig-row:last-child{border-bottom:none}
+.ig-name{font-family:'Source Sans 3',sans-serif;font-size:13px;color:var(--text-dim)}
+.ig-dots{display:flex;gap:2px}
+.ig-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.1)}
+.ig-dot.on{background:var(--gold)}
+.ig-dot.hi{background:var(--green)}
+.ig-dot.lo{background:var(--red)}
+.res-bar-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.res-bar-label{font-family:'Special Elite',monospace;font-size:7px;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;width:44px;flex-shrink:0}
+.res-bar-track{flex:1;height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden}
+.res-bar-fill{height:100%;border-radius:2px;transition:width 0.4s}
+.res-bar-val{font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;min-width:40px;text-align:right;transition:color 0.3s}
+
+/* Shock modal */
+.modal-wrap{display:none;background:rgba(0,0,0,0.75);position:absolute;inset:0;z-index:200;align-items:center;justify-content:center;min-height:500px}
+.modal-wrap.show{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border-gold);border-radius:12px;padding:24px;max-width:420px;width:92%;animation:slideUp 0.3s ease}
+.modal-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.modal-sub{font-family:'Special Elite',monospace;font-size:8px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:14px}
+.modal-body{font-family:'Libre Baskerville',serif;font-size:13px;line-height:1.8;color:var(--text-dim);margin-bottom:16px}
+.modal-body em{color:var(--gold);font-style:normal}
+.modal-choice{display:block;width:100%;background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:6px;padding:10px 14px;margin-bottom:8px;color:var(--text);font-family:'Source Sans 3',sans-serif;font-size:12px;line-height:1.5;text-align:left;cursor:pointer;transition:all 0.2s}
+
+/* ── VOTE PHASE ── */
+.tally-banner{display:flex;align-items:center;justify-content:center;gap:24px;padding:16px;margin-bottom:14px;border-radius:8px;background:var(--bg2);border:1px solid var(--border-gold)}
+.tally-num{font-family:'Playfair Display',serif;font-size:40px;font-weight:700;line-height:1}
+.tally-lab{font-family:'Special Elite',monospace;font-size:9px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-top:2px;text-align:center}
+.tally-vs{font-family:'Oswald',sans-serif;font-size:16px;color:var(--text-muted)}
+.tally-verdict{text-align:center;font-family:'Oswald',sans-serif;font-size:14px;letter-spacing:2px;text-transform:uppercase;padding:8px;border-radius:6px;margin-bottom:14px}
+.tally-verdict.pass{background:rgba(106,173,90,0.12);color:var(--green)}
+.tally-verdict.fail{background:rgba(226,75,74,0.1);color:var(--red)}
+.senator-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:6px;margin-bottom:6px;background:var(--bg3);border:1px solid var(--border)}
+.senator-row.no{border-color:rgba(226,75,74,0.25)}
+.senator-row.yes{border-color:rgba(106,173,90,0.25)}
+.sen-vote-badge{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:12px;font-weight:700;flex-shrink:0}
+.sen-vote-badge.yes{background:rgba(106,173,90,0.18);color:var(--green)}
+.sen-vote-badge.no{background:rgba(226,75,74,0.15);color:var(--red)}
+.sen-info{flex:1;min-width:0}
+.sen-name{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600}
+.sen-identity{font-family:'Special Elite',monospace;font-size:9px;color:var(--gold);opacity:0.6;letter-spacing:1px}
+.sen-why{font-family:'Libre Baskerville',serif;font-style:italic;font-size:12px;color:var(--text-dim);margin-top:3px;line-height:1.5}
+.tension-note{background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:8px;padding:12px 14px;margin:12px 0;font-family:'Source Sans 3',sans-serif;font-size:12px;line-height:1.7;color:var(--text-dim)}
+.tension-note strong{color:var(--gold)}
+.modal-choice:hover{background:rgba(200,168,75,0.14);border-color:var(--gold)}
+.modal-result{display:none;background:rgba(106,173,90,0.07);border:1px solid rgba(106,173,90,0.2);border-radius:6px;padding:12px;font-family:'Source Sans 3',sans-serif;font-size:12px;line-height:1.7;color:rgba(212,232,196,0.85);margin-top:10px}
+.modal-result.show{display:block}
+
+/* ── PHASE 3: TOWN HALL ── */
+#phase-townhall{flex-direction:column}
+.th-constituent{background:var(--bg3);padding:12px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.th-const-badge{width:40px;height:40px;border-radius:50%;background:#2a3a4a;border:2px solid var(--gold-dim);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:var(--gold);flex-shrink:0}
+.th-const-name{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600}
+.th-const-desc{font-family:'Special Elite',monospace;font-size:8px;color:var(--gold);opacity:0.5;letter-spacing:1px;margin-top:1px}
+.timer-wrap{margin-left:auto;text-align:right}
+.timer-label{font-family:'Special Elite',monospace;font-size:7px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase}
+.timer-val{font-family:'Oswald',sans-serif;font-size:28px;font-weight:600;line-height:1;transition:color 0.3s}
+.timer-track{height:3px;background:rgba(255,255,255,0.07);border-radius:2px;width:72px;margin-top:3px;overflow:hidden;margin-left:auto}
+.timer-fill{height:100%;border-radius:2px;transition:width 0.95s linear,background 0.3s}
+.th-q-section{padding:20px;flex:1}
+.th-q-type{font-family:'Special Elite',monospace;font-size:10px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px}
+.th-q-text{font-family:'Libre Baskerville',serif;font-size:18px;line-height:1.7;color:var(--text);margin-bottom:6px}
+.th-q-sub{font-family:'Source Sans 3',sans-serif;font-size:13px;color:var(--text-muted);margin-bottom:20px;line-height:1.6}
+.th-choice{background:var(--gold-bg);border:1px solid var(--gold-dim);border-radius:8px;padding:13px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;display:flex;align-items:flex-start;gap:12px;text-align:left;width:100%}
+.th-choice:hover{background:rgba(200,168,75,0.12);border-color:var(--gold)}
+.th-choice.correct{background:rgba(106,173,90,0.12);border-color:var(--green);cursor:default}
+.th-choice.wrong-ans{background:rgba(226,75,74,0.1);border-color:var(--red);cursor:default;opacity:0.7}
+.th-choice.reveal{background:rgba(106,173,90,0.07);border-color:rgba(106,173,90,0.3);cursor:default}
+.th-choice.th-deflect{background:rgba(224,128,96,0.06);border:1px solid rgba(224,128,96,0.3);margin-top:4px}
+.th-choice.th-deflect:hover{background:rgba(224,128,96,0.14);border-color:var(--orange)}
+.th-deflect-tag{font-family:'Special Elite',monospace;font-size:9px;letter-spacing:2px;color:var(--orange);flex-shrink:0;margin-top:2px;border:1px solid rgba(224,128,96,0.4);border-radius:3px;padding:2px 6px;white-space:nowrap}
+.th-choice-letter{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600;color:var(--gold);flex-shrink:0;margin-top:1px}
+.th-choice-text{font-family:'Source Sans 3',sans-serif;font-size:14px;line-height:1.6;color:var(--text-dim)}
+.th-feedback{display:none;border-radius:8px;padding:12px 14px;margin-bottom:12px;animation:slideUp 0.3s ease}
+.th-feedback.show{display:block}
+.th-fb-correct{background:rgba(106,173,90,0.1);border:1px solid rgba(106,173,90,0.25)}
+.th-fb-wrong{background:rgba(226,75,74,0.08);border:1px solid rgba(226,75,74,0.2)}
+.th-fb-timeout{background:var(--gold-bg);border:1px solid var(--gold-dim)}
+.th-fb-title{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+.th-fb-correct .th-fb-title{color:var(--green)}
+.th-fb-wrong .th-fb-title,.th-fb-timeout .th-fb-title{color:var(--red)}
+.th-fb-wrong.th-fb-timeout .th-fb-title{color:var(--gold)}
+.th-fb-body{font-family:'Source Sans 3',sans-serif;font-size:12px;line-height:1.7;color:var(--text-dim)}
+.th-chain{margin-top:7px;padding:6px 10px;border-left:2px solid var(--gold-dim);font-family:'Special Elite',monospace;font-size:9px;color:var(--gold);letter-spacing:1px;line-height:1.5}
+.th-score-strip{padding:8px 20px;background:var(--bg1);border-top:1px solid var(--border);display:flex;gap:16px;align-items:center}
+.ths-item{display:flex;flex-direction:column}
+.ths-label{font-family:'Special Elite',monospace;font-size:7px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase}
+.ths-val{font-family:'Oswald',sans-serif;font-size:15px;font-weight:600}
+.ths-sep{width:1px;height:24px;background:var(--border)}
+.q-dots{display:flex;gap:5px;margin-left:auto}
+.q-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.1);transition:background 0.3s}
+.q-dot.active-q{background:var(--gold)}
+.q-dot.q-done{background:var(--green)}
+.q-dot.q-wrong{background:var(--red)}
+.q-dot.q-deflect{background:var(--orange)}
+
+/* ── PHASE 4: DEBRIEF ── */
+#phase-debrief{flex-direction:column;overflow-y:auto}
+.dual-wrap{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border-gold)}
+.board{background:var(--bg1);padding:20px}
+.board-label{font-family:'Special Elite',monospace;font-size:8px;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px}
+.board-big-score{font-family:'Playfair Display',serif;font-size:56px;font-weight:700;line-height:1;margin-bottom:4px}
+.board-bar-track{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;margin-bottom:10px;overflow:hidden}
+.board-bar-fill{height:100%;border-radius:3px;transition:width 0.8s cubic-bezier(.4,0,.2,1)}
+.board-verdict{font-family:'Libre Baskerville',serif;font-style:italic;font-size:14px;line-height:1.7;margin-bottom:14px}
+.board-breakdown{display:flex;flex-direction:column;gap:7px}
+.bb-row{display:flex;align-items:center;gap:8px}
+.bb-label{font-family:'Source Sans 3',sans-serif;font-size:13px;color:var(--text-muted);flex:1}
+.bb-track{width:80px;height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;flex-shrink:0}
+.bb-fill{height:100%;border-radius:2px}
+.bb-val{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;min-width:24px;text-align:right}
+.gap-row{background:var(--bg0);padding:12px 20px;display:flex;align-items:center;gap:14px;border-top:1px solid var(--border-gold);border-bottom:1px solid var(--border-gold)}
+.gap-label{font-family:'Special Elite',monospace;font-size:8px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;white-space:nowrap}
+.gap-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.gap-line{flex:1;height:1px}
+.gap-big{font-family:'Playfair Display',serif;font-size:32px;font-weight:700}
+.gap-interp{font-family:'Libre Baskerville',serif;font-style:italic;font-size:12px;color:var(--text-muted);flex:1;line-height:1.6;margin-left:8px}
+.outcomes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.oc{background:var(--bg1);padding:12px 14px}
+.oc-label{font-family:'Special Elite',monospace;font-size:7px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px}
+.oc-val{font-family:'Oswald',sans-serif;font-size:18px;font-weight:600;line-height:1;margin-bottom:3px}
+.oc-desc{font-family:'Source Sans 3',sans-serif;font-size:10px;color:var(--text-muted);line-height:1.5}
+.headlines-section{padding:14px 20px}
+.hl-head{font-family:'Special Elite',monospace;font-size:8px;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px}
+.headline{padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:10px}
+.headline:last-child{border-bottom:none}
+.hl-src{font-family:'Special Elite',monospace;font-size:7px;letter-spacing:1px;color:var(--gold);white-space:nowrap;padding-top:2px}
+.hl-txt{font-family:'Libre Baskerville',serif;font-style:italic;font-size:11px;line-height:1.6;color:var(--text-dim)}
+.debrief-qs-section{padding:14px 20px;background:var(--bg2)}
+.dq-head{font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:10px}
+.dq{font-family:'Libre Baskerville',serif;font-size:12px;line-height:1.7;color:var(--text-dim);padding-left:12px;border-left:2px solid var(--gold-dim);margin-bottom:8px}
+.dq:last-child{margin-bottom:0}
+.dq em{color:var(--gold);font-style:normal}
+</style>
+</head>
+<body>
+<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous" style="position:fixed;top:14px;right:16px;z-index:9999;display:flex;align-items:center;gap:8px;text-decoration:none;color:#e9e2d0;font-family:Georgia,serif;font-weight:700;font-size:14px;background:rgba(10,14,22,.72);border:1px solid rgba(255,255,255,.16);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)"><img src="trex.png" alt="" style="height:22px;width:auto;display:block"><span>Dr.Tremendous</span></a>
+<div id="app">
+
+  <!-- PERSISTENT HEADER -->
+  <div id="game-header">
+    <div class="header-top">
+      <div class="game-wordmark">The Grain Throne</div>
+      <div class="phase-indicator" id="phase-label">Introduction</div>
+    </div>
+    <div class="scoreboards-bar">
+      <div class="sb-half">
+        <div>
+          <div class="sb-label">Political survival</div>
+          <div class="sb-score" id="hdr-ps" style="color:var(--orange);">—</div>
+        </div>
+        <div class="sb-bar-wrap">
+          <div class="sb-bar-track"><div class="sb-bar-fill" id="hdr-ps-bar" style="width:0%;background:var(--orange);"></div></div>
+          <div class="sb-sublabel" id="hdr-ps-sub">Not yet active</div>
+        </div>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-half">
+        <div>
+          <div class="sb-label">Policy outcomes</div>
+          <div class="sb-score" id="hdr-po" style="color:var(--green);">—</div>
+        </div>
+        <div class="sb-bar-wrap">
+          <div class="sb-bar-track"><div class="sb-bar-fill" id="hdr-po-bar" style="width:0%;background:var(--green);"></div></div>
+          <div class="sb-sublabel" id="hdr-po-sub">Not yet active</div>
+        </div>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="sb-gap">
+        <div class="gap-num" id="hdr-gap" style="color:var(--text-muted);">—</div>
+        <div class="gap-label">Gap</div>
+      </div>
+    </div>
+    <div class="phase-dots" id="phase-dots">
+      <div class="phase-dot" id="pd-0"><span class="phase-dot-label">Prologue</span></div>
+      <div class="phase-dot" id="pd-1"><span class="phase-dot-label">Act I</span></div>
+      <div class="phase-dot" id="pd-2"><span class="phase-dot-label">Markup Vote</span></div>
+      <div class="phase-dot" id="pd-3"><span class="phase-dot-label">Town Hall</span></div>
+      <div class="phase-dot" id="pd-4"><span class="phase-dot-label">Debrief</span></div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 0: TITLE ══ -->
+  <div class="phase active" id="phase-title">
+    <div class="title-game">The Grain<br>Throne</div>
+    <div class="title-tagline">The farm bill doesn't pass itself. Winter is coming for the baseline.</div>
+    <div class="title-divider"></div>
+    <p class="title-intro">You are a U.S. Senator on the Agriculture Committee. A new Farm Bill is overdue. Before you vote, you need to understand why this system exists — and what happens when it fails.<br><br>Travel through <em>90 years of American agricultural history.</em> Then make the decisions that will define your legacy.</p>
+    <button class="btn btn-pri" onclick="goPhase(1)" style="margin-top:0;">Begin the prologue →</button>
+  </div>
+
+  <!-- ══ PHASE 1: PROLOGUE ══ -->
+  <div class="phase" id="phase-prologue">
+    <div class="section-header">
+      <div class="section-title" id="prologue-era-title">Era I — The Crisis</div>
+      <div class="section-sub" id="prologue-era-sub">1929–1933</div>
+    </div>
+    <div class="era-slides" id="era-slides" style="position:relative;flex:1;overflow:hidden;"></div>
+    <div class="nav-bar">
+      <div class="nav-note" id="prologue-nav-note">Read, then continue</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sec" id="btn-prologue-back" onclick="prologueBack()" disabled>← Back</button>
+        <button class="btn btn-pri" id="btn-prologue-next" onclick="prologueNext()">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 2: ACT 1 ══ -->
+  <div class="phase" id="phase-act1" style="position:relative;">
+    <div class="section-header">
+      <div class="section-title">Act I — Markup</div>
+      <div class="section-sub">Senate Agriculture Committee · 119th Congress · 2025</div>
+    </div>
+    <div class="persona-strip">
+      <div class="persona-badge">MH</div>
+      <div>
+        <div class="persona-name">Sen. Margaret Holloway</div>
+        <div class="persona-detail">Kansas · Senate Agriculture Committee · Senior · Safe-R</div>
+      </div>
+      <span class="ptag ptag-r" style="margin-left:auto;">R · KS</span>
+    </div>
+    <div class="act1-grid">
+      <div class="titles-panel" id="titles-panel"></div>
+      <div class="sidebar" id="act1-sidebar"></div>
+    </div>
+    <div class="res-bar-row" style="padding:8px 20px;background:var(--bg2);border-top:1px solid var(--border);gap:16px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <div class="res-bar-label">Budget</div>
+        <div class="res-bar-track" style="flex:1;"><div class="res-bar-fill" id="act1-budget-fill" style="width:50%;background:var(--green);"></div></div>
+        <div class="res-bar-val" id="act1-budget-val" style="color:var(--green);">+$0B</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <div class="res-bar-label">Pol. Capital</div>
+        <div class="res-bar-track" style="flex:1;"><div class="res-bar-fill" id="act1-pc-fill" style="width:72%;background:var(--gold);"></div></div>
+        <div class="res-bar-val" id="act1-pc-val" style="color:var(--gold);">72</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <div class="res-bar-label">Coalition</div>
+        <div class="res-bar-track" style="flex:1;"><div class="res-bar-fill" id="act1-coal-fill" style="width:64%;background:var(--gold);"></div></div>
+        <div class="res-bar-val" id="act1-coal-val" style="color:var(--gold);">64</div>
+      </div>
+    </div>
+    <div class="nav-bar">
+      <div class="nav-note" id="act1-status">Set your positions, then respond to the shock event</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sec" id="btn-shock-event" onclick="openShock()">Shock event</button>
+        <button class="btn btn-pri" id="btn-act1-advance" onclick="advanceAct1()">Advance to Committee Vote →</button>
+      </div>
+    </div>
+    <div class="modal-wrap" id="shock-modal">
+      <div class="modal">
+        <div class="modal-title">Shock Event</div>
+        <div class="modal-sub" id="shock-modal-sub">Loading...</div>
+        <div class="modal-body" id="shock-modal-body">Loading...</div>
+        <div id="shock-choices"></div>
+        <div class="modal-result" id="shock-result"></div>
+        <button class="btn btn-pri" id="shock-close" style="display:none;width:100%;margin-top:10px;" onclick="closeShock()">Close and continue markup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE VOTE: MARKUP VOTE ══ -->
+  <div class="phase" id="phase-vote" style="position:relative;">
+    <div class="section-header">
+      <div class="section-title" id="vote-round-title">Committee Vote — Round 1</div>
+      <div class="section-sub" id="vote-round-sub">Senate Agriculture Committee · roll call</div>
+    </div>
+    <div style="padding:14px 20px;flex:1;overflow-y:auto;" id="vote-body">
+      <div style="text-align:center;padding:30px 0;font-family:'Libre Baskerville',serif;font-style:italic;color:var(--text-muted);">Calling the roll...</div>
+    </div>
+    <div class="nav-bar">
+      <div class="nav-note" id="vote-nav-note">Committing your bill for a vote</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-pri" id="btn-vote-action" style="display:none;" onclick="callRoll(1)">Call the roll →</button>
+      </div>
+    </div>
+    <div class="modal-wrap" id="temptation-modal">
+      <div class="modal" style="max-width:480px;">
+        <div class="modal-title">The Sixth Vote</div>
+        <div class="modal-sub">Crop Insurance Coalition · a lobbyist is in your doorway</div>
+        <div class="modal-body" id="temptation-rider-text"></div>
+        <div class="modal-body" id="temptation-pitch-text" style="font-style:italic;border-left:3px solid var(--gold-dim);padding-left:12px;margin-top:10px;"></div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;">
+          <button class="modal-choice" onclick="temptationChoice('accept')"><strong>Accept.</strong> Add the rider. Grady flips YES. The bill passes tonight.</button>
+          <button class="modal-choice" onclick="temptationChoice('decline')"><strong>Decline.</strong> This isn't the vote you want to win with. Let it die.</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 3: TOWN HALL ══ -->
+  <div class="phase" id="phase-townhall">
+
+    <div class="section-header">
+      <div class="section-title">Town Hall — Dodge City, Kansas</div>
+      <div class="section-sub">Post-markup accountability session · No internet · No notes</div>
+    </div>
+    <div class="th-constituent">
+      <div class="th-const-badge" id="th-badge">RF</div>
+      <div>
+        <div class="th-const-name" id="th-name">Robert Fanning</div>
+        <div class="th-const-desc" id="th-desc">Wheat & corn farmer · Seward County</div>
+      </div>
+      <div class="timer-wrap">
+        <div class="timer-label">Time remaining</div>
+        <div class="timer-val" id="th-timer">45</div>
+        <div class="timer-track"><div class="timer-fill" id="th-timer-fill" style="width:100%;background:var(--green);"></div></div>
+      </div>
+    </div>
+    <div class="th-q-section" id="th-q-section"></div>
+    <div class="th-score-strip">
+      <div class="ths-item"><div class="ths-label">Correct</div><div class="ths-val" id="th-score-c" style="color:var(--green);">0</div></div>
+      <div class="ths-sep"></div>
+      <div class="ths-item"><div class="ths-label">Wrong</div><div class="ths-val" id="th-score-w" style="color:var(--red);">0</div></div>
+      <div class="ths-sep"></div>
+      <div class="ths-item"><div class="ths-label">PC delta</div><div class="ths-val" id="th-score-pc" style="color:var(--gold);">+0</div></div>
+      <div class="q-dots" id="th-dots"></div>
+    </div>
+    <div class="nav-bar">
+      <div class="nav-note" id="th-nav-note">Answer before time runs out</div>
+      <button class="btn btn-pri" id="btn-th-next" onclick="thNext()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <!-- ══ PHASE 4: DEBRIEF ══ -->
+  <div class="phase" id="phase-debrief">
+    <div class="section-header">
+      <div class="section-title">Session debrief</div>
+      <div class="section-sub">The Grain Throne · Full session complete</div>
+    </div>
+    <div class="persona-strip" style="margin-bottom:0;">
+      <div class="persona-badge">MH</div>
+      <div>
+        <div class="persona-name">Sen. Margaret Holloway · Kansas</div>
+        <div class="persona-detail" id="debrief-scenario-strip">Scenario loading...</div>
+      </div>
+    </div>
+    <div id="ending-banner" style="padding:16px 20px;background:var(--bg2);border-bottom:1px solid var(--border-gold);text-align:center;">
+      <div id="ending-title" style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--gold);margin-bottom:4px;">Loading...</div>
+      <div id="ending-desc" style="font-family:'Libre Baskerville',serif;font-style:italic;font-size:13px;color:var(--text-dim);max-width:560px;margin:0 auto;line-height:1.7;">Loading...</div>
+    </div>
+    <div class="dual-wrap">
+      <div class="board">
+        <div class="board-label" style="color:var(--orange);">Political survival</div>
+        <div class="board-big-score" id="db-ps" style="color:var(--orange);">72</div>
+        <div class="board-bar-track"><div class="board-bar-fill" id="db-ps-bar" style="width:72%;background:var(--orange);"></div></div>
+        <div class="board-verdict" id="db-ps-verdict" style="color:rgba(224,128,96,0.7);">Loading...</div>
+        <div class="board-breakdown">
+          <div class="bb-row"><div class="bb-label">Constituent approval</div><div class="bb-track"><div class="bb-fill" id="db-approval-bar" style="width:76%;background:var(--orange);"></div></div><div class="bb-val" id="db-approval-val" style="color:var(--orange);">76</div></div>
+          <div class="bb-row"><div class="bb-label">Farm Bureau</div><div class="bb-track"><div class="bb-fill" id="db-fb-bar" style="width:82%;background:var(--orange);"></div></div><div class="bb-val" id="db-fb-val" style="color:var(--orange);">82</div></div>
+          <div class="bb-row"><div class="bb-label">Coalition strength</div><div class="bb-track"><div class="bb-fill" id="db-coal-bar" style="width:64%;background:var(--gold);"></div></div><div class="bb-val" id="db-coal-val" style="color:var(--gold);">64</div></div>
+          <div class="bb-row"><div class="bb-label">Town hall perf.</div><div class="bb-track"><div class="bb-fill" id="db-th-bar" style="width:60%;background:var(--gold);"></div></div><div class="bb-val" id="db-th-val" style="color:var(--gold);">60</div></div>
+        </div>
+      </div>
+      <div class="board">
+        <div class="board-label" style="color:var(--green);">Policy outcomes</div>
+        <div class="board-big-score" id="db-po" style="color:var(--green);">58</div>
+        <div class="board-bar-track"><div class="board-bar-fill" id="db-po-bar" style="width:58%;background:var(--green);"></div></div>
+        <div class="board-verdict" id="db-po-verdict" style="color:rgba(106,173,90,0.7);">Loading...</div>
+        <div class="board-breakdown">
+          <div class="bb-row"><div class="bb-label">Food security</div><div class="bb-track"><div class="bb-fill" id="db-food-bar" style="width:55%;background:var(--green);"></div></div><div class="bb-val" id="db-food-val" style="color:var(--green);">55</div></div>
+          <div class="bb-row"><div class="bb-label">Farm income</div><div class="bb-track"><div class="bb-fill" id="db-farm-bar" style="width:74%;background:var(--green);"></div></div><div class="bb-val" id="db-farm-val" style="color:var(--green);">74</div></div>
+          <div class="bb-row"><div class="bb-label">Environment</div><div class="bb-track"><div class="bb-fill" id="db-env-bar" style="width:48%;background:var(--gold);"></div></div><div class="bb-val" id="db-env-val" style="color:var(--gold);">48</div></div>
+          <div class="bb-row"><div class="bb-label">Rural economy</div><div class="bb-track"><div class="bb-fill" id="db-rural-bar" style="width:61%;background:var(--green);"></div></div><div class="bb-val" id="db-rural-val" style="color:var(--green);">61</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="gap-row">
+      <div class="gap-label">Score gap</div>
+      <div class="gap-dot" style="background:var(--orange);"></div>
+      <div class="gap-line" style="background:rgba(224,128,96,0.3);"></div>
+      <div class="gap-big" id="db-gap" style="color:var(--gold);">+14</div>
+      <div class="gap-line" style="background:rgba(106,173,90,0.3);"></div>
+      <div class="gap-dot" style="background:var(--green);"></div>
+      <div class="gap-interp" id="db-gap-interp">Gap loading...</div>
+    </div>
+    <div class="outcomes-grid">
+      <div class="oc"><div class="oc-label">Food security</div><div class="oc-val" id="oc-food" style="color:var(--gold);">Baseline</div><div class="oc-desc" id="oc-food-desc">SNAP held.</div></div>
+      <div class="oc"><div class="oc-label">Farm income</div><div class="oc-val" id="oc-farm" style="color:var(--gold);">Baseline</div><div class="oc-desc" id="oc-farm-desc">Pending.</div></div>
+      <div class="oc"><div class="oc-label">Fiscal cost</div><div class="oc-val" id="oc-fiscal" style="color:var(--gold);">At baseline</div><div class="oc-desc" id="oc-fiscal-desc">10-year CBO within range.</div></div>
+      <div class="oc"><div class="oc-label">Environment</div><div class="oc-val" id="oc-env" style="color:var(--gold);">Flat</div><div class="oc-desc" id="oc-env-desc">Conservation at baseline.</div></div>
+      <div class="oc"><div class="oc-label">Rural economy</div><div class="oc-val" id="oc-rural" style="color:var(--green);">Modest gain</div><div class="oc-desc" id="oc-rural-desc">Farm spending sustained.</div></div>
+      <div class="oc"><div class="oc-label">Town hall</div><div class="oc-val" id="oc-th" style="color:var(--gold);">Mixed</div><div class="oc-desc" id="oc-th-desc">Results pending...</div></div>
+    </div>
+    <div class="headlines-section">
+      <div class="hl-head">Session headlines</div>
+      <div class="headline"><div class="hl-src">Wichita Eagle</div><div class="hl-txt" id="hl-1">Loading...</div></div>
+      <div class="headline"><div class="hl-src">Politico Ag</div><div class="hl-txt" id="hl-2">Loading...</div></div>
+      <div class="headline"><div class="hl-src">Town Hall</div><div class="hl-txt" id="hl-3">Loading...</div></div>
+    </div>
+    <div class="debrief-qs-section">
+      <div class="dq-head">Debrief questions</div>
+      <div class="dq" id="dq-vote" style="border-left-color:var(--red);">Vote outcome loading...</div>
+      <div class="dq" id="dq-deflect" style="border-left-color:var(--orange);display:none;">Deflect question loading...</div>
+      <div class="dq">Your <em>Political Survival</em> and <em>Policy Outcomes</em> scores diverge. What decisions drove that gap — and is the gap a problem?</div>
+      <div class="dq" id="dq-chain">Causal chain loading...</div>
+      <div class="dq">What would have happened to your coalition strength — and your Title I votes — if you had cut SNAP below baseline?</div>
+      <div class="dq">The environmental index sits below the others. What tradeoff did you implicitly make by keeping conservation at baseline while lifting commodity support?</div>
+    </div>
+    <div id="research-bar" style="display:none;padding:10px 20px;background:var(--bg1);border-top:1px solid var(--border-gold);align-items:center;justify-content:space-between;">
+      <div style="font-family:'Special Elite',monospace;font-size:9px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;">Session ID: <span id="session-id-display" style="color:var(--gold);"></span> · write this on your consent form</div>
+      <button class="btn btn-sec" onclick="downloadLog()">Download session data</button>
+    </div>
+    <div class="nav-bar">
+      <div class="nav-note">Session complete</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sec" onclick="restartGame()">Play again</button>
+        <button class="btn btn-pri" onclick="alert('In the full game, Act II: Floor Debate would begin here — coalition negotiation, amendments, horse-trading.')">Continue to Act II →</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #app -->
+
+<script>
+// ══ GLOBAL STATE ══
+var G = {
+  phase: 0,
+  ps: 50, po: 50,
+  pc: 72, coal: 64,
+  sliders: {t1:55, t4:55, t11:55, t2:55},
+  shockDone: false, shockChoice: null, shockId: null, shockAidCost: 0,
+  thCorrect: 0, thWrong: 0, thPCDelta: 0,
+  prologueSlide: 0,
+  decisionMade: {},
+  voteOutcome: null, voteDelta: null, voteRiderCost: 0, voteMargin: null, voteYesList: null
+};
+
+// ══ RESEARCH LOGGING (SPEC 4) ══
+// Gates the participant prompt and the debrief download button. Flip to true for a study session;
+// leave false for ordinary classroom play so nothing about the UI changes for a normal run.
+var RESEARCH_MODE = false;
+
+var BUILD = 'v16'; // single source of truth for exported session metadata — bump this, not the two LOG literals below
+
+var LOG = {
+  meta:{version:BUILD, sessionId:(Date.now().toString(36)+Math.random().toString(36).slice(2,7)),
+        started:new Date().toISOString(), participant:''},
+  events:[]
+};
+function logEvent(type, data){
+  LOG.events.push({t:Date.now()-(LOG._t0||(LOG._t0=Date.now())), type:type, data:data});
+}
+function downloadLog(){
+  var blob = new Blob([JSON.stringify(LOG, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'grain-throne-session-'+LOG.meta.sessionId+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+if(RESEARCH_MODE){
+  // App collects nothing identifying by default: this is a free-text code the student
+  // writes on a separate paper consent form, not a name. Keeps the app itself out of PII scope.
+  var _participantCode = window.prompt('Research session — enter your session code (or leave blank):','');
+  LOG.meta.participant = _participantCode || '';
+}
+
+// ══ PHASE NAVIGATION ══
+function goPhase(n) {
+  document.querySelectorAll('.phase').forEach(function(p){p.classList.remove('active')});
+  G.phase = n;
+  var phases = ['phase-title','phase-prologue','phase-act1','phase-vote','phase-townhall','phase-debrief'];
+  var labels = ['Introduction','Prologue','Act I — Markup','Markup Vote','Town Hall','Debrief'];
+  document.getElementById(phases[n]).classList.add('active');
+  document.getElementById('phase-label').textContent = labels[n];
+  ['pd-0','pd-1','pd-2','pd-3','pd-4'].forEach(function(id,i){
+    var el = document.getElementById(id);
+    el.className = 'phase-dot';
+    if(i < n-1) el.classList.add('done');
+    else if(i === n-1) el.classList.add('active');
+  });
+  updateHeader();
+  if(n===1) initPrologue();
+  if(n===2) initAct1();
+  if(n===3) initVote();
+  if(n===4) initTownHall();
+  if(n===5) initDebrief();
+  window.scrollTo(0,0);
+}
+
+function updateHeader() {
+  if(G.phase < 5){
+    // Scores are sealed until the debrief so students can't optimize against a live objective function.
+    var sub = G.phase < 2 ? 'Not yet active' : 'Sealed until debrief';
+    document.getElementById('hdr-ps').textContent = G.phase < 2 ? '—' : '\u2022\u2022';
+    document.getElementById('hdr-po').textContent = G.phase < 2 ? '—' : '\u2022\u2022';
+    document.getElementById('hdr-gap').textContent = G.phase < 2 ? '—' : '?';
+    document.getElementById('hdr-gap').style.color = 'var(--text-muted)';
+    document.getElementById('hdr-ps-bar').style.width = '0%';
+    document.getElementById('hdr-po-bar').style.width = '0%';
+    document.getElementById('hdr-ps-sub').textContent = sub;
+    document.getElementById('hdr-po-sub').textContent = sub;
+  } else {
+    document.getElementById('hdr-ps').textContent = Math.round(G.ps);
+    document.getElementById('hdr-po').textContent = Math.round(G.po);
+    document.getElementById('hdr-ps-bar').style.width = G.ps + '%';
+    document.getElementById('hdr-po-bar').style.width = G.po + '%';
+    var gap = Math.round(G.ps - G.po);
+    document.getElementById('hdr-gap').textContent = gap > 0 ? '+'+gap : ''+gap;
+    document.getElementById('hdr-gap').style.color = Math.abs(gap) < 5 ? 'var(--green)' : 'var(--gold)';
+    document.getElementById('hdr-ps-sub').textContent = G.ps > 60 ? 'Safe seat holding' : G.ps > 40 ? 'Watch your back' : 'Primary threat';
+    document.getElementById('hdr-po-sub').textContent = G.po > 60 ? 'Strong outcomes' : G.po > 40 ? 'Mixed outcomes' : 'Poor outcomes';
+  }
+}
+
+// ── Single unified scoring function. Called once at Act 1 exit and after Town Hall. ──
+function computeScores() {
+  // Political Survival: political capital + shock politics + coalition + Farm Bureau reward for commodity/insurance support
+  var ps = 38 + G.pc*0.42
+    + (G.shockChoice==='A'?8:G.shockChoice==='B'?3:G.shockChoice==='C'?-5:0)
+    + (act1State.t1>63?4:act1State.t1<47?-4:0)      // Farm Bureau notices commodity support
+    + (act1State.t11>63?3:0)                          // crop insurance industry
+    + (G.coal-64)*0.15;                               // coalition standing
+  // Policy Outcomes: welfare proxy — SNAP adequacy, conservation, farm income realism, minus fiscal overrun
+  var totalCost = 130*(0.45+act1State.t1/100)+1170*(0.45+act1State.t4/100)+120*(0.45+act1State.t11/100)+80*(0.45+act1State.t2/100) + (G.voteRiderCost||0);
+  var budgetDelta = totalCost - 1500;
+  var po = 34 + G.coal*0.28
+    + (act1State.t4>47?9:act1State.t4<40?-8:0)        // food security
+    + (act1State.t2>63?8:act1State.t2<47?-5:0)        // environment
+    + (G.shockChoice==='C'?4:0)                        // diplomacy avoids moral hazard / WTO exposure
+    - Math.max(0,(budgetDelta-30))*0.04;              // fiscal overrun penalty (budget now has teeth)
+  // Markup vote outcome (SPEC 1 §1.6 / SPEC 2 §2.4) — applied once, after the roll is called.
+  if(G.voteDelta){ ps += G.voteDelta.ps; po += G.voteDelta.po; }
+  G.ps = Math.round(Math.max(0,Math.min(100,ps)));
+  G.po = Math.round(Math.max(0,Math.min(100,po)));
+}
+
+// ══ PROLOGUE ══
+var pSlides = [
+  {type:'news', eraTitle:'Era I — The Crisis', eraSub:'1929–1933'},
+  {type:'portrait', eraTitle:'Era I — Henry A. Wallace', eraSub:'Secretary of Agriculture, 1933–1940'},
+  {type:'decision', eraTitle:'Era I — The Parity Trap', eraSub:'Micro-decision · 1932'},
+  {type:'portrait2', eraTitle:'Era II — The Great Society', eraSub:'Sullivan & the 1964 logroll'},
+  {type:'portrait3', eraTitle:'Era III — Earl Butz', eraSub:'Secretary of Agriculture, 1971–1976'},
+  {type:'decision2', eraTitle:'Era III — The Boom', eraSub:'Micro-decision · 1974 · Kansas'},
+  {type:'stark', eraTitle:'Era IV — The Reckoning', eraSub:'1979–1987'},
+  {type:'bridge', eraTitle:'Era V — Freedom to Farm', eraSub:'1996–2002'},
+  {type:'era9', eraTitle:'Era IX — The Bargain, Tested', eraSub:'2025–2026'},
+  {type:'handoff', eraTitle:'The Handoff', eraSub:'2026'}
+];
+
+function initPrologue() {
+  G.prologueSlide = 0;
+  renderPrologueSlide();
+}
+
+function renderPrologueSlide() {
+  var s = pSlides[G.prologueSlide];
+  window._slideLoadedAt = Date.now();
+  document.getElementById('prologue-era-title').textContent = s.eraTitle;
+  document.getElementById('prologue-era-sub').textContent = s.eraSub;
+  document.getElementById('btn-prologue-back').disabled = G.prologueSlide === 0;
+  var nextBtn = document.getElementById('btn-prologue-next');
+  nextBtn.textContent = G.prologueSlide === pSlides.length-1 ? 'Enter 2025 →' : 'Continue →';
+
+  var container = document.getElementById('era-slides');
+  container.innerHTML = '';
+  var slide = document.createElement('div');
+  slide.className = 'era-slide on';
+
+  if(s.type==='news') {
+    slide.innerHTML = '<div class="np-header"><div class="np-name">The American Farmer\'s Record</div><div class="np-date">Wednesday, October 12, 1932 · One Cent</div></div><div class="np-body" style="background:#f5f0e0;flex:1;padding:16px 24px;display:grid;grid-template-columns:1fr 1px 1fr;gap:0 16px;"><div><div style="font-family:Special Elite,monospace;font-size:8px;letter-spacing:2px;color:#5a4a2a;text-transform:uppercase;margin-bottom:6px;">Washington Bureau</div><div class="np-headline">Farm Prices Collapse; Foreclosures at Crisis Pitch</div><p class="np-text">One in four Americans farms for a living. Wheat fetches 30 cents a bushel — below the cost of production. Corn moves at 15 cents. Cotton, a nickel a pound.</p><div class="np-stat"><span class="np-stat-num">10,000</span><span class="np-stat-lab">Farm foreclosures per month</span></div></div><div class="np-col-div"></div><div><p class="np-text" style="font-style:italic;font-size:13px;margin-bottom:10px;">The core problem: land, debt, and production commitments were already in place. Most farmers could not reduce output quickly in the short run — even at prices below the cost of production. Parity pricing aimed to restore farm purchasing power to what it had been before the collapse.</p><div class="np-stat"><span class="np-stat-num">−50%</span><span class="np-stat-lab">Farm income since 1929</span></div><p class="np-text" style="margin-top:10px;">Dust storms have buried 100 million acres across Oklahoma, Kansas, and Texas. Franklin Roosevelt has won the presidency. His Agriculture Secretary will be an Iowa farmer named Henry Wallace.</p></div></div>';
+    slide.style.flexDirection = 'column';
+  }
+  else if(s.type==='portrait') {
+    slide.className = 'era-slide on portrait-slide';
+    slide.innerHTML = '<div class="port-era">Secretary of Agriculture · 1933–1940</div><div class="port-frame"><div class="port-ini">HAW</div></div><div class="port-name">Henry A. Wallace</div><div class="port-title-role">Architect of the modern farm safety net</div><div class="port-quote">"The ever-normal granary is not a new idea. Joseph suggested it to Pharaoh."</div><div class="port-src"><span class="atag atag-att">Attributed</span> Consistent with documented speeches 1934–1938 · Democracy Reborn, ed. Lord, 1944</div><p class="port-bio">Iowa farmer, plant geneticist, New Deal visionary. Architect of the Agricultural Adjustment Act. Introduced supply controls and parity pricing to stabilize farm incomes. Later FDR\'s Vice President.</p><div class="port-legacy"><div class="port-leg-l">Living legacy in this game</div><div class="port-leg-t">Every commodity reference price in Title I traces to Wallace\'s logic: if the market won\'t pay farmers fairly, the government must step in.</div></div>';
+  }
+  else if(s.type==='decision') {
+    slide.className = 'era-slide on dec-slide';
+    var done = G.decisionMade['d1'];
+    slide.innerHTML = '<div class="dec-era">Micro-decision · 1932 · Kansas</div><div class="dec-q">You are a Kansas wheat farmer.<br>Prices have collapsed. Your bank loan is due.</div><div class="dec-ctx">What do you do?</div>' +
+      (done ? '<div style="opacity:0.5;"><button class="dec-choice" disabled><span class="dec-letter">A</span> Plant every acre — maximize bushels to make ends meet</button><button class="dec-choice" disabled><span class="dec-letter">B</span> Fallow half your fields — rest the soil, produce less</button></div>' :
+      '<button class="dec-choice" onclick="makeDecision(\'d1\',this)"><span class="dec-letter">A</span> Plant every acre — maximize bushels to make ends meet</button><button class="dec-choice" onclick="makeDecision(\'d1\',this)"><span class="dec-letter">B</span> Fallow half your fields — rest the soil, produce less</button>') +
+      '<div class="dec-result' + (done?' show':'') + '" id="dec-result-d1"><div class="dec-res-title">What happened</div><div class="dec-res-body">Most farmers kept producing — fixed costs, debt obligations, and land already committed left little choice. Aggregate output stayed high, prices fell further, and incomes collapsed. This short-run supply inelasticity is why Wallace argued the market alone could not solve the farm income problem.</div><div class="mseed">→ Mechanic unlocked: Title I commodity programs · parity pricing · supply management</div></div>';
+  }
+  else if(s.type==='portrait2') {
+    slide.className = 'era-slide on portrait-slide';
+    slide.innerHTML = '<div class="port-era">The Coalition · 1964</div><div style="display:flex;justify-content:center;margin-bottom:16px;"><div style="text-align:center;"><div class="port-frame" style="width:72px;height:72px;margin:0 auto 8px;"><div class="port-ini" style="font-size:20px;">LKS</div></div><div style="font-family:Oswald,sans-serif;font-size:14px;font-weight:600;color:#1a1208;">Leonor K. Sullivan</div><div style="font-family:Special Elite,monospace;font-size:9px;color:#7a5c1a;letter-spacing:1px;margin:2px 0;">D · MISSOURI</div><div style="font-family:Libre Baskerville,serif;font-style:italic;font-size:12px;color:#2a2018;max-width:220px;margin-top:4px;">Championed food stamps from 1954; introduced the 1964 bill that made the program permanent.</div></div></div><p class="port-bio" style="max-width:500px;">The deal that binds the farm bill was struck in 1964 through classic logrolling: <strong>urban Democrats agreed to vote for the wheat-and-cotton bill only if rural Democrats would vote for food stamps.</strong> Neither bloc could pass its bill alone. Rep. Leonor Sullivan, who had fought for food stamps for a decade, introduced the bill. A young Rep. Bob Dole voted against it that year — yet he would become one of its fiercest defenders in the 1970s, alongside George McGovern.</p><div class="port-legacy" style="max-width:500px;"><div class="port-leg-l">Living legacy in this game</div><div class="port-leg-t">This vote-trade is load-bearing. When you set Title IV, you are deciding whether the 1964 bargain still holds.</div></div>';
+  }
+  else if(s.type==='portrait3') {
+    slide.className = 'era-slide on';
+    slide.style.cssText = 'background:#2d2000;flex-direction:column;';
+    slide.innerHTML = '<div style="background:#c8a010;padding:12px 24px;display:flex;align-items:baseline;gap:12px;"><div style="font-family:Oswald,sans-serif;font-size:44px;font-weight:600;color:#1a1000;line-height:1;">1971</div><div style="font-family:Oswald,sans-serif;font-size:11px;color:rgba(26,16,0,0.6);text-transform:uppercase;letter-spacing:3px;">Get big or get out</div></div><div style="padding:20px 24px;flex:1;"><div style="font-family:Playfair Display,serif;font-size:20px;font-weight:700;color:var(--text);">Earl Butz</div><div style="font-family:Special Elite,monospace;font-size:8px;letter-spacing:2px;color:#c8a010;text-transform:uppercase;margin-bottom:12px;opacity:0.8;">Secretary of Agriculture · Nixon & Ford · 1971–1976</div><div style="font-family:Playfair Display,serif;font-style:italic;font-size:28px;line-height:1.3;color:#c8a010;margin-bottom:6px;">"Plant fencerow to fencerow."</div><div style="font-family:Special Elite,monospace;font-size:8px;color:rgba(200,160,16,0.5);letter-spacing:1px;margin-bottom:14px;"><span class="atag atag-doc">Documented</span> Multiple historical sources · Iowa PBS · National Family Farm Coalition</div><p style="font-family:Libre Baskerville,serif;font-size:13px;line-height:1.8;color:rgba(240,216,112,0.75);">Butz believed American agriculture\'s future was exports, scale, and efficiency. He struck the 1972 Soviet grain deal — selling 30% of U.S. wheat to the USSR in one transaction. Prices exploded. Land values soared. Farmers borrowed heavily. He resigned in 1976 over a racist remark. His policies outlasted him by decades.</p><div style="margin-top:12px;padding:9px 12px;border-left:3px solid #c8a010;"><div style="font-family:Special Elite,monospace;font-size:8px;letter-spacing:2px;color:#c8a010;text-transform:uppercase;margin-bottom:3px;">Living legacy in this game</div><div style="font-family:Source Sans 3,sans-serif;font-size:12px;color:rgba(240,216,112,0.65);">The moral hazard in crop insurance. Export dependence as vulnerability. The production treadmill.</div></div></div>';
+  }
+  else if(s.type==='decision2') {
+    slide.className = 'era-slide on dec-slide';
+    var done2 = G.decisionMade['d2'];
+    slide.innerHTML = '<div class="dec-era">Micro-decision · Kansas · 1974</div><div class="dec-q">You still farm the same Kansas ground.<br>The Butz boom is real. Land is $2,000/acre.</div><div class="dec-ctx">Your banker calls with an offer.</div>' +
+      (done2 ? '<div style="opacity:0.5;"><button class="dec-choice" disabled><span class="dec-letter">A</span> Take the loan at 8%. Buy the neighbor\'s 200 acres. Wheat is $4/bushel.</button><button class="dec-choice" disabled><span class="dec-letter">B</span> Decline. Your land is paid off. Prices never stay high forever.</button></div>' :
+      '<button class="dec-choice" onclick="makeDecision(\'d2\',this)"><span class="dec-letter">A</span> Take the loan at 8%. Buy the neighbor\'s 200 acres. Wheat is $4/bushel.</button><button class="dec-choice" onclick="makeDecision(\'d2\',this)"><span class="dec-letter">B</span> Decline. Your land is paid off. Prices never stay high forever.</button>') +
+      '<div class="dec-result' + (done2?' show':'') + '" id="dec-result-d2"><div class="dec-res-title">Seven years later — 1981</div><div class="dec-res-body">The Federal Reserve raised rates to 20%. Your land is now worth $800/acre. If you took the loan, your bank is calling it. 300,000 farmers will declare bankruptcy between 1980 and 1986. Across the Corn Belt, Iowa alone loses roughly one farm an hour in 1985.</div><div class="mseed">→ Mechanic unlocked: crop insurance moral hazard · Title XI · why premium subsidies exist</div></div>';
+  }
+  else if(s.type==='stark') {
+    slide.className = 'era-slide on';
+    slide.style.cssText = 'background:#f8f8f8;flex-direction:column;';
+    slide.innerHTML = '<div style="background:#0a0a0a;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;"><div style="font-family:Oswald,sans-serif;font-size:56px;font-weight:600;color:#f8f8f8;line-height:1;">1981</div><div style="font-family:Playfair Display,serif;font-size:14px;color:rgba(248,248,248,0.6);font-style:italic;max-width:260px;text-align:right;line-height:1.4;">Volcker raises rates to 20% to break inflation. He will break something else too.</div></div><div style="padding:20px 24px;flex:1;background:#f8f8f8;"><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px;"><div style="border:2px solid #0a0a0a;padding:12px;"><span style="font-family:Oswald,sans-serif;font-size:36px;font-weight:600;color:#8b1a1a;display:block;line-height:1;">20%</span><div style="font-family:Source Sans 3,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#444;margin-top:3px;">Federal funds rate</div></div><div style="border:2px solid #0a0a0a;padding:12px;"><span style="font-family:Oswald,sans-serif;font-size:36px;font-weight:600;color:#8b1a1a;display:block;line-height:1;">300K</span><div style="font-family:Source Sans 3,sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#444;margin-top:3px;">Farm bankruptcies 1980–86</div></div></div><div style="border-top:3px solid #0a0a0a;border-bottom:3px solid #0a0a0a;padding:10px 0;margin-bottom:12px;font-family:Oswald,sans-serif;font-size:16px;color:#8b1a1a;text-transform:uppercase;letter-spacing:2px;">Iowa loses one farm every hour in 1985</div><p style="font-family:Libre Baskerville,serif;font-size:13px;line-height:1.8;color:#1a1a1a;">Congress responds with the 1985 Farm Bill — conservation compliance, the Conservation Reserve Program, and marketing loans. The crisis discredits ad hoc disaster payments and sets up crop insurance\'s rise through the 1994 and 2000 reforms. Willie Nelson plays Farm Aid on September 22 for 80,000 people.<br><br><em style="color:#8b1a1a;">Every crop insurance vote you make in this game exists because of what happened in these fields.</em></p></div>';
+  }
+  else if(s.type==='bridge') {
+    slide.className = 'era-slide on bridge-slide';
+    slide.innerHTML = '<div style="font-family:Special Elite,monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px;">Era V · 1996–2002</div><div class="bridge-line"></div><div class="bridge-txt">1996. Congress passes <em>Freedom to Farm.</em><br>Phase out price supports. Let markets work.<br><br>1998: commodity prices collapse.<br>Congress passes $6 billion in emergency aid.<br>Then $8 billion. Then $7 billion more.<br><br><em>The experiment lasted six years.</em><br><br>2002: price supports reinstated.<br>The lesson wasn\'t that markets can\'t work —<br>it\'s that Congress was never willing to tolerate the adjustment.</div><div class="bridge-mech">→ Why reference prices are sticky · why status quo persists</div>';
+  }
+  else if(s.type==='era9') {
+    slide.className = 'era-slide on bridge-slide';
+    slide.style.background = '#1a0f08';
+    slide.innerHTML = '<div style="font-family:Special Elite,monospace;font-size:9px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px;">Era IX · 2025–2026</div><div class="bridge-line"></div><div class="bridge-txt" style="font-size:17px;line-height:2.2;">'+
+      '<strong style="color:#f0e8d0;font-family:Playfair Display,serif;font-style:normal;font-size:26px;">2026.</strong><br><br>'+
+      'Last July, it finally happened —<br>but not the way anyone drew it up.<br>One party. One reconciliation bill.<br>Reference prices <em>up.</em> SNAP <em>cut</em> —<br>the deepest in the program\'s history,<br>its costs shifted onto the states.<br><br>'+
+      'Both halves of the 1964 bargain,<br>moved in the same vehicle,<br>with only one side of the coalition voting.<br>Four million people have left SNAP since.<br><br>'+
+      'The House passed its full farm bill in April, two-twenty-four to two hundred.<br>The Senate released its own version in June.<br>Neither one delays the SNAP cost-shift.<br>Sixty votes are needed, and the votes aren\'t there.<br>The other party is asking<br>a sixty-two-year-old question:<br><em>if the logroll is broken,<br>why should we vote for your farm bill at all?</em>'+
+      '</div><div class="bridge-mech">The 1964 bargain wasn\'t repealed. It was tested. You\'re about to find out if it held.</div>';
+  }
+  else if(s.type==='handoff') {
+    slide.className = 'era-slide on handoff-slide';
+    slide.innerHTML = '<div class="handoff-year">2026.</div><div class="handoff-txt">A new Farm Bill is overdue — again.<br>The last one expired mid-standoff.<br>Commodity prices have come off their highs.<br>SNAP enrollment remains far below its peak.<br><br>And somewhere in the <em>Strait of Hormuz,</em><br>a tension is building that will reach<br>a wheat farmer in Kansas before the year is out.</div><div class="handoff-warn">Don\'t forget what you just saw.</div><p style="font-family:Libre Baskerville,serif;font-style:italic;font-size:13px;color:var(--text-muted);max-width:400px;text-align:center;margin:0 auto;line-height:1.8;">You have been assigned to the Senate Agriculture Committee.<br>Your state. Your constituents. Your career.</p>';
+  }
+
+  container.appendChild(slide);
+}
+
+function makeDecision(id, btn) {
+  if(G.decisionMade[id]) return;
+  G.decisionMade[id] = true;
+  var container = btn.parentNode;
+  var choiceIdx = Array.prototype.indexOf.call(container.querySelectorAll('.dec-choice'), btn);
+  var choiceLetter = String.fromCharCode(65+choiceIdx); // 0->'A', 1->'B'
+  logEvent('prologue_decision', {id:id, choice:choiceLetter, msOnSlide:Date.now()-(window._slideLoadedAt||Date.now())});
+  container.querySelectorAll('.dec-choice').forEach(function(b){b.style.opacity='0.45';b.onclick=null;});
+  var result = document.getElementById('dec-result-'+id);
+  if(result){ result.classList.add('show'); }
+}
+
+function prologueNext() {
+  logEvent('prologue_nav', {direction:'next', slide:G.prologueSlide, msOnSlide:Date.now()-(window._slideLoadedAt||Date.now())});
+  if(G.prologueSlide < pSlides.length-1){
+    G.prologueSlide++;
+    renderPrologueSlide();
+  } else {
+    goPhase(2);
+  }
+}
+
+function prologueBack() {
+  logEvent('prologue_nav', {direction:'back', slide:G.prologueSlide, msOnSlide:Date.now()-(window._slideLoadedAt||Date.now())});
+  if(G.prologueSlide > 0){
+    G.prologueSlide--;
+    renderPrologueSlide();
+  }
+}
+
+// ══ ACT 1 ══
+var act1State = {t1:55,t4:55,t11:55,t2:55};
+var baselines = {t1:130,t4:1170,t11:120,t2:80};
+
+function initAct1() {
+  drawShock(); // idempotent — no-ops if G.shockId is already set, so amendment-round re-entry can't re-roll it
+  if(!G.shockDone && !G.shockChoice){
+    G.ps = 50; G.po = 50; G.pc = 72; G.coal = 64;
+  }
+  // Always reset the advance button to its default state first. If this is a
+  // re-entry for the amendment round, the caller mutates it again immediately
+  // after goPhase(2) returns (see renderTally's round-1-fail branch) — so this
+  // reset is safe there and is what makes a fresh replay show the right button.
+  var advanceBtn = document.getElementById('btn-act1-advance');
+  if(advanceBtn){
+    advanceBtn.textContent = 'Advance to Committee Vote →';
+    advanceBtn.onclick = advanceAct1;
+  }
+  var shockBtn = document.getElementById('btn-shock-event');
+  if(shockBtn) shockBtn.style.display = G.shockDone ? 'none' : 'inline-block';
+  buildTitlesPanel();
+  buildAct1Sidebar();
+  syncAct1Controls();
+  updateAct1Resources();
+  updateHeader();
+}
+
+function buildTitlesPanel() {
+  var titles = [
+    {id:'t1',name:'Title I — Commodity Programs',share:'~10% spending',desc:'ARC-CO, PLC reference prices, marketing loans. Sets the income safety net for corn, wheat, soybeans, cotton, rice, peanuts.',sliderLabel:'Support level'},
+    {id:'t4',name:'Title IV — Nutrition (SNAP)',share:'~80% spending',desc:'SNAP benefit levels, eligibility, work requirements. The coalition glue — urban members will not vote for commodity programs without this title.',sliderLabel:'Benefit level'},
+    {id:'t11',name:'Title XI — Crop Insurance',share:'~8% spending',desc:'Premium subsidy rate, coverage expansion. Bipartisan, industry-organized, historically hard to cut.',sliderLabel:'Premium subsidy'},
+    {id:'t2',name:'Title II — Conservation',share:'~8% spending',desc:'CRP acreage cap, EQIP funding, climate-smart agriculture. Competes with Title I for the same land.',sliderLabel:'Funding level'}
+  ];
+  var html = '<div class="panel-heading">Set your positions on each title</div>';
+  titles.forEach(function(t){
+    html += '<div class="title-card"><div class="tc-header"><div class="tc-name">'+t.name+'</div><div class="tc-share">'+t.share+'</div></div><div class="tc-desc">'+t.desc+'</div><div class="slider-row"><div class="slider-label">'+t.sliderLabel+'</div><input type="range" min="0" max="100" value="'+act1State[t.id]+'" step="1" id="slider-'+t.id+'" oninput="actSlider(\''+t.id+'\',this.value)"><div class="slider-val" id="sval-'+t.id+'" style="color:var(--gold);">Baseline</div></div><div class="impact-tags" id="itags-'+t.id+'"><span class="itag itag-neu">At baseline</span></div></div>';
+  });
+  document.getElementById('titles-panel').innerHTML = html;
+}
+
+function syncAct1Controls() {
+  Object.keys(act1State).forEach(function(id){
+    var slider = document.getElementById('slider-'+id);
+    if(slider) slider.value = act1State[id];
+    syncSliderLabel(id);
+  });
+  var advance = document.getElementById('btn-act1-advance');
+  if(advance) advance.disabled = !G.shockDone;
+}
+
+function buildAct1Sidebar() {
+  var foreshadow = {
+    hormuz:'Kansas wheat farmers press for higher PLC reference prices ahead of markup. "Input cost reality" cited.',
+    rates:'Ag lenders flag rising rate risk on operating notes ahead of markup. "We\u2019re watching the Fed as closely as the farm bill," one banker says.',
+    soy:'Export elevators report thin bids on new-crop soybeans amid trade tension ahead of markup. Basis watchers nervous.'
+  };
+  var html = '<div class="sidebar-card"><div class="sc-title">Morning briefing</div>';
+  html += '<div class="news-item"><div class="news-src">Agri-Pulse</div><div class="news-txt">CBO projects farm bill baseline at $1.5T over 10 years. Nutrition title accounts for 78% of projected cost.</div></div>';
+  html += '<div class="news-item"><div class="news-src">DTN</div><div class="news-txt">'+(foreshadow[G.shockId]||foreshadow.hormuz)+'</div></div>';
+  html += '<div class="news-item"><div class="news-src">Politico Ag</div><div class="news-txt">House Freedom Caucus signals opposition to any bill maintaining current SNAP categorical eligibility rules.</div></div></div>';
+  html += '<div class="sidebar-card"><div class="sc-title">Interest group standing</div>';
+  var igs = [['Kansas Farm Bureau','hi hi hi on '],['Crop Ins. industry','hi hi hi hi '],['SNAP advocates','on on on  '],['Env. groups','on on   '],['Fiscal hawks','on on on  ']];
+  igs.forEach(function(ig){
+    var dots = '';
+    for(var i=0;i<5;i++){
+      var parts = ig[1].split(' ');
+      var cls = i < parts.filter(function(p){return p.trim()}).length ? (parts[i]==='hi' ? 'ig-dot hi' : 'ig-dot on') : 'ig-dot';
+      dots += '<div class="'+cls+'" id="ig-dot-'+ig[0].replace(/\s/g,'')+'-'+i+'"></div>';
+    }
+    html += '<div class="ig-row"><div class="ig-name">'+ig[0]+'</div><div class="ig-dots">'+dots+'</div></div>';
+  });
+  html += '</div>';
+  html += '<div class="sidebar-card"><div class="sc-title">CBO score · 10-year</div>';
+  html += '<div class="cbo-row"><div class="cbo-name">Title I</div><div class="cbo-num" id="cbo-t1" style="color:var(--gold);">$130B</div></div>';
+  html += '<div class="cbo-row"><div class="cbo-name">Title IV</div><div class="cbo-num" id="cbo-t4" style="color:var(--gold);">$1,170B</div></div>';
+  html += '<div class="cbo-row"><div class="cbo-name">Title XI</div><div class="cbo-num" id="cbo-t11" style="color:var(--gold);">$120B</div></div>';
+  html += '<div class="cbo-row"><div class="cbo-name">Title II</div><div class="cbo-num" id="cbo-t2" style="color:var(--gold);">$80B</div></div>';
+  html += '<div class="cbo-total-row"><div class="cbo-total-label">Total</div><div class="cbo-num" id="cbo-total" style="color:var(--gold);font-size:15px;">$1,500B</div></div></div>';
+  document.getElementById('act1-sidebar').innerHTML = html;
+}
+
+var _sliderLogTimers = {};
+var _sliderDragStart = {};
+function actSlider(id, val) {
+  val = parseInt(val);
+  if(!(id in _sliderDragStart)) _sliderDragStart[id] = act1State[id]; // capture true start of this drag, once
+  act1State[id] = val;
+  syncSliderLabel(id);
+  updateCBODisplay();
+  updateAct1Resources();
+  // Debounced log: only record once the slider has been still for 800ms, so a drag
+  // produces one event covering the whole gesture (start → settled value), not a hundred.
+  clearTimeout(_sliderLogTimers[id]);
+  _sliderLogTimers[id] = setTimeout(function(){
+    var from = _sliderDragStart[id];
+    delete _sliderDragStart[id];
+    logEvent('slider_move', {id:id, from:from, to:act1State[id], phaseRound:(typeof voteState!=='undefined'&&voteState.r1Result)?2:1});
+  }, 800);
+}
+
+function syncSliderLabel(id) {
+  var val = act1State[id];
+  // Match the CBO cost model: multiplier = 0.45 + val/100, baseline at val=55 = 1.00x.
+  var pct = Math.round(((0.45+val/100)/(0.45+55/100) - 1) * 100);
+  var label, color;
+  if(Math.abs(pct)<3){label='At baseline';color='var(--gold)';}
+  else if(pct>0){label='+'+pct+'% vs. baseline';color='var(--gold)';}
+  else{label=pct+'% vs. baseline';color='var(--gold)';}
+  document.getElementById('sval-'+id).textContent = label;
+  document.getElementById('sval-'+id).style.color = color;
+  updateImpactTags(id, val-55);
+}
+
+function updateImpactTags(id, diff) {
+  var el = document.getElementById('itags-'+id);
+  var tags = {
+    t1: {hi:'<span class="itag itag-pos">Farm Bureau: pleased</span><span class="itag itag-neg">Fiscal hawks: alarmed</span>',lo:'<span class="itag itag-neg">Farm Bureau: furious</span><span class="itag itag-pos">Fiscal hawks: pleased</span>'},
+    t4: {hi:'<span class="itag itag-pos">SNAP advocates: strong</span><span class="itag itag-neg">Coalition: risk</span>',lo:'<span class="itag itag-neg">SNAP advocates: furious</span><span class="itag itag-neg">Coalition: at risk</span>'},
+    t11:{hi:'<span class="itag itag-pos">Industry: pleased</span><span class="itag itag-neg">Moral hazard: rises</span>',lo:'<span class="itag itag-neg">Industry: mobilizing</span><span class="itag itag-pos">Fiscal hawks: pleased</span>'},
+    t2: {hi:'<span class="itag itag-pos">Env. groups: pleased</span><span class="itag itag-neu">Competes w/ Title I</span>',lo:'<span class="itag itag-neg">Env. groups: alarmed</span><span class="itag itag-pos">Short-run production: up</span>'}
+  };
+  if(Math.abs(diff)<8) el.innerHTML = '<span class="itag itag-neu">At baseline</span>';
+  else if(diff>0) el.innerHTML = tags[id].hi;
+  else el.innerHTML = tags[id].lo;
+}
+
+function updateCBODisplay() {
+  var t1=Math.round(baselines.t1*(0.45+act1State.t1/100));
+  var t4=Math.round(baselines.t4*(0.45+act1State.t4/100));
+  var t11=Math.round(baselines.t11*(0.45+act1State.t11/100));
+  var t2=Math.round(baselines.t2*(0.45+act1State.t2/100));
+  var total=t1+t4+t11+t2;
+  ['t1','t4','t11','t2'].forEach(function(id,i){
+    var vals=[t1,t4,t11,t2];
+    var el=document.getElementById('cbo-'+id);
+    if(el){el.textContent='$'+vals[i]+'B';el.style.color=Math.abs(act1State[id]-55)<8?'var(--gold)':act1State[id]>55?'var(--red)':'var(--green)';}
+  });
+  var tel=document.getElementById('cbo-total');
+  if(tel){tel.textContent='$'+total+'B';tel.style.color=Math.abs(total-1500)<30?'var(--gold)':total>1500?'var(--red)':'var(--green)';}
+  var budgetDiff=total-1500;
+  document.getElementById('act1-budget-val').textContent=(budgetDiff>=0?'+$'+budgetDiff:'$'+budgetDiff)+'B';
+  document.getElementById('act1-budget-val').style.color=budgetDiff>30?'var(--red)':budgetDiff<-30?'var(--green)':'var(--gold)';
+  document.getElementById('act1-budget-fill').style.width=Math.min(100,Math.max(0,50+budgetDiff/30))+'%';
+  document.getElementById('act1-budget-fill').style.background=budgetDiff>30?'var(--red)':budgetDiff<-30?'var(--green)':'var(--gold)';
+}
+
+function updateAct1Resources() {
+  var coalDelta=0;
+  if(act1State.t4<40) coalDelta-=15;
+  else if(act1State.t4>70) coalDelta+=8;
+  if(act1State.t1>70) coalDelta+=5;
+  var coal=Math.max(10,Math.min(100,64+coalDelta));
+  G.coal=coal;
+  document.getElementById('act1-coal-val').textContent=Math.round(coal);
+  document.getElementById('act1-coal-fill').style.width=coal+'%';
+  var cc=coal>50?'var(--green)':coal>30?'var(--gold)':'var(--red)';
+  document.getElementById('act1-coal-val').style.color=cc;
+  document.getElementById('act1-coal-fill').style.background=cc;
+  document.getElementById('act1-pc-val').textContent=Math.round(G.pc);
+  document.getElementById('act1-pc-fill').style.width=G.pc+'%';
+  var msg;
+  if(voteState && voteState.r1Result && !voteState.r2Result){
+    // Amendment window: round 1 failed, round 2 hasn't been called yet. Don't let a slider
+    // touch clobber this message back to the generic pre-shock default.
+    msg = 'Amendment round: adjust your positions, then return to re-vote. This is your last chance \u2014 a second failure kills the bill.';
+  } else if(!G.shockDone){
+    msg = 'Set your positions on each title, then respond to the shock event.';
+  } else {
+    msg = 'Set your positions, then advance to the committee vote.';
+  }
+  if(act1State.t4<40) msg='Warning: SNAP cuts below threshold — urban coalition at risk.';
+  else if(act1State.t1>75) msg='Note: High commodity support — CBO cost rising, WTO exposure.';
+  document.getElementById('act1-status').textContent=msg;
+  updateInterestGroups();
+  updateHeader();
+}
+
+function updateInterestGroups() {
+  // Each group's standing (0-5 filled dots) responds to the relevant title position.
+  var totalCost = 130*(0.45+act1State.t1/100)+1170*(0.45+act1State.t4/100)+120*(0.45+act1State.t11/100)+80*(0.45+act1State.t2/100);
+  var budgetDelta = totalCost - 1500;
+  var standing = {
+    'KansasFarmBureau': Math.round(2.5 + (act1State.t1-55)*0.06),      // loves commodity support
+    'CropIns.industry': Math.round(2.5 + (act1State.t11-55)*0.06),     // loves premium subsidy
+    'SNAPadvocates':    Math.round(2.5 + (act1State.t4-55)*0.06),      // loves nutrition funding
+    'Env.groups':       Math.round(2.5 + (act1State.t2-55)*0.06),      // loves conservation
+    'Fiscalhawks':      Math.round(2.5 - budgetDelta*0.012)            // hate overspending
+  };
+  Object.keys(standing).forEach(function(key){
+    var n = Math.max(0, Math.min(5, standing[key]));
+    for(var i=0;i<5;i++){
+      var dot = document.getElementById('ig-dot-'+key+'-'+i);
+      if(!dot) continue;
+      if(i<n) dot.className = 'ig-dot ' + (n>=4?'hi':n<=1?'lo':'on');
+      else dot.className = 'ig-dot';
+    }
+  });
+}
+
+function openShock() {
+  var pkg = SHOCKS[G.shockId];
+  document.getElementById('shock-modal-sub').textContent = pkg.modalSub;
+  document.getElementById('shock-modal-body').innerHTML = pkg.body;
+  var choicesHtml = pkg.options.map(function(o){
+    return '<button class="modal-choice" onclick="chooseShock(\''+o.key+'\')"><strong>'+o.key+'.</strong> '+o.label+'</button>';
+  }).join('');
+  document.getElementById('shock-choices').innerHTML = choicesHtml;
+  document.getElementById('shock-modal').classList.add('show');
+}
+function closeShock() { document.getElementById('shock-modal').classList.remove('show'); }
+
+function chooseShock(choice) {
+  if(G.shockDone) return;
+  G.shockDone=true; G.shockChoice=choice;
+  var pkg = SHOCKS[G.shockId];
+  var opt = pkg.options.filter(function(o){return o.key===choice;})[0];
+  logEvent('shock_choice', {shockId:G.shockId, choice:choice});
+  document.querySelectorAll('.modal-choice').forEach(function(b){b.disabled=true;b.style.opacity='0.45';});
+  G.pc=Math.max(0,Math.min(100,G.pc+opt.pc));
+  // Ad hoc aid cost (soy shock, choice A) is tracked here but deliberately NEVER added into the
+  // CBO/fiscal totals — see aidCost comment in the SHOCKS registry. It only surfaces in the
+  // debrief farm-income truth text. That gap between what the fiscal card shows and what the
+  // bill actually cost IS the lesson; do not "fix" it into the budget math.
+  G.shockAidCost = (pkg.aidCost && pkg.aidCost[choice]) || 0;
+  document.getElementById('act1-pc-val').textContent=Math.round(G.pc);
+  document.getElementById('act1-pc-fill').style.width=G.pc+'%';
+  var res=document.getElementById('shock-result');
+  res.innerHTML='<strong style="color:var(--gold);">Consequence:</strong> '+opt.msg+'<div class="mseed" style="margin-top:6px;">'+pkg.mseed+'</div>';
+  res.classList.add('show');
+  document.getElementById('shock-close').style.display='block';
+  document.getElementById('btn-act1-advance').disabled=false;
+  updateAct1Resources();
+}
+
+function advanceAct1() {
+  if(!G.shockDone){
+    document.getElementById('act1-status').textContent='Respond to the shock event before facing constituents.';
+    openShock();
+    return;
+  }
+  goPhase(3); // → Markup Vote. computeScores() now runs after the vote resolves, not here.
+}
+
+// ══ MARKUP VOTE ENGINE (SPEC 1 + SPEC 2) ══
+// All thresholds verified against engine cost model: cost_i = base_i*(0.45+v_i/100)  // fixed: slider 55 = 1.00x, baseline total = $1500B exactly, bases T1=130 T4=1170 T11=120 T2=80.
+// ══ SHOCKS REGISTRY (SPEC 5) ══
+// One package per shock: modal content, option deltas, Grady's dialogue only (never his
+// numeric thresholds — those stay fixed in the senator object, keyed to the choice letter,
+// which is the invariant that guarantees baseline fails 5–6 under every shock).
+var FORCE_SHOCK = null; // set to 'hormuz' | 'rates' | 'soy' to force a specific shock for testing/instruction; null = random draw
+
+var SHOCKS = {
+  hormuz: {
+    id:'hormuz',
+    modalSub:'Strait of Hormuz · Breaking',
+    body:'Iranian exercises have closed the Strait of Hormuz for 72 hours. Natural gas futures +18%. Nitrogen fertilizer spot prices rising.<br><br><em>A Kansas wheat farmer calls your office:</em> Senator, my input costs are through the roof. What are you going to do?',
+    options:[
+      {key:'A', label:'Call for higher PLC reference prices to offset input cost volatility (+8 PC, Farm Bureau pleased)', pc:8,
+        msg:'Farm Bureau pleased (+8 PC). You call for higher PLC reference prices. Politically strong. PLC pays on low prices, not high input costs — check the debrief for whether it actually helps. Town Hall question queued on the Hormuz → gas → fertilizer chain.'},
+      {key:'B', label:'Propose emergency crop insurance coverage expansion (+2 PC, measured response)', pc:2,
+        msg:'Measured response (+2 PC). Crop insurance expansion proposed. Industry satisfied. Moderate political cost.'},
+      {key:'C', label:'Issue diplomatic statement only (−4 PC, Farm Bureau frustrated)', pc:-4,
+        msg:'Diplomatic framing (−4 PC). Fiscal position protected. Farm Bureau frustrated. They wanted a fighter, not a diplomat.'}
+    ],
+    mseed:'→ Town Hall question queued on Hormuz → gas → ammonia → nitrogen fertilizer',
+    gradyNo:{
+      A:'You told Kansas you\u2019d fight for higher reference prices. They\u2019re not in this bill.',
+      B:'You promised insurance expansion on camera. Title XI says otherwise.',
+      C:'You gave farmers a press release. Give them a program.'
+    },
+    debriefFarm:{
+      A:{pct:52, val:'No payout', color:'var(--gold)', desc:'PLC payments triggered: $0 — wheat prices held above the reference price. Input-cost margins still squeezed. Farm Bureau satisfied by the effort anyway.'},
+      B:{pct:64, val:'Some relief', color:'var(--gold)', desc:'Crop insurance expansion helps margins at the edges, but standard price/revenue policies don\u2019t pay on an input-cost spike alone.'},
+      C:{pct:48, val:'Unaddressed', color:'var(--red)', desc:'No program response to the input-cost shock. Diplomatically prudent, fiscally clean — but margins stay squeezed.'}
+    },
+    optionLabels:{A:'Higher PLC reference prices', B:'Crop insurance expansion', C:'Diplomatic statement only'},
+    headline:{
+      A:'"Sen. Holloway calls for higher wheat price supports as fertilizer costs bite Kansas farms — cites Strait of Hormuz directly"',
+      B:'"Sen. Holloway proposes crop insurance expansion in response to Hormuz fertilizer shock"',
+      C:'"Sen. Holloway calls for diplomacy over direct farm aid — Kansas Farm Bureau issues pointed statement"'
+    },
+    aidCost:{A:0,B:0,C:0},
+    thQuestion:{
+      qid:'fanning_hormuz', badge:'RF', name:'Robert Fanning', desc:'Wheat & corn farmer · Seward County', type:'Mechanism question · Tier 2', time:45,
+      text:'Senator, why are my fertilizer costs up 40% because of something in the Persian Gulf? Walk me through it.',
+      sub:'A farmer who spent 35 years on these fields deserves a straight answer.',
+      choices:['Natural gas is the feedstock for the ammonia in nitrogen fertilizer, so a gas shock passes through to fertilizer.',
+        'Hormuz is an oil chokepoint, so higher diesel raises the cost of running tractors and of hauling every ton of fertilizer to the co-op elevator.',
+        'War-risk premiums make traders bid up every farm commodity at once, and fertilizer gets swept along with grain and diesel.',
+        'Iran supplies most of the world\u2019s finished fertilizer, so any Gulf conflict cuts global supply and spikes the price.'],
+      correct:0,
+      correctFB:'Exactly right. Hormuz threatens Qatari LNG → European/Asian gas prices spike → European ammonia plants curtail → global urea/UAN trade prices rise → US fertilizer prices follow (the US imports much of its nitrogen). This is the same mechanism as the 2021–22 gas shock.',
+      wrongFB:'The chain runs through natural gas, not oil or general uncertainty. Ammonia (the base for nitrogen fertilizer) is synthesized from gas. Note: Iran IS a significant urea exporter — but sanctions already limit its tonnage in Western markets, so the price signal travels through the global gas-and-ammonia market, not an Iranian supply cut.',
+      chain:'Hormuz → Qatari LNG risk → European/Asian gas price → ammonia curtailment → global nitrogen price → US fertilizer costs', knowledge:'price',
+      deflect:'Bob, I\u2019ve walked those fields with you. Washington created this mess, and I\u2019m going to be the loudest voice in that committee room fighting for Kansas inputs. You have my word.'
+    }
+  },
+
+  rates: {
+    id:'rates',
+    modalSub:'Treasury Markets · Breaking',
+    body:'A string of weak Treasury auctions sends long yields up 180 basis points in six weeks. Banks reprice farm credit across the board — operating notes roll over at the new rates, farmland cap rates rise, and land values in western Kansas soften 8% in a single quarter.<br><br><em>Linda Torres calls from First National:</em> Senator, I have forty accounts that penciled at 7% and don\u2019t pencil at 9. These are operations that did nothing wrong except borrow at the wrong moment. What are you going to do?',
+    options:[
+      {key:'A', label:'Call for emergency FSA interest assistance — federal buy-downs on guaranteed operating loans for distressed borrowers (+8 PC, bankers and Farm Bureau pleased)', pc:8,
+        msg:'Bankers and Farm Bureau pleased (+8 PC). You call for interest buy-downs. Politically strong. Ask who a buy-down actually reaches — it rescues the leveraged, not the cautious. Watch who\u2019s grateful in the debrief. Town Hall question queued: someone remembers 1984.'},
+      {key:'B', label:'Propose expanded FSA direct lending capacity so credit-rationed operators have a lender of last resort (+2 PC, measured response)', pc:2,
+        msg:'Measured response (+2 PC). Direct lending capacity expands slowly and helps at the margin. Nobody\u2019s furious; nobody\u2019s saved by Friday.'},
+      {key:'C', label:'State that credit conditions are the Federal Reserve\u2019s lane, not the Agriculture Committee\u2019s (−4 PC, Torres\u2019s forty accounts noted, coldly)', pc:-4,
+        msg:'Institutionally correct (−4 PC). The Fed does set rates. Torres\u2019s borrowers will remember that you said so.'}
+    ],
+    mseed:'→ Town Hall question queued on rescue precedent and time-consistency',
+    gradyNo:{
+      A:'You promised those borrowers relief on camera. Pair it with reference price movement or it\u2019s a press conference, not a program.',
+      B:'Lender of last resort is fine. My farmers want a bill that pays, not one that lends.',
+      C:'You told forty families it\u2019s not your lane. Make Title I your lane, then.'
+    },
+    debriefFarm:{
+      A:{pct:70, val:'Selective rescue', color:'var(--gold)', desc:'The buy-down reaches leveraged operators — by design, distress-targeted aid rescues exactly the farmers who expanded on debt. The cautious neighbor who declined the loan in 1974 gets nothing, and watches. Lenders take note for next time: leverage now carries an implicit federal put.'},
+      B:{pct:58, val:'Slow relief', color:'var(--gold)', desc:'Direct lending keeps credit-rationed operations alive through the roll-over, at government risk. Smaller, slower, less distortionary — and less visible.'},
+      C:{pct:40, val:'Market clearing', color:'var(--red)', desc:'No intervention. Stressed operations sell to stronger neighbors; land transfers accelerate consolidation. Fiscally clean. Politically remembered.'}
+    },
+    optionLabels:{A:'Emergency interest rate buy-downs', B:'Expanded FSA direct lending', C:'Deferred to the Federal Reserve'},
+    headline:{
+      A:'"Sen. Holloway secures interest buy-downs for distressed Kansas operators — bankers praise swift action, critics ask who\u2019s left out"',
+      B:'"Sen. Holloway expands FSA lending capacity in response to rate shock — measured response draws mixed reviews"',
+      C:'"Sen. Holloway defers to the Fed on farm credit crunch — First National\u2019s Torres says forty families got no answer"'
+    },
+    aidCost:{A:0,B:0,C:0},
+    thQuestion:{
+      qid:'hoffmann_rates', badge:'EH', name:'Earl Hoffmann', desc:'Retired farmer · 78 · lost his farm in 1984', type:'Historical pattern · Tier 2', time:45,
+      text:'In September of \u201984 the President announced a program — deferrals, loan guarantees. It was 0.3 percent of farm debt, almost nobody qualified, and the bank took my place that winter. Now you\u2019re buying down notes for these fellows. Tell me straight: what does rescuing them actually do?',
+      sub:'He is not asking to be consoled. He is asking to be told the truth.',
+      choices:['Honestly? It can\u2019t reach backward to you — and it teaches every lender and borrower to expect the next rescue, so today\u2019s relief quietly raises tomorrow\u2019s leverage.',
+        'Today\u2019s farmers face genuine conditions beyond their control, while the 1980s crisis was driven mainly by farmers\u2019 own speculative overborrowing — the two situations aren\u2019t comparable.',
+        'Crop insurance now absorbs interest-rate risk that was uninsured in your day, so this buy-down is only a short bridge, not a permanent bailout.',
+        'The Federal Reserve has already signaled cuts within the year, so the buy-down is nearly costless — a small advance on relief that\u2019s coming anyway.'],
+      correct:0,
+      correctFB:'The honest answer, and Earl knows it. Rescues are time-inconsistent: announced as one-time, expected as permanent. Once lenders and borrowers price in the next buy-down, leverage rises ex ante — the 1984 program was too small to save Earl, but the precedent it set is part of why aid is demanded today.',
+      wrongFB:'Two of those are factually wrong — crop insurance covers yield and revenue, not interest rates, and the 1980s crisis was macro-driven (Volcker, the dollar), not farmer recklessness; the game showed you that. The real mechanism is precedent: each rescue resets expectations and reprices risk-taking before the next crisis.',
+      chain:'rescue announced → expectations updated → lenders/borrowers price in the next rescue → leverage rises ex ante → larger crisis, larger rescue → time inconsistency', knowledge:'history',
+      deflect:'Earl, what happened to you in \u201984 was a failure of government, plain and simple. As long as I hold this seat, no Kansas farmer will ever be forgotten like that again.'
+    }
+  },
+
+  soy: {
+    id:'soy',
+    modalSub:'Trade · Breaking',
+    body:'A tariff dispute escalates overnight: China suspends new purchases of U.S. soybeans and books Brazilian cargoes through spring. November beans go limit-down two sessions running, and basis at the Gulf collapses as export elevators back up.<br><br><em>Curt Weber, soybean and corn farmer, Brown County, calls in:</em> Senator, I priced nothing before this hit. My beans are worth eighty cents less than Tuesday and the elevator won\u2019t even bid. What are you going to do?',
+    options:[
+      {key:'A', label:'Demand ad hoc trade-assistance payments — direct checks to affected producers, MFP-style, outside the farm bill baseline (+8 PC, immediate and loud)', pc:8,
+        msg:'Loud and immediate (+8 PC). Direct payments, announced within weeks. Of the three crises, this is the one response that pays farmers in full. It also never appears in a CBO baseline. Watch the fiscal card.'},
+      {key:'B', label:'Propose strengthening ARC\u2019s revenue guarantee so the safety net absorbs the price collapse (+2 PC, works-through-the-program response)', pc:2,
+        msg:'Works through the program (+2 PC). ARC will trigger this year. Ask what happens to a revenue guarantee built on a moving average when the low prices persist. Town Hall question queued.'},
+      {key:'C', label:'Urge negotiation and refuse to endorse aid, arguing payments entrench the trade war (−4 PC, Weber unimpressed)', pc:-4,
+        msg:'Principled (−4 PC). Possibly even correct on trade strategy. Weber\u2019s beans are still eighty cents lower, and Brazil is still loading.'}
+    ],
+    mseed:'→ Town Hall question queued on ARC\u2019s moving-average benchmark',
+    gradyNo:{
+      A:'You promised checks. Checks aren\u2019t in a farm bill — reference prices are. Show me Title I.',
+      B:'You promised the safety net would hold. The safety net is Title I, and Title I is flat.',
+      C:'You told Weber to wait for diplomacy. Brazil isn\u2019t waiting. Neither am I.'
+    },
+    debriefFarm:{
+      A:{pct:74, val:'Paid — off books', color:'var(--gold)', desc:'The payments land, fast and visible — the one response across all three crises that mechanically delivers. And that is the trap: ad hoc aid is unbudgeted, escapes the CBO baseline, and teaches producers the real safety net is political, not programmatic. Note your fiscal card doesn\u2019t show it. Neither did Congress\u2019s.'},
+      B:{pct:58, val:'Pays, then shrinks', color:'var(--gold)', desc:'ARC triggers in year one. But the guarantee is a moving average of recent revenue — the crash year now enters the benchmark, so protection erodes exactly as long as the trade war lasts.'},
+      C:{pct:42, val:'Unaddressed', color:'var(--red)', desc:'No response. Basis stays wide, the market share moves to Brazil, and some of it — as after the 1973 embargo and the 2018 dispute — will not come back.'}
+    },
+    optionLabels:{A:'Ad hoc trade-assistance payments', B:'Strengthen ARC\u2019s revenue guarantee', C:'Negotiation, no aid'},
+    headline:{
+      A:'"Sen. Holloway demands emergency trade payments as China books Brazilian beans — checks promised within weeks"',
+      B:'"Sen. Holloway proposes ARC strengthening in response to soybean collapse — economists question durability"',
+      C:'"Sen. Holloway resists trade aid on principle — Brown County\u2019s Weber says his elevator still won\u2019t bid"'
+    },
+    aidCost:{A:12,B:0,C:0}, // INTENTIONAL: this cost must stay OUT of the fiscal/CBO card and IN the debrief truth text —
+                             // that gap is the lesson (ad hoc aid is off-budget). Do not "fix" this into the CBO total.
+    thQuestion:{
+      qid:'weber_soy', badge:'CW', name:'Curt Weber', desc:'Soybean & corn farmer · Brown County', type:'Program mechanics · Tier 2', time:45,
+      text:'Year one of this trade war, my ARC payment showed up like it was supposed to. Year two, prices are just as bad — worse, some months — my yields were normal both years, and the payment came in smaller. Nobody at the FSA office could explain it in English. Can you?',
+      sub:'He has the payment stubs in his shirt pocket. He will check your answer against them.',
+      choices:['ARC guarantees a share of your county\u2019s recent average revenue — the crash year entered that average, so the benchmark dropped, shrinking both the guarantee and the payment cap.',
+        'ARC pays on price alone, and prices technically stabilized between year one and year two, even though they stayed at historically low levels.',
+        'Congress reduced ARC appropriations in the interim as part of broader spending cuts, so payment rates were trimmed across every county.',
+        'You likely hit the per-person payment limitation in year one, which reduces what any individual operation can collect the following year.'],
+      correct:0,
+      correctFB:'Exactly — and it\u2019s the program\u2019s deepest design tension. The benchmark is an Olympic moving average of recent county revenue, so ARC insures against deviation from recent history, and recent history now includes the disaster. Sustained low prices erode the guarantee year over year — until the reference-price floor in the benchmark calculation finally binds. This is why enrollment swung heavily from ARC to PLC after 2014, and why Weber\u2019s stubs shrink while his losses don\u2019t.',
+      wrongFB:'Wrong mechanism. ARC is revenue-based, not price-only — that\u2019s PLC. It\u2019s mandatory CCC spending, so there\u2019s no appropriation to cut. And payment limits don\u2019t carry across years. The real answer is the moving benchmark: the crash year entered the five-year average, dragging the guarantee down. ARC protects against surprise, not against persistence.',
+      chain:'year-1 crash price enters 5-yr Olympic average → benchmark revenue falls → guarantee (% of benchmark) falls → payment cap (% of benchmark) falls → smaller payment despite equal loss', knowledge:'mechanics',
+      deflect:'Curt, I\u2019ve seen those Brazilian cargoes too, and it makes my blood boil. Kansas grows the best beans in the world, and I won\u2019t rest until you can sell every bushel at a fair price.'
+    }
+  }
+};
+
+function drawShock(){
+  if(G.shockId) return G.shockId; // already drawn this session — never redraw
+  var id = FORCE_SHOCK || ['hormuz','rates','soy'][Math.floor(Math.random()*3)];
+  G.shockId = id;
+  logEvent('shock_drawn', {id:id, forced:!!FORCE_SHOCK});
+  return id;
+}
+
+var senators = [
+ {id:'rucker', name:'Sen. Dale Rucker', tag:'R-ND · Wheat/Durum',
+  test:function(s){ return s.t1>=60; },
+  no:'Reference prices at baseline don\u2019t answer what my growers are facing.',
+  yes:'Rucker: \u201cNow it\u2019s a farm bill.\u201d'},
+ {id:'landry', name:'Sen. Bo Landry', tag:'R-LA · Rice/Cotton',
+  test:function(s){ return s.t1>=62 && s.t11>=50; },
+  no:'The South needs real reference price movement \u2014 and hands off crop insurance.',
+  yes:'Landry: \u201cThe Delta is whole. I\u2019m a yes.\u201d'},
+ {id:'marsh', name:'Sen. Alicia Marsh', tag:'D-IL · Chicago',
+  test:function(s){ return s.t4>=52; },
+  no:'You cut SNAP. I don\u2019t vote for bills that take food off tables in my city.',
+  yes:'Marsh: \u201cNutrition is protected. That\u2019s my line, and you held it.\u201d'},
+ {id:'ortiz', name:'Sen. Ruben Ortiz', tag:'D-NJ · Urban',
+  test:function(s){ return s.t4>=60; },
+  no:'Holding SNAP flat during a food-price shock is a cut in real terms. Do better.',
+  yes:'Ortiz: \u201cThis bill actually expands food security. Yes.\u201d'},
+ {id:'kessler', name:'Sen. Grant Kessler', tag:'R-UT · Budget, pragmatic',
+  test:function(s){ return s.B<=35; },
+  no:function(s){ return 'This bill is $'+Math.round(s.B)+'B over baseline \u2014 my caucus\u2019s tolerance is $35B.'; },
+  yes:'Kessler: \u201cInside the fiscal box. I can sell this at home.\u201d'},
+ {id:'paulsen', name:'Sen. Vic Paulsen', tag:'R-WI · Budget, purist',
+  test:function(s){ return s.B<=-60; },
+  no:'Every farm bill promises reform and delivers baseline. Show me $60B in real cuts.',
+  yes:'Paulsen: \u201cActual cuts. I didn\u2019t think I\u2019d live to see it.\u201d'},
+ {id:'voss', name:'Sen. Ellen Voss', tag:'D-MN · Conservation',
+  test:function(s){ return s.t2>=62 && s.t1<75; },
+  no:'Conservation is the piggy bank again. Long-run soil and water lose so short-run production wins.',
+  yes:'Voss: \u201cWorking lands finally got their share.\u201d'},
+ {id:'hale', name:'Sen. Marcus Hale', tag:'R-IN · Crop Insurance',
+  test:function(s){ return s.t11>=50; },
+  no:'You touched premium subsidies. The one program farmers actually trust \u2014 and you cut it.',
+  yes:'Hale: \u201cInsurance holds. Count me in.\u201d'},
+ {id:'natarajan', name:'Sen. Priya Natarajan', tag:'D-CO · Swing',
+  test:function(s){ return s.B<=90 && s.t4>=48 && s.t2>=48; },
+  no:'I need a bill I can call balanced \u2014 this isn\u2019t it.',
+  yes:'Natarajan: \u201cReasonable people can vote for this.\u201d'},
+ {id:'grady', name:'Sen. Tom Grady', tag:'R-OH · Swing, populist',
+  test:function(s){
+    if(s.shock==='A') return s.t1>=58;
+    if(s.shock==='B') return s.t1>=55 && s.t11>=58;
+    return s.t1>=65; // C or none — thresholds are fixed here, keyed only to the choice letter,
+                      // identical across all three shocks. This is the invariant: never move
+                      // these numbers into a shock package, or the baseline 5–6 tally breaks
+                      // per-shock and needs re-tuning every time a shock is added.
+  },
+  no:function(s){
+    var pkg = SHOCKS[s.shockId || G.shockId];
+    if(pkg && pkg.gradyNo && pkg.gradyNo[s.shock]) return pkg.gradyNo[s.shock];
+    return 'You gave farmers a press release. Give them a program.'; // fallback if shock somehow unset
+  },
+  yes:'Grady: \u201cYou said it, and you did it. Yes.\u201d'}
+];
+
+var voteState = {round:1, r1Sliders:null, r2Sliders:null, r1Result:null, r2Result:null, temptationTriggered:false, temptationDecision:null, outcome:null};
+var voteAmendmentReentry = false; // set true right before routing back into the vote phase for the final re-vote, so initVote() preserves round-1 history instead of wiping it.
+
+function engineTotal(s){
+  // Fixed multiplier: 0.45 + v/100, so slider 55 = 1.00x and baseline total = $1500B exactly.
+  return Math.round((130*(0.45+s.t1/100) + 1170*(0.45+s.t4/100) + 120*(0.45+s.t11/100) + 80*(0.45+s.t2/100)) * 10) / 10;
+}
+
+function runRoll(sliderSnapshot) {
+  var total = engineTotal(sliderSnapshot);
+  var s = {t1:sliderSnapshot.t1, t4:sliderSnapshot.t4, t11:sliderSnapshot.t11, t2:sliderSnapshot.t2, total:total, B: total-1500, shock:G.shockChoice, shockId:G.shockId};
+  var results = senators.map(function(sen){
+    var vote = sen.test(s) ? 'yes' : 'no';
+    var line = vote==='no' ? (typeof sen.no==='function' ? sen.no(s) : sen.no) : sen.yes;
+    return {id:sen.id, name:sen.name, identity:sen.tag, vote:vote, why:line};
+  });
+  var yes = results.filter(function(r){return r.vote==='yes';}).length + 1; // +1 for player
+  var no = results.filter(function(r){return r.vote==='no';}).length;
+  return {sliders:{t1:s.t1,t4:s.t4,t11:s.t11,t2:s.t2}, total:s.total, B:s.B, results:results, yes:yes, no:no, passed: yes>=6};
+}
+
+function initVote() {
+  if(voteAmendmentReentry){
+    // Re-entering for the final amendment re-vote: preserve round-1 history
+    // (voteState.r1Result etc.) instead of wiping it — the research log needs
+    // round 1, the amendment deltas, and round 2 as three separate records.
+    voteAmendmentReentry = false;
+    document.getElementById('vote-round-title').textContent = 'Committee Vote — Round 2 (Final)';
+    document.getElementById('vote-round-sub').textContent = 'Senate Agriculture Committee · amendment re-vote — this is final';
+    document.getElementById('vote-nav-note').textContent = 'Re-committing your amended bill for a final vote';
+    document.getElementById('btn-vote-action').style.display = 'none';
+    return; // callRoll(2) is called immediately after goPhase(3) by the amendment button; no placeholder body needed.
+  }
+  voteState = {round:1, r1Sliders:null, r2Sliders:null, r1Result:null, r2Result:null, temptationTriggered:false, temptationDecision:null, outcome:null};
+  document.getElementById('vote-round-title').textContent = 'Committee Vote — Round 1';
+  document.getElementById('vote-round-sub').textContent = 'Senate Agriculture Committee · roll call on your bill as marked up';
+  document.getElementById('vote-nav-note').textContent = 'Committing your bill for a vote';
+  document.getElementById('btn-vote-action').style.display = 'inline-block';
+  document.getElementById('btn-vote-action').textContent = 'Call the roll →';
+  document.getElementById('btn-vote-action').onclick = function(){ callRoll(1); };
+  document.getElementById('vote-body').innerHTML = '<div style="text-align:center;padding:40px 0;"><div style="font-family:\'Libre Baskerville\',serif;font-style:italic;font-size:15px;color:var(--text-dim);line-height:2;">Your bill, as marked up:<br>Title I '+act1State.t1+' · Title IV '+act1State.t4+' · Title XI '+act1State.t11+' · Title II '+act1State.t2+'<br><br>Eleven votes on the committee. You need six.</div></div>';
+}
+
+function callRoll(round) {
+  var snapshot = {t1:act1State.t1, t4:act1State.t4, t11:act1State.t11, t2:act1State.t2};
+  var result = runRoll(snapshot);
+  var noIds = result.results.filter(function(r){return r.vote==='no';}).map(function(r){return r.id;});
+  logEvent('vote_roll', {round:round, sliders:snapshot, B:result.B, yes:result.yes, no:result.no, noIds:noIds});
+  if(round===1){
+    voteState.r1Sliders = snapshot; voteState.r1Result = result;
+  } else {
+    voteState.r2Sliders = snapshot; voteState.r2Result = result;
+    // The amendment delta: what changed between the committed round-1 bill and this final re-vote.
+    if(voteState.r1Sliders){
+      var deltas = {}, costDelta = 0;
+      var perPoint = {t1:1.3, t4:11.7, t11:1.2, t2:0.8};
+      ['t1','t4','t11','t2'].forEach(function(k){
+        var d = snapshot[k]-voteState.r1Sliders[k];
+        deltas[k] = d;
+        costDelta += d*perPoint[k];
+      });
+      logEvent('amendment_delta', {deltas:deltas, costDelta:Math.round(costDelta*10)/10});
+    }
+  }
+  renderTally(result, round);
+}
+
+function renderTally(result, round) {
+  // Defensive: set the round title here too, regardless of which path led into renderTally.
+  var titleEl = document.getElementById('vote-round-title');
+  if(titleEl) titleEl.textContent = round===1 ? 'Committee Vote — Round 1' : 'Committee Vote — Round 2 (Final)';
+  var html = '<div class="tally-banner">'+
+    '<div><div class="tally-num" style="color:var(--green);">'+result.yes+'</div><div class="tally-lab">Yes</div></div>'+
+    '<div class="tally-vs">of 11</div>'+
+    '<div><div class="tally-num" style="color:var(--red);">'+result.no+'</div><div class="tally-lab">No</div></div>'+
+    '</div>';
+  html += '<div class="tally-verdict '+(result.passed?'pass':'fail')+'">'+(result.passed?'Bill reports out of committee':'Bill fails — needs 6, got '+result.yes)+'</div>';
+  var bSign = result.B>=0 ? '+$'+result.B.toFixed(1)+'B over baseline' : '−$'+Math.abs(result.B).toFixed(1)+'B under baseline';
+  html += '<div style="font-family:Special Elite,monospace;font-size:9px;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:10px;">CBO total: $'+result.total.toFixed(1)+'B ('+bSign+')</div>';
+  result.results.forEach(function(r){
+    html += '<div class="senator-row '+r.vote+'"><div class="sen-vote-badge '+r.vote+'">'+r.vote.toUpperCase()+'</div><div class="sen-info"><div class="sen-name">'+r.name+'</div><div class="sen-identity">'+r.identity+'</div>'+(r.vote==='no'?'<div class="sen-why">"'+r.why+'"</div>':'<div class="sen-why" style="color:var(--green);opacity:0.8;">'+r.why+'</div>')+'</div></div>';
+  });
+  document.getElementById('vote-body').innerHTML = html;
+
+  var noteEl = document.getElementById('vote-nav-note');
+  var btn = document.getElementById('btn-vote-action');
+
+  if(result.passed){
+    // Composition matters for the debrief headline: farm-bloc landslide vs. knife-edge coalition.
+    var margin = result.yes - result.no;
+    G.voteMargin = margin;
+    G.voteYesList = result.results.filter(function(r){return r.vote==='yes';}).map(function(r){return r.id;});
+    noteEl.textContent = round===1 ? 'The bill passes on the first vote, '+result.yes+'–'+result.no+'.' : 'The bill passes on the amendment round, '+result.yes+'–'+result.no+'.';
+    btn.style.display = 'inline-block';
+    btn.textContent = 'Continue to Town Hall →';
+    btn.onclick = function(){ finalizeVote(round===1?'passed_round1':'passed_round2'); };
+    return;
+  }
+
+  // Failed.
+  if(round===1){
+    noteEl.textContent = 'Fails by '+(6-result.yes)+'. You get one amendment round — move sliders to find the votes you\'re missing.';
+    btn.style.display = 'inline-block';
+    btn.textContent = 'Open sliders for amendment →';
+    btn.onclick = function(){ goPhase(2); document.getElementById('act1-status').textContent = 'Amendment round: adjust your positions, then return to re-vote. This is your last chance — a second failure kills the bill.'; document.getElementById('btn-act1-advance').textContent='Re-vote (final) →'; document.getElementById('btn-act1-advance').onclick=function(){ voteAmendmentReentry=true; goPhase(3); callRoll(2); }; };
+    return;
+  }
+
+  // Round 2 failed — final. Check the temptation trigger: fails by exactly one AND Grady is the swing NO.
+  var grady = result.results.filter(function(r){return r.id==='grady';})[0];
+  if((6-result.yes)===1 && grady.vote==='no'){
+    noteEl.textContent = 'Fails by exactly one. Someone wants to talk to you before you give up.';
+    btn.style.display = 'none';
+    setTimeout(function(){ openTemptation(); }, 600);
+  } else {
+    noteEl.textContent = 'The bill dies in committee. No further votes.';
+    btn.style.display = 'inline-block';
+    btn.textContent = 'Continue to Town Hall →';
+    btn.onclick = function(){ finalizeVote('died_final'); };
+  }
+}
+
+function openTemptation(){
+  voteState.temptationTriggered = true;
+  window._temptationShownAt = Date.now();
+  document.getElementById('temptation-rider-text').innerHTML =
+    '<strong style="color:var(--gold);">Amendment No. 214 — "Beginning and Highly Leveraged Producer Risk Management Enhancement."</strong><br><br>'+
+    'Strike section 11.302(b) and insert: <em>"For Revenue Protection policies at the 80 and 85 percent coverage levels, the premium subsidy share shall be not less than 65 percent, without regard to the schedule in section 508(e)(2) of the Federal Crop Insurance Act."</em><br><br>'+
+    'CBO score: <strong style="color:var(--red);">+$18B / 10 years</strong>, Title XI.';
+  document.getElementById('temptation-pitch-text').innerHTML =
+    '"Senator, let me tell you who buys 85 percent coverage: almost nobody. At the top coverage levels the subsidy schedule drops to 38 cents on the dollar, so the farmers who most need protection buy the least of it. You know who that is? It\'s the 29-year-old who just took on land debt at today\'s rates. It\'s Earl Hoffmann in 1979. You saw what those fields looked like by 1985. You walked through it yourself, an hour ago.<br><br>'+
+    'Every time coverage falls short, Congress passes an ad hoc disaster bill anyway — unbudgeted, unpriced, after the fact. We are not asking you to spend new money; we are asking you to spend it before the catastrophe instead of after. Eighteen billion over ten years to make sure 1981 never happens again. Mr. Grady\'s staff has seen the language. He\'s ready to be your sixth vote tonight."';
+  document.getElementById('temptation-modal').classList.add('show');
+}
+
+function temptationChoice(choice){
+  voteState.temptationDecision = choice;
+  var msToDecide = Date.now()-(window._temptationShownAt||Date.now());
+  logEvent('temptation', {shown:true, decision:choice, msToDecide:msToDecide});
+  document.getElementById('temptation-modal').classList.remove('show');
+  if(choice==='accept'){
+    G.voteMargin = 1; // 6-5, rider-flipped
+    G.voteYesList = voteState.r2Result.results.filter(function(r){return r.vote==='yes';}).map(function(r){return r.id;}).concat(['grady']);
+    finalizeVote('passed_with_rider');
+  } else {
+    finalizeVote('died_declined_rider');
+  }
+}
+
+function finalizeVote(outcome){
+  voteState.outcome = outcome;
+  var deltas = {
+    passed_round1:      {ps:5,  po:4},
+    passed_round2:       {ps:5,  po:4},
+    passed_with_rider:   {ps:7,  po:-6},
+    died_final:           {ps:-12, po:-8},
+    died_declined_rider: {ps:-5, po:-2}
+  };
+  G.voteOutcome = outcome;
+  G.voteDelta = deltas[outcome] || {ps:0,po:0};
+  G.voteRiderCost = (outcome==='passed_with_rider') ? 18 : 0;
+  computeScores();
+  updateHeader();
+  goPhase(4); // → Town Hall
+}
+
+// ══ TOWN HALL ══
+// The three CORE questions are constant across all shocks — same characters, same content —
+// so Town Hall scores stay comparable across sessions run with different shocks. The fourth
+// (mechanism) question comes from SHOCKS[G.shockId].thQuestion and is assembled at initTownHall.
+var CORE_THQS = [
+  {qid:'achebe_coalition', badge:'DA',name:'Deborah Achebe',desc:'Food bank director · Wichita · 4,200 families/month',type:'Coalition theory · Tier 1',time:45,
+    text:'Senator, why is the food stamp program in the same bill as crop insurance? These seem like different things.',
+    sub:'She runs the largest food bank in western Kansas. She votes. Her board votes.',
+    choices:['They share the USDA budget account, so appropriators have scored them as one line item since the 1930s.',
+      'A 1964 vote-trade: urban Democrats backed the wheat-cotton bill only if rural members backed food stamps.',
+      'Food stamps began as surplus-grain disposal, so they have been legally part of farm policy since 1939.',
+      'Reformers bundled them in 1996 to protect nutrition funding from annual appropriations fights.'],
+    correct:1,
+    correctFB:'Correct. In 1964, urban Democrats voted for the wheat-cotton farm bill; rural Democrats voted for food stamps. Rep. Leonor Sullivan (D-MO) introduced the food stamp bill she\'d championed since 1954. (Bob Dole actually voted against it that year — he became a champion only in the 1970s, alongside McGovern.) That vote-trade is the load-bearing wall of every farm bill since.',
+    wrongFB:'The core answer is the 1964 logroll: urban Democrats trade votes on the wheat-cotton bill for rural support of food stamps, in a bill introduced by Rep. Leonor Sullivan. It\'s explicit vote-trading, and it\'s why the two have stayed bundled. (The McGovern-Dole partnership is the 1970s consolidation, not the 1964 origin.)',
+    chain:'Sullivan\'s food stamp bill + wheat-cotton bill → 1964 vote-trade → urban-rural coalition → foundation of every farm bill',knowledge:'coalition',
+    deflect:'What I can tell you is that no family in Wichita should go hungry, and no farmer should go broke — and I\'ll fight for both, every single day.'},
+  {qid:'dietz_history', badge:'MD',name:'Marlene Dietz',desc:'Retired farmer · lost her farm in 1986',type:'Historical pattern · Tier 2',time:45,
+    text:'I lost this farm in 1986. Every time something goes wrong out here, people around town start saying "this feels like the eighties again." Does it? Are we headed back there?',
+    sub:'She drove two hours to ask this question. She deserves a real answer.',
+    choices:['Yes — whenever conditions turn hard for farmers, it means we\'re headed for a bankruptcy wave just like the 1980s.',
+      'Only partly — the 1980s needed three things at once: high rates, a strong dollar killing exports, and a Butz-era land bubble.',
+      'No — crop insurance now covers price and yield losses, so a 1980s-style collapse is effectively impossible today.',
+      'No — that crisis was driven by the Soviet grain embargo cutting off exports, and there is no comparable embargo now.'],
+    correct:1,
+    correctFB:'Well done. The 1980s crisis needed all three: the Volcker rate shock, the dollar surge killing exports, AND the land bubble from Butz-era borrowing. Whatever hard year prompts this question, the conditions are rarely identical — but the pattern is worth checking every time, not dismissing or assuming.',
+    wrongFB:'The 1980s crisis had three converging causes: Volcker rate hikes, dollar appreciation crushing exports, and land values inflated by Butz-era expansion. The Soviet embargo added pressure but wasn\'t the primary driver, and no single hard year automatically means a repeat.',
+    chain:'Butz boom → land inflation + debt → Volcker rate hike → dollar surge → export collapse → land values crater → 300K bankruptcies',knowledge:'history',
+    deflect:'What happened to your farm should never happen to anyone. That\'s exactly why I\'m on this committee — so Washington never forgets people like you.'},
+  {qid:'torres_mechanics', badge:'LT',name:'Linda Torres',desc:'Ag loan officer · First National Bank · 340 farm accounts',type:'Program mechanics · Tier 1',time:45,
+    text:'What\'s the actual difference between ARC and PLC, and which one protects farmers better when both prices AND yields are bad?',
+    sub:'Her recommendation shapes what her 340 borrowers plant next season.',
+    choices:['ARC pays on a county revenue shortfall (price times yield); PLC pays only on low price — so ARC catches a combined price-and-yield hit.',
+      'ARC covers yield losses and PLC covers price losses, so a farmer facing both at once has to enroll in both programs together.',
+      'PLC always wins in a downturn because its statutory reference price is a hard floor that pays out regardless of the farm\'s yield.',
+      'They are effectively the same revenue guarantee, and the only real difference between them is the specific list of program commodities each one happens to cover.'],
+    correct:0,
+    correctFB:'Correct. ARC triggers on revenue (price × yield) falling below a county benchmark — so when both price and yield drop, ARC captures that combined shock. PLC only triggers on price, missing the yield dimension.',
+    wrongFB:'ARC (Agricultural Risk Coverage) is revenue-based — price × yield vs. benchmark. PLC (Price Loss Coverage) is price-only. When both price AND yield are bad, ARC captures both dimensions and is generally more protective.',
+    chain:'ARC = revenue coverage (price × yield) → catches combined shocks · PLC = price-only → misses yield dimension',knowledge:'mechanics',
+    deflect:'Linda, what your borrowers need is certainty, and this bill delivers certainty. I\'d be glad to have my ag staff walk your team through the details.'}
+];
+
+var thQs = []; // assembled fresh at initTownHall() from [shock mechanism question] + CORE_THQS
+
+var thState = {current:0,correct:0,wrong:0,pcDelta:0,answered:false,timer:null,timeLeft:45,basePs:50,basePo:50,deflected:0,deflectLog:[]};
+
+function initTownHall() {
+  thQs = [SHOCKS[G.shockId].thQuestion].concat(CORE_THQS);
+  thState={current:0,correct:0,wrong:0,pcDelta:0,answered:false,timer:null,timeLeft:45,basePs:G.ps,basePo:G.po,deflected:0,deflectLog:[]};
+  buildTHDots();
+  loadTHQuestion(0);
+}
+
+function buildTHDots() {
+  var html='';
+  thQs.forEach(function(q,i){ html+='<div class="q-dot" id="qdot-'+i+'"></div>'; });
+  document.getElementById('th-dots').innerHTML=html;
+  document.getElementById('qdot-0').className='q-dot active-q';
+}
+
+function loadTHQuestion(idx) {
+  var q=thQs[idx];
+  thState.answered=false; thState.timeLeft=q.time;
+  clearInterval(thState.timer);
+  document.getElementById('th-badge').textContent=q.badge;
+  document.getElementById('th-name').textContent=q.name;
+  document.getElementById('th-desc').textContent=q.desc;
+  document.getElementById('btn-th-next').disabled=true;
+  document.getElementById('th-nav-note').textContent='Answer before time runs out';
+  var qsec=document.getElementById('th-q-section');
+  var choicesHtml=q.choices.map(function(c,i){
+    return '<button class="th-choice" onclick="thAnswer('+i+')"><span class="th-choice-letter">'+String.fromCharCode(65+i)+'</span><span class="th-choice-text">'+c+'</span></button>';
+  }).join('');
+  choicesHtml += '<button class="th-choice th-deflect" onclick="thDeflect()"><span class="th-deflect-tag">DEFLECT</span><span class="th-choice-text">'+q.deflect+'</span></button>';
+  qsec.innerHTML='<div class="th-q-type">'+q.type+'</div><div class="th-q-text">'+q.text+'</div><div class="th-q-sub">'+q.sub+'</div><div id="th-choices">'+choicesHtml+'</div><div class="th-feedback" id="th-feedback"></div>';
+  thTickTimer();
+}
+
+function thTickTimer() {
+  updateTHTimer();
+  thState.timer=setInterval(function(){
+    thState.timeLeft--;
+    updateTHTimer();
+    if(thState.timeLeft<=0){ clearInterval(thState.timer); if(!thState.answered) thTimeout(); }
+  },1000);
+}
+
+function updateTHTimer() {
+  var t=thState.timeLeft;
+  var q=thQs[thState.current];
+  document.getElementById('th-timer').textContent=t;
+  var c=t>15?'var(--green)':t>8?'var(--gold)':'var(--red)';
+  document.getElementById('th-timer').style.color=c;
+  document.getElementById('th-timer-fill').style.width=Math.round((t/q.time)*100)+'%';
+  document.getElementById('th-timer-fill').style.background=c;
+}
+
+function thAnswer(idx) {
+  if(thState.answered) return;
+  thState.answered=true;
+  clearInterval(thState.timer);
+  var q=thQs[thState.current];
+  var isCorrect=(idx===q.correct);
+  document.querySelectorAll('.th-choice').forEach(function(b,i){
+    b.onclick=null;
+    if(i>=4) return; // the deflect button — just disable it, no correct/wrong styling
+    if(i===q.correct) b.classList.add('correct');
+    else if(i===idx&&!isCorrect) b.classList.add('wrong-ans');
+    else b.classList.add('reveal');
+  });
+  var fb=document.getElementById('th-feedback');
+  if(isCorrect){
+    thState.correct++;
+    var pcG=thState.timeLeft>20?8:thState.timeLeft>10?5:3;
+    thState.pcDelta+=pcG;
+    logEvent('th_answer', {q:thState.current, qid:q.qid, action:'correct', choiceIdx:idx, tRemaining:thState.timeLeft});
+    fb.className='th-feedback th-fb-correct show';
+    fb.innerHTML='<div class="th-fb-title">Correct — +'+pcG+' political capital</div><div class="th-fb-body">'+q.correctFB+'</div><div class="th-chain">'+q.chain+'</div>';
+    document.getElementById('qdot-'+thState.current).className='q-dot q-done';
+  } else {
+    thState.wrong++;
+    thState.pcDelta-=6;
+    logEvent('th_answer', {q:thState.current, qid:q.qid, action:'wrong', choiceIdx:idx, tRemaining:thState.timeLeft});
+    fb.className='th-feedback th-fb-wrong show';
+    fb.innerHTML='<div class="th-fb-title">Incorrect — −6 political capital</div><div class="th-fb-body">'+q.wrongFB+'</div><div class="th-chain">'+q.chain+'</div>';
+    document.getElementById('qdot-'+thState.current).className='q-dot q-wrong';
+  }
+  updateTHStrip();
+  document.getElementById('btn-th-next').disabled=false;
+  document.getElementById('th-nav-note').textContent=thState.current<thQs.length-1?'Read the feedback, then continue':'Last question — view your results';
+}
+
+function thTimeout() {
+  thState.answered=true;
+  var q=thQs[thState.current];
+  thState.wrong++; thState.pcDelta-=8;
+  logEvent('th_answer', {q:thState.current, qid:q.qid, action:'timeout', choiceIdx:null, tRemaining:0});
+  document.querySelectorAll('.th-choice').forEach(function(b,i){b.onclick=null;if(i>=4)return;if(i===q.correct)b.classList.add('correct');else b.classList.add('reveal');});
+  var fb=document.getElementById('th-feedback');
+  fb.className='th-feedback th-fb-timeout show';
+  fb.innerHTML='<div class="th-fb-title">Time expired — −8 political capital</div><div class="th-fb-body">The constituent saw you hesitate. '+q.wrongFB+'</div><div class="th-chain">'+q.chain+'</div>';
+  document.getElementById('qdot-'+thState.current).className='q-dot q-wrong';
+  updateTHStrip();
+  document.getElementById('btn-th-next').disabled=false;
+  document.getElementById('th-nav-note').textContent=thState.current<thQs.length-1?'Read the feedback, then continue':'Last question — view your results';
+}
+
+function thDeflect(){
+  if(thState.answered) return;
+  thState.answered=true; clearInterval(thState.timer);
+  var q=thQs[thState.current];
+  thState.deflected++; thState.pcDelta+=2;
+  thState.deflectLog.push({q:thState.current, tRemaining:thState.timeLeft});
+  if(typeof logEvent==='function') logEvent('th_answer', {q:thState.current, qid:q.qid, action:'deflect', choiceIdx:null, tRemaining:thState.timeLeft});
+  document.querySelectorAll('.th-choice').forEach(function(b,i){
+    b.onclick=null;
+    if(i>=4) return;
+    if(i===q.correct) b.classList.add('reveal');
+  });
+  var fb=document.getElementById('th-feedback');
+  fb.className='th-feedback th-fb-timeout show';
+  fb.innerHTML='<div class="th-fb-title" style="color:var(--orange);">Deflected — +2 political capital</div>'+
+    '<div class="th-fb-body">The room nods. Nobody learned anything, including whether you know the answer. The question is still out there.</div>'+
+    '<div class="th-chain">'+q.chain+'</div>';
+  document.getElementById('qdot-'+thState.current).className='q-dot q-deflect';
+  updateTHStrip();
+  document.getElementById('btn-th-next').disabled=false;
+  document.getElementById('th-nav-note').textContent=thState.current<thQs.length-1?'Read the feedback, then continue':'Last question — view your results';
+}
+
+function updateTHStrip() {
+  document.getElementById('th-score-c').textContent=thState.correct;
+  document.getElementById('th-score-w').textContent=thState.wrong;
+  var pc=thState.pcDelta;
+  document.getElementById('th-score-pc').textContent=pc>=0?'+'+pc:''+pc;
+  document.getElementById('th-score-pc').style.color=pc>=0?'var(--green)':'var(--red)';
+  // Town Hall performance affects POLITICAL SURVIVAL only. Knowing an answer at a town hall
+  // does not change realized welfare — blending them would contaminate the very divergence
+  // the game exists to expose (and would wreck it as a research instrument).
+  G.ps=Math.min(100,Math.max(0,thState.basePs+Math.round(thState.pcDelta*0.4)));
+  // G.po is NOT touched here — it was set by computeScores() at Act 1 exit and stays fixed.
+  updateHeader();
+}
+
+function thNext() {
+  var next=document.getElementById('qdot-'+thState.current);
+  if(thState.current<thQs.length-1){
+    thState.current++;
+    var nxt=document.getElementById('qdot-'+thState.current);
+    if(nxt) nxt.className='q-dot active-q';
+    loadTHQuestion(thState.current);
+  } else {
+    goPhase(5);
+  }
+}
+
+// ══ NAMED ENDINGS ══
+// Keyed to the decision log (voteOutcome, temptationDecision, deflected, voteYesList, act1State),
+// never to the raw scores — the game's thesis is that the interesting information is in HOW you
+// got there, not just where you landed. Checked in priority order; first match wins.
+// Priority: temptation endings (unique, mutually exclusive events) → vote-path endings, most
+// specific first (Conscience, Collapse, Coalition Builder, Farm Bloc) → behavioral endings
+// (Straight Shooter, Poll-Tested) → fallback. Rare/effortful outranks common/cheap.
+function computeEnding(){
+  var deflected = thState.deflected || 0;
+  var perfectTH = thState.correct === thQs.length && deflected === 0;
+  var yesList = G.voteYesList || [];
+
+  // ── Temptation endings (checked first: unique events, cannot co-occur with anything below) ──
+  if(G.voteOutcome === 'passed_with_rider'){
+    return {title:'The Dealmaker\u2019s Bill',
+      desc:'You took the sixth vote the lobbyist offered. The bill passed. The rider costs what the Town Hall material said it would, and nobody made you take it.'};
+  }
+  if(G.voteOutcome === 'died_declined_rider'){
+    return {title:'The Clean Hands',
+      desc:'You could have passed it. You knew what the rider would cost, and you let the bill die rather than pay it. It was the principled vote. It still cost you.'};
+  }
+
+  // ── Vote-path endings, most specific first ──
+  if(G.voteOutcome === 'died_final' && G.shockChoice==='C' && act1State.t4>=55 && act1State.t2>=55){
+    return {title:'The Conscience of the Committee',
+      desc:'You chose diplomacy over a fight, held nutrition and conservation at or above baseline, and refused the cheap votes that would have bought you a majority. The bill you wouldn\u2019t write might have passed. The one you wrote couldn\u2019t.'};
+  }
+  if(G.voteOutcome === 'died_final'){
+    return {title:'The Committee Chairman\u2019s Collapse',
+      desc:'No rider was ever offered. The bill simply failed, twice, and died in committee. Status quo persists. The prologue already taught you that\u2019s a policy outcome, not the absence of one.'};
+  }
+  if(G.voteMargin === 1 && act1State.t4 > 58){
+    return {title:'The Coalition Builder',
+      desc:'You built the hardest bill in this game: a real SNAP expansion, held together by senators sitting at their exact thresholds. One defection anywhere and this collapses. This is what expanding nutrition through committee feels like.'};
+  }
+  if(G.voteMargin>=3 && yesList.indexOf('rucker')!==-1 && yesList.indexOf('landry')!==-1){
+    return {title:'The Farm Bloc Landslide',
+      desc:'Rucker and Landry both joined you. The commodity bloc, bought early and bought whole, gave you the biggest majority in the game — and the cheapest. Concentrated benefits move fast.'};
+  }
+
+  // ── Behavioral endings ──
+  if(G.voteOutcome === 'passed_round1' && perfectTH){
+    return {title:'The Straight Shooter',
+      desc:'Clean vote, first try. Every Town Hall question answered, none deflected. You didn\u2019t need the demagogue button, and it shows.'};
+  }
+  if(deflected >= 2){
+    return {title:'The Poll-Tested Senator',
+      desc:'You deflected '+deflected+' of '+thQs.length+' Town Hall questions and survived anyway. Political Survival never asked whether you knew the answers. It only asked whether the room nodded.'};
+  }
+
+  return {title:'The Working Senator',
+    desc:'The bill passed. No dramatic concessions, no perfect record, no lopsided coalition. Just a senator doing the unglamorous work of finding six votes.'};
+}
+
+// ══ DEBRIEF ══
+function initDebrief() {
+  clearInterval(thState.timer);
+  var shockLabels = (SHOCKS[G.shockId] && SHOCKS[G.shockId].optionLabels) || {A:'Response A',B:'Response B',C:'Response C'};
+  var shockLabel=G.shockChoice?shockLabels[G.shockChoice]:'No shock response';
+  var marginNote = (typeof G.voteMargin==='number' && G.voteMargin!==null) ?
+    (G.voteMargin>=3 ? ' ('+((11+G.voteMargin)/2)+'–'+((11-G.voteMargin)/2)+', a lopsided farm-bloc bill)' :
+     G.voteMargin===1 ? ' (6–5, a knife-edge coalition)' : '') : '';
+  var voteLabels={
+    passed_round1:'Bill passed, first vote'+marginNote,
+    passed_round2:'Bill passed, after amendment'+marginNote,
+    passed_with_rider:'Bill passed — you took the rider (6–5)',
+    died_final:'Bill died in committee',
+    died_declined_rider:'Bill died — you declined the rider'
+  };
+  var voteLabel = G.voteOutcome ? voteLabels[G.voteOutcome] : 'No vote recorded';
+  document.getElementById('debrief-scenario-strip').textContent='Shock: '+shockLabel+' · Vote: '+voteLabel+' · Town Hall: '+thState.correct+'/'+thQs.length+' correct';
+
+  var voteNarratives = {
+    passed_round1:'Your bill reported out clean on the first vote — no concessions, no rider. That\'s the rare case; most bills need at least one round of horse-trading.'+(marginNote?' This margin tells its own story: '+(G.voteMargin>=3?'a lopsided coalition usually means you bought the cheap, concentrated-benefit votes (commodity or conservation) rather than the expensive, diffuse ones.':'a one-vote margin means every senator in your yes column was holding at their exact threshold — this bill could not have survived a single defection.'):''),
+    passed_round2:'You found your sixth vote by moving sliders after the first roll failed. Whatever you moved, and whatever it cost, is the trade you actually made — look at what you gave up to get here.'+(marginNote?' '+(G.voteMargin>=3?'You ended up with room to spare, which usually means the cheap path (commodity or conservation) was available and you took it.':'You landed on a knife-edge — every yes vote you\'re counting was at its exact threshold.'):''),
+    passed_with_rider:'You passed your bill by buying the marginal vote with a crop-insurance rider you had just been taught, in the Town Hall material, was welfare-negative. This is not a moral failing; it is the mechanism. Your cheapest vote was the one the history warned you about.',
+    died_final:'The bill died in committee — no further votes, no rider offer. Status quo persists, which the prologue taught is itself a policy outcome, not an absence of one. Sen. Holloway loses control of her own markup: "chairman loses control of own committee" runs in the Wichita Eagle.',
+    died_declined_rider:'You declined the rider and let the bill die rather than win with a provision you knew was welfare-negative. Note what that cost you on Political Survival — and ask whether a real senator, facing a real election, would have made the same call.'
+  };
+  var dqVote = document.getElementById('dq-vote');
+  if(dqVote) dqVote.innerHTML = G.voteOutcome ? ('<em>The markup vote:</em> '+voteNarratives[G.voteOutcome]) : 'No markup vote was recorded this session.';
+
+  var ps=Math.round(G.ps), po=Math.round(G.po);
+  document.getElementById('db-ps').textContent=ps;
+  document.getElementById('db-ps-bar').style.width=ps+'%';
+  document.getElementById('db-po').textContent=po;
+  document.getElementById('db-po-bar').style.width=po+'%';
+
+  var thPct=Math.round((thState.correct/thQs.length)*100);
+  document.getElementById('db-th-bar').style.width=thPct+'%';
+  document.getElementById('db-th-val').textContent=thPct;
+  document.getElementById('db-th-val').style.color=thPct>=75?'var(--green)':thPct>=50?'var(--gold)':'var(--red)';
+  document.getElementById('db-th-bar').style.background=thPct>=75?'var(--green)':thPct>=50?'var(--gold)':'var(--red)';
+
+  var coal=Math.round(G.coal);
+  document.getElementById('db-coal-bar').style.width=coal+'%';
+  document.getElementById('db-coal-val').textContent=coal;
+  var cc=coal>50?'var(--green)':coal>30?'var(--gold)':'var(--red)';
+  document.getElementById('db-coal-val').style.color=cc;
+  document.getElementById('db-coal-bar').style.background=cc;
+
+  var fbVal=G.shockChoice==='A'?88:G.shockChoice==='B'?72:55;
+  document.getElementById('db-fb-bar').style.width=fbVal+'%';
+  document.getElementById('db-fb-val').textContent=fbVal;
+
+  // Constituent approval: distinct from Farm Bureau (an interest group), Coalition (elite legislative
+  // math), and Town Hall perf. (knowledge score) — this is the general public's reaction to visible
+  // action taken, SNAP salience (a highly visible issue to ordinary voters), and town hall competence.
+  var approvalVal = Math.round(50 + (G.shockChoice==='A'?12:G.shockChoice==='B'?4:-8) + (act1State.t4-55)*0.3 + (thState.correct-2)*3);
+  approvalVal = Math.max(10, Math.min(95, approvalVal));
+  var approvalColor = approvalVal>=65?'var(--green)':approvalVal>=45?'var(--gold)':'var(--red)';
+  document.getElementById('db-approval-bar').style.width=approvalVal+'%';
+  document.getElementById('db-approval-bar').style.background=approvalColor;
+  document.getElementById('db-approval-val').textContent=approvalVal;
+  document.getElementById('db-approval-val').style.color=approvalColor;
+
+  var psV=ps>65?'Safe seat holding. Constituent support strong.':ps>45?'Competitive territory. Watch your margins.':'Primary threat emerging.';
+  var poV=po>65?'Strong outcomes. Policy delivered real improvements.':po>45?'Mixed outcomes. Some gains, some gaps.':'Poor outcomes. Policy fell short of welfare goals.';
+  document.getElementById('db-ps-verdict').textContent=psV;
+  document.getElementById('db-po-verdict').textContent=poV;
+
+  var gap=ps-po;
+  document.getElementById('db-gap').textContent=gap>0?'+'+gap:''+gap;
+  document.getElementById('db-gap').style.color=Math.abs(gap)<5?'var(--green)':'var(--gold)';
+  var gapInterp=gap>10?'Political survival exceeds policy outcomes by '+Math.abs(gap)+' points. Classic public choice pattern — constituent-facing choices protected your seat while aggregate welfare gains were modest. This gap is the heart of the debrief discussion.':
+    gap<-5?'Policy outcomes exceed political survival by '+Math.abs(gap)+' points — rare reversal. You made welfare-maximizing choices at a political cost.':
+    'Scores are close — only '+Math.abs(gap)+' points apart. Your decisions were unusually aligned between political and welfare objectives.';
+  document.getElementById('db-gap-interp').textContent=gapInterp;
+
+  // ── Policy Outcome indicators: computed from actual positions, not hardcoded ──
+  function setBar(barId, valId, pct, txt){
+    var col = pct>=65?'var(--green)':pct>=45?'var(--gold)':'var(--red)';
+    var b=document.getElementById(barId), v=document.getElementById(valId);
+    if(b){b.style.width=pct+'%';b.style.background=col;}
+    if(v){v.textContent=(txt!==undefined?txt:pct);v.style.color=col;}
+  }
+  function setCard(valId, descId, val, valColor, desc){
+    var v=document.getElementById(valId), d=document.getElementById(descId);
+    if(v){v.textContent=val;v.style.color=valColor;}
+    if(d){d.textContent=desc;}
+  }
+
+  // Food security: driven by SNAP (Title IV)
+  var foodPct = Math.round(45 + (act1State.t4-55)*0.9);
+  foodPct = Math.max(10,Math.min(95,foodPct));
+  setBar('db-food-bar','db-food-val',foodPct);
+  var foodOC=act1State.t4>63?'Above baseline':act1State.t4<47?'Below baseline':'Baseline';
+  var foodColor=act1State.t4>63?'var(--green)':act1State.t4<47?'var(--red)':'var(--gold)';
+  setCard('oc-food','oc-food-desc',foodOC,foodColor,
+    act1State.t4>63?'SNAP raised. Food price shock partially offset.':act1State.t4<47?'SNAP cut. Food insecurity rises under the price shock.':'SNAP held at baseline through the shock.');
+
+  // Farm income: THE SHOCK TRUTH. Pulled from SHOCKS[G.shockId].debriefFarm — each shock's
+  // politically-rewarded response fails the farmer for a DIFFERENT reason (see registry comments).
+  var farmPct, farmVal, farmColor, farmDesc;
+  var farmTruth = SHOCKS[G.shockId] && G.shockChoice ? SHOCKS[G.shockId].debriefFarm[G.shockChoice] : null;
+  if(farmTruth){
+    farmPct=farmTruth.pct; farmVal=farmTruth.val; farmColor=farmTruth.color; farmDesc=farmTruth.desc;
+    // Soy shock, choice A: the $12B aid cost is INTENTIONALLY absent from the CBO/fiscal card
+    // (see chooseShock and the fiscal card below) and appears ONLY here. That gap is the lesson.
+    if(G.shockId==='soy' && G.shockChoice==='A' && G.shockAidCost>0){
+      farmDesc += ' (Off-budget cost: $'+G.shockAidCost+'B — not reflected in the fiscal card below.)';
+    }
+  } else {
+    farmPct=50; farmVal='Baseline'; farmColor='var(--gold)';
+    farmDesc='No shock response recorded.';
+  }
+  setBar('db-farm-bar','db-farm-val',farmPct);
+  setCard('oc-farm','oc-farm-desc',farmVal,farmColor,farmDesc);
+
+  // Environment: driven by conservation (Title II)
+  var envPct=Math.round(45+(act1State.t2-55)*0.9);
+  envPct=Math.max(10,Math.min(95,envPct));
+  setBar('db-env-bar','db-env-val',envPct);
+  setCard('oc-env','oc-env-desc',
+    act1State.t2>63?'Improving':act1State.t2<47?'Degrading':'Flat',
+    envPct>=65?'var(--green)':envPct>=45?'var(--gold)':'var(--red)',
+    act1State.t2>63?'Conservation funding up. Soil and water gains accrue over 10–15 yr.':act1State.t2<47?'Conservation cut. Long-run soil and water outcomes worsen.':'Conservation at baseline. No Title II expansion.');
+
+  // Rural economy: blend of commodity support (t1), crop insurance (t11), SNAP dollars (t4)
+  var ruralPct=Math.round(40 + (act1State.t1-55)*0.3 + (act1State.t11-55)*0.2 + (act1State.t4-55)*0.3);
+  ruralPct=Math.max(10,Math.min(95,ruralPct));
+  setBar('db-rural-bar','db-rural-val',ruralPct);
+  setCard('oc-rural','oc-rural-desc',
+    ruralPct>=65?'Gains':ruralPct>=45?'Modest gain':'Strained',
+    ruralPct>=65?'var(--green)':ruralPct>=45?'var(--gold)':'var(--red)',
+    'Rural spending tracks commodity, insurance, and SNAP dollars flowing into local economies.');
+
+  // Fiscal cost: driven by total budget vs baseline, PLUS the Title XI rider if the player accepted it.
+  // Deliberately does NOT include G.shockAidCost (the soy shock's ad hoc trade payments) — that
+  // omission is intentional and IS the lesson (see chooseShock and the farm-income card above).
+  // Do not add G.shockAidCost to totalCost here.
+  var riderCost = G.voteRiderCost || 0;
+  var totalCost=Math.round(130*(0.45+act1State.t1/100)+1170*(0.45+act1State.t4/100)+120*(0.45+act1State.t11/100)+80*(0.45+act1State.t2/100)) + riderCost;
+  var budgetDelta=totalCost-1500;
+  var riderNote = riderCost>0 ? ' (includes $'+riderCost+'B Title XI rider)' : '';
+  setCard('oc-fiscal','oc-fiscal-desc',
+    Math.abs(budgetDelta)<40?'At baseline':budgetDelta>0?'+$'+budgetDelta+'B':'−$'+Math.abs(budgetDelta)+'B',
+    Math.abs(budgetDelta)<40?'var(--gold)':budgetDelta>0?'var(--red)':'var(--green)',
+    (Math.abs(budgetDelta)<40?'10-year CBO within range.':budgetDelta>0?'Over baseline by $'+budgetDelta+'B. Reconciliation pressure builds.':'Under baseline by $'+Math.abs(budgetDelta)+'B. Fiscal hawks pleased; program advocates alarmed.')+riderNote);
+
+  var thResult=thState.correct>=3?'Well handled':thState.correct>=2?'Mixed reception':'Rough session';
+  var thColor=thState.correct>=3?'var(--green)':thState.correct>=2?'var(--gold)':'var(--red)';
+  document.getElementById('oc-th').textContent=thResult;
+  document.getElementById('oc-th').style.color=thColor;
+  var deflectNote = thState.deflected>0 ? ' · '+thState.deflected+' of '+thQs.length+' deflected.' : '';
+  document.getElementById('oc-th-desc').textContent=thState.correct+'/'+thQs.length+' correct. '+(thState.correct>=3?'Constituents left satisfied.':thState.correct>=2?'Some gaps visible.':'Significant knowledge gaps exposed.')+deflectNote;
+
+  var dqDeflect = document.getElementById('dq-deflect');
+  if(dqDeflect){
+    if(thState.deflected>0){
+      dqDeflect.style.display = 'block';
+      dqDeflect.innerHTML = '<em>The demagogue button:</em> You deflected '+thState.deflected+' question'+(thState.deflected>1?'s':'')+'. Each one bought +2 political capital and cost nothing — visible. What did it cost that isn\'t on the scoreboard? Now: why is this the equilibrium strategy for actual senators, and what would change it?';
+    } else {
+      dqDeflect.style.display = 'none';
+    }
+  }
+
+  var dqChain = document.getElementById('dq-chain');
+  if(dqChain && thQs.length>0){
+    var mechQ = thQs[0]; // the shock-specific mechanism question, always assembled first
+    var sharperQ = {
+      hormuz:'And the sharper question: if you chose higher PLC reference prices, why did your farmers get $0 — what does PLC actually trigger on?',
+      rates:'And the sharper question: if you funded the interest buy-down, who exactly did it rescue — and who watched?',
+      soy:'And the sharper question: your fiscal card says baseline. Is that true?'
+    };
+    dqChain.innerHTML = 'Trace the full causal chain: <em>'+mechQ.chain+'.</em> '+(sharperQ[G.shockId]||'');
+  }
+
+  var hl1 = (SHOCKS[G.shockId] && G.shockChoice && SHOCKS[G.shockId].headline[G.shockChoice]) || '"Sen. Holloway responds to committee shock event"';
+  document.getElementById('hl-1').textContent=hl1;
+  document.getElementById('hl-2').textContent=coal>55?'"Kansas Republican holds SNAP at baseline — urban Democrats cautiously supportive, coalition intact"':'"Holloway SNAP position draws fire from urban caucus — farm bill coalition showing strain"';
+  document.getElementById('hl-3').textContent=thState.correct>=3?'"Sen. Holloway handles constituent town hall with command of policy detail — farm groups impressed"':thState.correct>=2?'"Mixed reviews from Holloway town hall — mechanism question drew uncertainty"':'"Sen. Holloway struggles in town hall — knowledge gaps visible on the shock\'s underlying mechanism"';
+
+  var ending = computeEnding();
+  var endTitleEl = document.getElementById('ending-title');
+  var endDescEl = document.getElementById('ending-desc');
+  if(endTitleEl) endTitleEl.textContent = ending.title;
+  if(endDescEl) endDescEl.textContent = ending.desc;
+
+  logEvent('finalize', {ps:ps, po:po, gap:gap, voteOutcome:G.voteOutcome, voteMargin:G.voteMargin, deflected:thState.deflected, correct:thState.correct, ending:ending.title});
+  LOG.meta.completed = new Date().toISOString();
+  var researchBar = document.getElementById('research-bar');
+  if(researchBar){
+    researchBar.style.display = RESEARCH_MODE ? 'flex' : 'none';
+    var sidEl = document.getElementById('session-id-display');
+    if(sidEl) sidEl.textContent = LOG.meta.sessionId;
+  }
+
+  updateHeader();
+}
+
+function restartGame() {
+  G={phase:0,ps:50,po:50,pc:72,coal:64,sliders:{t1:55,t4:55,t11:55,t2:55},shockDone:false,shockChoice:null,shockId:null,shockAidCost:0,thCorrect:0,thWrong:0,thPCDelta:0,prologueSlide:0,decisionMade:{},voteOutcome:null,voteDelta:null,voteRiderCost:0,voteMargin:null,voteYesList:null};
+  act1State={t1:55,t4:55,t11:55,t2:55};
+  thState={current:0,correct:0,wrong:0,pcDelta:0,answered:false,timer:null,timeLeft:45,basePs:50,basePo:50,deflected:0,deflectLog:[]};
+  voteState={round:1,r1Sliders:null,r2Sliders:null,r1Result:null,r2Result:null,temptationTriggered:false,temptationDecision:null,outcome:null};
+  var _prevParticipant = LOG.meta.participant;
+  LOG = {meta:{version:BUILD, sessionId:(Date.now().toString(36)+Math.random().toString(36).slice(2,7)),
+         started:new Date().toISOString(), participant:_prevParticipant}, events:[]};
+  LOG._t0 = null;
+  voteAmendmentReentry=false;
+  document.getElementById('temptation-modal').classList.remove('show');
+  document.getElementById('shock-modal').classList.remove('show');
+  goPhase(0);
+  updateHeader();
+}
+</script>
+</body>
+</html>
