@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Drive-Thru Draft — Econ Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt:#271c11;
+    --asphalt2:#332514;
+    --surface:#3b2c1b;
+    --surface2:#473521;
+    --line:#5a4836;
+    --cream:#f7f1e3;
+    --muted:#c8baa5;
+    --ketchup:#e8392b;
+    --ketchup-dim:#a8281f;
+    --mustard:#f5b82e;
+    --mint:#37d2a0;
+    --shadow:0 18px 40px -18px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(1300px 620px at 50% -4%, rgba(245,184,46,.22) 0%, transparent 58%),
+      radial-gradient(1000px 520px at 50% 6%, rgba(232,57,43,.10) 0%, transparent 55%),
+      linear-gradient(180deg, #33260f 0%, #2a1f12 45%, #221913 100%);
+    background-attachment:fixed;
+    color:var(--cream);
+    font-family:"DM Sans",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:clamp(14px,3vw,28px);
+    line-height:1.45;
+    position:relative;
+  }
+  /* subtle grease/asphalt grain — very low opacity so it never gets busy */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:760px;margin:0 auto;position:relative;z-index:1}
+
+  /* ---- Header ---- */
+  header{text-align:center;margin-bottom:18px;position:relative}
+  .eyebrow{
+    font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--mustard);margin-bottom:8px;
+  }
+  h1{
+    font-family:"Anton",sans-serif;font-weight:400;
+    font-size:clamp(38px,9vw,68px);line-height:.92;letter-spacing:.01em;
+    text-transform:uppercase;
+    color:var(--cream);
+    text-shadow:0 0 1px rgba(247,241,227,.5), 0 0 14px rgba(245,184,46,.28), 0 2px 0 rgba(0,0,0,.5);
+  }
+  h1 .red{color:var(--ketchup);text-shadow:0 0 1px rgba(232,57,43,.6), 0 0 18px rgba(232,57,43,.45), 0 2px 0 rgba(0,0,0,.5)}
+  .hero-badge{
+    display:inline-block;margin-top:12px;
+    font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--asphalt);background:var(--mustard);
+    padding:5px 14px;border-radius:999px;font-weight:500;
+    box-shadow:0 0 0 3px rgba(245,184,46,.18), 0 6px 16px -8px rgba(245,184,46,.6);
+  }
+  .tag{color:var(--muted);font-size:14px;margin-top:12px;max-width:48ch;margin-inline:auto}
+
+  /* ---- Tray (the 5 slots) ---- */
+  .tray{
+    background:linear-gradient(180deg, var(--surface), #241c14);
+    border:1px solid var(--line);border-radius:18px;
+    padding:14px;margin:20px 0;
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,224,170,.07);
+  }
+  .tray-head{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:2px 4px 12px;border-bottom:1px dashed var(--line);margin-bottom:12px;
+  }
+  .tray-title{font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .skip-badge{
+    font-family:"DM Mono",monospace;font-size:12px;color:var(--mustard);
+    border:1px solid var(--line);border-radius:999px;padding:4px 10px;
+  }
+  .slots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  @media(max-width:560px){.slots{grid-template-columns:repeat(2,1fr)}}
+  .slot{
+    background:var(--asphalt2);border:1px solid var(--line);border-radius:12px;
+    padding:0;min-height:104px;display:flex;flex-direction:column;
+    position:relative;overflow:hidden;transition:border-color .2s,background .2s,transform .15s,box-shadow .2s;
+  }
+  /* ticket tab header on every compartment */
+  .slot .tab{
+    display:flex;align-items:center;gap:5px;padding:6px 8px;
+    background:rgba(0,0,0,.25);border-bottom:1px dashed var(--line);
+  }
+  .slot .tab .ico{width:15px;height:15px;flex:0 0 auto;color:var(--muted);transition:color .2s}
+  .slot .pos{
+    font-family:"DM Mono",monospace;font-size:9.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .slot .body{padding:9px 10px;display:flex;flex-direction:column;gap:3px;flex:1}
+  .slot.empty{border-style:dashed}
+  .slot.eligible{border-color:var(--mint);background:#1c241f;box-shadow:0 0 0 1px var(--mint) inset, 0 0 16px -4px rgba(55,210,160,.45);cursor:pointer}
+  .slot.eligible .tab .ico{color:var(--mint)}
+  .slot.eligible:hover{transform:translateY(-2px)}
+  .slot.filled .tab{background:rgba(245,184,46,.12)}
+  .slot.filled .tab .ico,.slot.filled .pos{color:var(--mustard)}
+  .slot.filled .item-name{animation:slotPop .32s cubic-bezier(.34,1.56,.64,1)}
+  .slot .item-name{font-weight:700;font-size:14px;line-height:1.18;margin-top:auto}
+  .slot .item-chain{font-size:11px;color:var(--muted)}
+  .slot .empty-hint{margin-top:auto;font-size:12px;color:#5d5247}
+
+  /* ---- Spinner ---- */
+  .machine{
+    background:linear-gradient(180deg,var(--surface2),var(--surface));
+    border:1px solid var(--line);border-radius:18px;padding:16px;
+    box-shadow:var(--shadow), inset 0 1px 0 rgba(255,224,170,.07);margin-bottom:18px;
+  }
+  .reel-window{
+    position:relative;height:88px;border-radius:12px;overflow:hidden;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 199px, rgba(0,0,0,.5) 199px 200px),
+      var(--asphalt);
+    border:1px solid var(--line);
+    box-shadow:inset 0 2px 10px rgba(0,0,0,.6);
+  }
+  /* center highlight zone behind the pointer */
+  .pay-zone{
+    position:absolute;left:50%;top:0;bottom:0;width:200px;transform:translateX(-50%);
+    z-index:2;pointer-events:none;
+    background:linear-gradient(180deg, rgba(245,184,46,.16), rgba(232,57,43,.12));
+    border-left:1px solid rgba(245,184,46,.25);border-right:1px solid rgba(245,184,46,.25);
+    transition:opacity .3s;
+  }
+  .reel-window.live .pay-zone{animation:zonePulse 1s ease-in-out infinite}
+  .reel-mask{
+    position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(90deg, var(--asphalt) 0%, transparent 16%, transparent 84%, var(--asphalt) 100%);
+  }
+  .reel{display:flex;align-items:center;height:100%;will-change:transform;position:relative;z-index:0}
+  .cell{
+    flex:0 0 200px;height:100%;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:8px;
+  }
+  .cell .chip{
+    font-family:"Anton",sans-serif;text-transform:uppercase;font-size:19px;
+    letter-spacing:.01em;line-height:.95;color:var(--cream);
+    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    border-radius:9px;border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.25));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .cell:nth-child(odd) .chip{border-color:rgba(245,184,46,.22)}
+  .cell:nth-child(even) .chip{border-color:rgba(232,57,43,.2)}
+  .pointer{
+    position:absolute;left:50%;top:0;bottom:0;width:0;transform:translateX(-50%);
+    border-left:2px solid var(--ketchup);z-index:4;pointer-events:none;
+    box-shadow:0 0 10px 1px rgba(232,57,43,.7);
+  }
+  .reel-window.live .pointer{animation:pointerGlow .6s ease-in-out infinite}
+  .pointer::before,.pointer::after{
+    content:"";position:absolute;left:50%;transform:translateX(-50%);
+    border:7px solid transparent;border-top-color:var(--ketchup);
+    filter:drop-shadow(0 0 4px rgba(232,57,43,.7));
+  }
+  .pointer::before{top:-1px}
+  .pointer::after{bottom:-1px;border-top-color:transparent;border-bottom-color:var(--ketchup)}
+
+  /* ---- Motion ---- */
+  @keyframes slotPop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+  @keyframes stampIn{0%{transform:translate(-50%,-50%) rotate(-11deg) scale(2.4);opacity:0}55%{opacity:1}100%{transform:translate(-50%,-50%) rotate(-11deg) scale(1);opacity:1}}
+  @keyframes gradePop{0%{transform:scale(.3);opacity:0}65%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  @keyframes pointerGlow{0%,100%{box-shadow:0 0 8px 1px rgba(232,57,43,.6)}50%{box-shadow:0 0 16px 3px rgba(232,57,43,.95)}}
+  @keyframes zonePulse{0%,100%{opacity:.7}50%{opacity:1}}
+  @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+  @media(prefers-reduced-motion:reduce){
+    /* stop decorative animations only — the reel spin is a transition and must keep working */
+    *{animation:none!important}
+  }
+
+  .controls{display:flex;gap:10px;margin-top:14px}
+  button{
+    font-family:"DM Sans",sans-serif;font-weight:700;font-size:15px;cursor:pointer;
+    border-radius:12px;border:1px solid transparent;padding:13px 18px;transition:filter .15s,transform .1s,opacity .15s;
+  }
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .btn-spin{flex:1;background:var(--ketchup);color:#fff;box-shadow:0 6px 0 var(--ketchup-dim)}
+  .btn-spin:hover:not(:disabled){filter:brightness(1.07)}
+  .btn-spin:active:not(:disabled){box-shadow:0 3px 0 var(--ketchup-dim);transform:translateY(3px)}
+  .btn-skip{background:transparent;color:var(--mustard);border-color:var(--line)}
+  .btn-skip:hover:not(:disabled){border-color:var(--mustard)}
+
+  /* ---- Counter (item draft) ---- */
+  .counter{margin-bottom:18px}
+  .counter-head{
+    display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:0 2px;
+  }
+  .counter-head .chain-name{font-family:"Anton",sans-serif;text-transform:uppercase;font-size:24px}
+  .counter-head .hint{font-size:13px;color:var(--muted);margin-left:auto;text-align:right}
+  .menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+
+  /* situation line — spells out what's happening in plain words */
+  .counter-status{
+    display:flex;flex-direction:column;gap:5px;margin-bottom:14px;padding:11px 13px;
+    background:var(--asphalt2);border:1px solid var(--line);border-radius:12px;font-size:13px;
+  }
+  .counter-status b{color:var(--cream)}
+  .st-need{color:var(--muted)}
+  .st-need b{color:var(--mint)}
+  .st-can{color:var(--muted)}
+  .st-can b{color:var(--mustard)}
+  .st-block{
+    color:var(--cream);margin-top:3px;padding-top:8px;border-top:1px dashed var(--line);
+    line-height:1.4;
+  }
+  .st-block b{color:var(--ketchup)}
+  .card{
+    background:linear-gradient(180deg, var(--surface), #221c17);
+    border:1px solid var(--line);border-radius:14px;
+    padding:12px;display:flex;flex-direction:column;gap:9px;
+    position:relative;transition:transform .12s,border-color .15s,box-shadow .15s;
+  }
+  .card.draftable{cursor:pointer}
+  .card.draftable:hover{transform:translateY(-3px);border-color:var(--mustard);box-shadow:0 10px 24px -12px rgba(245,184,46,.6), 0 0 0 1px rgba(245,184,46,.3) inset}
+  .card.locked{opacity:.5}
+  .card .cname{font-weight:700;font-size:16px;line-height:1.16;letter-spacing:-.01em}
+  .card .ctags{display:flex;flex-wrap:wrap;gap:5px}
+  /* slot tags styled like little condiment packets */
+  .pill{
+    font-family:"DM Mono",monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--line);border-radius:4px;padding:3px 7px;color:var(--muted);
+    background:rgba(0,0,0,.2);
+  }
+  .pill.open{border-color:var(--mint);color:var(--mint);background:rgba(55,210,160,.1)}
+  .card .crow{display:flex;justify-content:space-between;align-items:center;margin-top:auto;gap:8px}
+  /* rating as a crowd-score stamp */
+  .rating{
+    font-family:"DM Mono",monospace;font-size:12px;font-weight:500;color:var(--mustard);
+    border:1px solid rgba(245,184,46,.4);border-radius:6px;padding:2px 7px;white-space:nowrap;
+  }
+  .draft-cue{font-size:12px;font-weight:700;color:var(--mint)}
+  .card.locked .draft-cue{color:#5d5247}
+  .hotflag{font-family:"DM Mono",monospace;font-size:11px;font-weight:500;color:var(--mustard)}
+  .crow-spacer{flex:1}
+
+  /* SOLD OUT cards */
+  .card.down{overflow:hidden;filter:grayscale(.65);opacity:.72}
+  .card.down .cname{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--ketchup-dim)}
+  .card.down .rating{color:#5d5247;border-color:var(--line)}
+  .down-why{color:var(--ketchup)!important;font-weight:700;font-size:11px;text-align:right;max-width:62%}
+  .stamp{
+    position:absolute;top:42%;left:50%;
+    transform:translate(-50%,-50%) rotate(-11deg);
+    background:rgba(232,57,43,.94);color:#fff;font-family:"Anton",sans-serif;
+    font-size:16px;letter-spacing:.12em;padding:4px 16px;z-index:3;white-space:nowrap;
+    border:2.5px solid rgba(255,255,255,.92);border-radius:3px;
+    box-shadow:0 3px 12px rgba(0,0,0,.55);
+    animation:stampIn .35s cubic-bezier(.3,1.4,.5,1) both;
+  }
+  /* HOT-light jackpot cards */
+  .card.hot{
+    border-color:var(--mustard);
+    background:linear-gradient(180deg, #3a2c14, #2a2012);
+    box-shadow:0 0 0 1px rgba(245,184,46,.5) inset, 0 0 22px -6px rgba(245,184,46,.7);
+  }
+  .card.hot .cname{color:#ffe7a8}
+  .rating.hot{color:#1a140a;background:var(--mustard);border-color:var(--mustard);font-weight:700}
+  .rating .boost{color:var(--mint);font-weight:700}
+  .stamp.hot{
+    background:var(--mustard);color:#1a140a;
+    border-color:#fff5dd;
+    transform:translate(-50%,-50%) rotate(-9deg);
+    box-shadow:0 3px 14px rgba(245,184,46,.6);
+  }
+
+  /* slot picker */
+  .picker{
+    background:var(--asphalt2);border:1px dashed var(--mint);border-radius:14px;
+    padding:12px;margin-bottom:12px;
+  }
+  .picker p{font-size:13px;color:var(--cream);margin-bottom:10px}
+  .picker p b{color:var(--mustard)}
+  .picker-opts{display:flex;flex-wrap:wrap;gap:8px}
+  .picker-opts button{background:var(--surface);color:var(--cream);border-color:var(--line);font-size:13px;padding:9px 14px}
+  .picker-opts button:hover{border-color:var(--mint);color:var(--mint)}
+
+  .msg{font-size:13px;color:var(--mustard);text-align:center;min-height:18px;margin-top:10px;font-family:"DM Mono",monospace}
+
+  /* ---- Result (share card) ---- */
+  .result{
+    background:linear-gradient(180deg, var(--surface2), var(--surface));
+    border:1px solid var(--line);border-radius:18px;
+    padding:24px 22px;text-align:center;box-shadow:var(--shadow);
+    position:relative;overflow:hidden;
+  }
+  .result .order-complete{
+    font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--mustard);padding-bottom:14px;margin-bottom:6px;
+    border-bottom:1px dashed var(--line);
+  }
+  .grade-wrap{position:relative;height:96px;display:flex;align-items:center;justify-content:center;margin:8px 0 2px}
+  .grade-wrap .ghost{
+    position:absolute;font-family:"Anton",sans-serif;font-size:170px;line-height:1;
+    color:var(--mustard);opacity:.07;z-index:0;pointer-events:none;
+  }
+  .result .grade{
+    font-family:"Anton",sans-serif;font-size:84px;line-height:1;color:var(--mustard);
+    position:relative;z-index:1;animation:gradePop .45s cubic-bezier(.3,1.5,.5,1) both;
+    text-shadow:0 0 24px rgba(245,184,46,.35);
+  }
+  .label-badge{
+    display:inline-block;font-family:"Anton",sans-serif;text-transform:uppercase;
+    font-size:20px;letter-spacing:.01em;color:var(--asphalt);
+    background:var(--mustard);padding:6px 16px;border-radius:999px;margin:6px 0 4px;
+    box-shadow:0 8px 20px -10px rgba(245,184,46,.8);
+  }
+  .result .score-line{font-family:"DM Mono",monospace;color:var(--muted);font-size:12px;margin-bottom:16px}
+  /* receipt with torn paper edges */
+  .receipt{
+    text-align:left;background:#fbf6ea;color:#2a2018;border-radius:3px;
+    padding:16px 16px;font-family:"DM Mono",monospace;font-size:13px;margin:0 auto 16px;max-width:340px;
+    position:relative;box-shadow:0 12px 28px -14px rgba(0,0,0,.7);
+    --tear:linear-gradient(135deg, transparent 0 6px, #fbf6ea 6px) 0 0/12px 12px repeat-x,
+           linear-gradient(-135deg, transparent 0 6px, #fbf6ea 6px) 0 0/12px 12px repeat-x;
+  }
+  .receipt::before,.receipt::after{content:"";position:absolute;left:0;right:0;height:8px;background:var(--tear)}
+  .receipt::before{top:-8px;transform:scaleY(-1)}
+  .receipt::after{bottom:-8px}
+  .receipt .r-head{text-align:center;font-weight:700;letter-spacing:.12em;padding-bottom:8px;margin-bottom:6px;border-bottom:1px dashed #c9bba6}
+  .receipt .r-row{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dotted #d8ccb6}
+  .receipt .r-row.weak{background:rgba(232,57,43,.1);margin:2px -8px;padding:5px 8px;border-radius:4px;border-bottom:none}
+  .receipt .r-row:last-child{border-bottom:none}
+  .receipt .r-pos{color:#9a8c74;text-transform:uppercase;font-size:9.5px;letter-spacing:.1em}
+  .receipt .r-chain{display:block;color:#9a8c74;font-size:11px;margin-top:1px;padding-left:2px}
+  .receipt .r-weak-tag{color:var(--ketchup);font-weight:700}
+  .receipt .r-misheard-tag{color:#2f6f7a;font-weight:700;font-size:11px}
+  .receipt .r-flair-tag{color:#b3300f;font-weight:700;font-size:11px;font-style:italic}
+  .receipt .r-total{display:flex;justify-content:space-between;font-weight:700;padding-top:8px;margin-top:4px;border-top:2px solid #2a2018}
+  .result .verdict{font-size:14px;color:var(--cream);margin-bottom:14px}
+  .result .verdict b{color:var(--ketchup)}
+  .result .dare{
+    font-family:"DM Mono",monospace;font-size:13px;color:var(--mustard);
+    border-top:1px dashed var(--line);padding-top:14px;margin-bottom:16px;
+  }
+  .result-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn-share{background:var(--mustard);color:#1a140a;font-size:14px}
+  .btn-share.pulse{animation:pulse .4s ease}
+  .btn-again{background:transparent;color:var(--cream);border-color:var(--line);font-size:14px}
+  .btn-again:hover{border-color:var(--cream)}
+  .btn-copytext{
+    display:block;margin:12px auto 0;background:none;border:none;
+    color:var(--muted);font-family:"DM Mono",monospace;font-size:12px;
+    text-decoration:underline;text-underline-offset:3px;padding:6px;cursor:pointer;
+  }
+  .btn-copytext:hover{color:var(--cream)}
+
+  .hidden{display:none!important}
+  footer{text-align:center;color:#5d5247;font-size:11px;margin-top:24px;font-family:"DM Mono",monospace}
+
+/* ===== THEME: late-night drive-thru — burgundy/ketchup night + cream menu board ===== */
+:root{
+  --asphalt:#1b0d0b; --asphalt2:#24100d;
+  --surface:#2a1310; --surface2:#341711;
+  --line:#59302a;
+  --cream:#f7f1e3;
+  --muted:#d2b7a0;
+  --ketchup:#e8392b; --ketchup-dim:#b32a20;
+  --mustard:#f5b82e; --mint:#37d2a0;
+}
+/* burgundy night background, lit from the top like a menu board */
+body{ background:
+  radial-gradient(1100px 520px at 50% -6%, rgba(245,184,46,.20) 0%, transparent 52%),
+  radial-gradient(900px 460px at 50% 4%, rgba(232,57,43,.14) 0%, transparent 54%),
+  linear-gradient(180deg,#2a0f0c 0%,#160907 78%) !important; color:var(--cream); }
+body::before{ opacity:.05 !important; }
+
+/* bold neon title */
+h1{ color:#f7f1e3 !important; text-shadow:0 0 16px rgba(245,184,46,.35), 0 2px 0 rgba(0,0,0,.6) !important; }
+h1 .red{ color:#ff4634 !important; text-shadow:0 0 22px rgba(232,57,43,.6), 0 2px 0 rgba(0,0,0,.6) !important; }
+.eyebrow{ color:#f8c43e !important; font-size:13px !important; font-weight:700 !important; letter-spacing:.3em !important; text-shadow:0 0 12px rgba(245,184,46,.45) !important; }
+.tag{ color:#d2b7a0 !important; }
+.hero-badge{ background:var(--ketchup) !important; color:#fff !important;
+  box-shadow:0 0 0 3px rgba(232,57,43,.22), 0 8px 18px -8px rgba(232,57,43,.7) !important; }
+footer{ color:#dcc6b4 !important; font-size:12px !important; letter-spacing:.22em !important; text-transform:uppercase !important; font-weight:500 !important; }
+
+/* cream menu-board panels pop on asphalt */
+.tray,.machine{
+  background:#f6edd9 !important; border:1px solid #e2d3b4 !important;
+  box-shadow:0 24px 50px -18px rgba(0,0,0,.75) !important; }
+.tray-title{ color:#9a8048 !important; }
+.skip-badge{ color:#3f2d0c !important; font-weight:800 !important; border-color:#bd9f60 !important; background:rgba(245,184,46,.18) !important; }
+.slot{ background:#ece0c4 !important; border:1px solid #ddcba6 !important; }
+.slot .tab{ background:rgba(0,0,0,.05) !important; border-bottom:1px dashed #ddcba6 !important; }
+.slot .pos, .slot .tab .ico{ color:#9a8048 !important; }
+.slot.filled .tab{ background:rgba(245,184,46,.24) !important; }
+.slot.filled .tab .ico, .slot.filled .pos{ color:#b07d12 !important; }
+.slot .item-name{ color:#1d2123 !important; }
+.slot .item-chain{ color:#6a5526 !important; }
+.slot .empty-hint{ color:#7a5f2e !important; }
+.slot.eligible{ background:#e6f7ef !important;
+  box-shadow:0 0 0 1px var(--mint) inset, 0 0 18px -3px rgba(55,210,160,.5) !important; }
+.slot.eligible .tab .ico{ color:#1f9d76 !important; }
+
+/* spinner: cream board, fades to cream (not dark), bold red pointer */
+.reel-window{ background:#e3d4b4 !important; box-shadow:inset 0 2px 8px rgba(120,90,40,.3) !important; }
+.reel-mask{ background:linear-gradient(90deg,#e3d4b4 0%, transparent 16%, transparent 84%, #e3d4b4 100%) !important; }
+.cell .chip{ background:#fffdf8 !important; color:#1d2123 !important; border-color:#ddcba6 !important; }
+.cell:nth-child(odd) .chip{ border-color:rgba(245,184,46,.5) !important; }
+.cell:nth-child(even) .chip{ border-color:rgba(232,57,43,.45) !important; }
+.pay-zone{ background:linear-gradient(180deg, rgba(245,184,46,.28), rgba(232,57,43,.20)) !important;
+  border-left:1px solid rgba(232,57,43,.5) !important; border-right:1px solid rgba(232,57,43,.5) !important; }
+.pointer{ box-shadow:0 0 14px 2px rgba(232,57,43,.8) !important; }
+.msg{ color:#9a6f12 !important; font-weight:700 !important; }
+.btn-skip{ color:#3f2d0c !important; font-weight:700 !important; border-color:#bd9f60 !important; background:rgba(245,184,46,.16) !important; }
+.btn-skip:hover:not(:disabled){ border-color:#3f2d0c !important; background:rgba(245,184,46,.26) !important; }
+
+/* paper menu cards on the asphalt counter */
+.card{ background:#fffdf8 !important; border:1px solid #e2d3b4 !important;
+  box-shadow:0 12px 26px -12px rgba(0,0,0,.6) !important; }
+.card .cname{ color:#1d2123 !important; }
+.pill{ background:rgba(0,0,0,.05) !important; border-color:#ddcba6 !important; color:#7d7257 !important; }
+.pill.open{ border-color:#1f9d76 !important; color:#11633f !important; background:rgba(55,210,160,.16) !important; }
+.draft-cue{ color:#11633f !important; }
+.card.locked .draft-cue{ color:#8c8064 !important; }
+.rating{ color:#b07d12 !important; border-color:rgba(245,184,46,.5) !important; }
+.counter-status{ background:#f6edd9 !important; border:1px solid #e2d3b4 !important; }
+.counter-status b{ color:#1d2123 !important; }
+.st-need{ color:#6f6750 !important; } .st-need b{ color:#1f9d76 !important; }
+.st-can{ color:#6f6750 !important; } .st-can b{ color:#b07d12 !important; }
+.st-block{ color:#1d2123 !important; }
+.counter-head .chain-name{ color:#f7f1e3 !important; }
+.counter-head .hint{ color:#aeb6b7 !important; }
+
+/* ===== fry-paper warming: cartons & receipt paper, not white cards ===== */
+.tray,
+.machine,
+.counter-status {
+  background: #efe0bf !important;
+  border-color: #d7bd86 !important;
+}
+.slot {
+  background: #cdaa5c !important;
+  border-color: #a9863a !important;
+}
+.card,
+.cell .chip {
+  background: #f4e5c3 !important;
+  border-color: #d7bd86 !important;
+}
+.tray-title {
+  color: #1d1710 !important;
+  font-family: "DM Sans", system-ui, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  letter-spacing: .08em !important;
+}
+.slot .pos,
+.slot .tab .ico {
+  color: #6f5321 !important;
+  font-weight: 800 !important;
+}
+h1 { color: #f1e3c6 !important; }
+/* keep the reel window/edge-fade matching the warmer paper */
+.reel-window { background:#e3cf9f !important; }
+.reel-mask { background:linear-gradient(90deg,#e3cf9f 0%, transparent 16%, transparent 84%, #e3cf9f 100%) !important; }
+/* 86'd cards: keep the reason readable (red), signal 'dead' with color not a filter that greys the red */
+.card.down{ filter:none !important; opacity:1 !important; background:#e7dcc2 !important; border-color:#cdbf9a !important; }
+.card.down .cname{ color:#998e77 !important; }
+.card.down .pill{ opacity:.45 !important; }
+.card.down .rating{ opacity:.45 !important; }
+.down-why{ color:#e8392b !important; font-weight:800 !important; font-size:12.5px !important; max-width:70% !important; }
+/* action buttons match the mono SKIPS badge */
+.btn-spin, .btn-skip{ font-family:"DM Mono", ui-monospace, monospace !important; letter-spacing:.02em !important; font-weight:500 !important; }
+.btn-spin{ font-weight:500 !important; }
+/* tray slot headers read as bold labels, not washed-out text */
+.slot .tab{ background:#6f5321 !important; border-bottom:none !important; padding:7px 9px !important; }
+.slot .pos{ color:#f7e9c8 !important; font-weight:800 !important; font-size:10.5px !important; letter-spacing:.16em !important; }
+.slot .tab .ico{ color:#f7e9c8 !important; }
+.slot.filled .tab{ background:var(--mustard) !important; }
+.slot.filled .pos{ color:#3a2a06 !important; }
+.slot.filled .tab .ico{ color:#3a2a06 !important; }
+.slot .item-name{ font-size:15px !important; font-weight:800 !important; color:#1d1710 !important; }
+/* a HOT-drafted item stays special on the tray — the trophy */
+.slot.hot{ border-color:var(--ketchup) !important;
+  box-shadow:0 0 0 1px var(--mustard) inset, 0 0 22px -4px rgba(245,184,46,.75) !important; }
+.slot.hot .tab{ background:linear-gradient(90deg, var(--mustard), #ff7a1a) !important; }
+.slot.hot .pos, .slot.hot .tab .ico{ color:#3a1c00 !important; }
+.slot.hot .item-chain{ color:#7a3b0a !important; }
+.slot-fire{ margin-left:auto; font-size:13px; line-height:1; filter:drop-shadow(0 0 4px rgba(255,150,40,.8)); }
+/* multi-slot picker takes over the menu area */
+.picker{ background:#efe0bf !important; border:2px dashed #bd9f60 !important; padding:22px 18px !important; text-align:center !important; margin-bottom:0 !important; }
+.picker-q{ font-size:17px !important; color:#2a2014 !important; font-weight:700 !important; line-height:1.4 !important; margin-bottom:16px !important; font-family:"DM Sans",system-ui,sans-serif !important; }
+.picker-q b{ color:#b07d12 !important; }
+.picker-opts{ display:flex !important; flex-wrap:wrap !important; gap:12px !important; justify-content:center !important; }
+.picker-opts button{ background:#6f5321 !important; color:#f7e9c8 !important; border:none !important; font-family:"DM Mono",ui-monospace,monospace !important; font-weight:800 !important; font-size:15px !important; letter-spacing:.12em !important; padding:15px 30px !important; border-radius:10px !important; box-shadow:0 6px 0 #4a3614 !important; }
+.picker-opts button:hover{ background:var(--mustard) !important; color:#3a2a06 !important; box-shadow:0 6px 0 #b07d12 !important; }
+.picker-opts button:active{ transform:translateY(3px) !important; box-shadow:0 3px 0 #4a3614 !important; }
+.picker-back{ display:block !important; margin:16px auto 0 !important; background:none !important; border:none !important; color:#8a7758 !important; font-family:"DM Mono",ui-monospace,monospace !important; font-size:12px !important; text-decoration:underline !important; text-underline-offset:3px !important; padding:6px !important; cursor:pointer !important; box-shadow:none !important; }
+.picker-back:hover{ color:#3f2d0c !important; }
+/* HOT diagonal stamp now rides into the tray slot too */
+.slot{ position:relative !important; overflow:hidden !important; }
+.slot .stamp.hot{ font-size:14px !important; padding:3px 12px !important; top:46% !important; }
+/* 'boosted' flag was unreadable mustard-on-paper — make it a bold burnt orange */
+.hotflag{ color:#c2410c !important; font-weight:800 !important; font-size:12px !important; }
+.lognote{ text-align:center; color:#7a5f50; font-size:11px; font-family:"DM Mono",monospace; letter-spacing:.04em; margin-top:6px; opacity:.85; }
+.vote-note{ text-align:center; color:#f5b82e; font-size:12.5px; font-family:"DM Mono",ui-monospace,monospace; letter-spacing:.03em; margin:14px auto 2px; max-width:34ch; line-height:1.45; }
+/* mishear marker: distinct teal so it doesn't read as SOLD OUT (red) or HOT (gold) */
+.slot.misheard{ border-color:#2f6f7a !important; box-shadow:0 0 0 1px #5fb0bd inset !important; }
+.slot.misheard .tab{ background:#2f6f7a !important; }
+.slot.misheard .pos, .slot.misheard .tab .ico{ color:#e7f6f8 !important; }
+.slot .stamp.misheard{ background:#2f6f7a !important; color:#eafafc !important; border-color:#1d4a52 !important; font-size:11px !important; padding:3px 9px !important; top:46% !important; }
+.ordered-note{ color:#2f6f7a !important; font-style:italic; }
+/* pay-it-forward: warm green 'on the house' — the kind mirror of the mishear */
+.stamp.treat{ background:linear-gradient(90deg,#2f7d4f,#3da06a) !important; color:#eafff2 !important; border-color:#1d5234 !important; }
+.slot.treat{ border-color:#2f7d4f !important; box-shadow:0 0 0 1px #5cc585 inset, 0 0 20px -6px rgba(60,160,90,.6) !important; }
+.slot.treat .tab{ background:linear-gradient(90deg,#2f7d4f,#3da06a) !important; }
+.slot.treat .pos, .slot.treat .tab .ico{ color:#eafff2 !important; }
+.slot .stamp.treat{ background:linear-gradient(90deg,#2f7d4f,#3da06a) !important; color:#eafff2 !important; border-color:#1d5234 !important; font-size:10.5px !important; padding:3px 9px !important; top:46% !important; }
+.treat-flag{ color:#2f7d4f !important; }
+/* late-night Taco Bell: purple */
+.stamp.late{ background:linear-gradient(90deg,#5b2a8c,#7c3aed) !important; color:#f3e8ff !important; border-color:#3b1a5e !important; }
+.slot.late{ border-color:#7c3aed !important; box-shadow:0 0 0 1px #a78bfa inset, 0 0 20px -6px rgba(124,58,237,.6) !important; }
+.slot.late .tab{ background:linear-gradient(90deg,#5b2a8c,#7c3aed) !important; }
+.slot.late .pos, .slot.late .tab .ico{ color:#f3e8ff !important; }
+.slot .stamp.late{ font-size:10.5px !important; padding:3px 9px !important; top:46% !important; }
+.late-flag{ color:#7c3aed !important; }
+/* Sonic happy hour: cyan */
+.stamp.happy{ background:linear-gradient(90deg,#0e7490,#06b6d4) !important; color:#ecfeff !important; border-color:#0a4d5c !important; }
+.slot.happy{ border-color:#0891b2 !important; box-shadow:0 0 0 1px #67e8f9 inset, 0 0 20px -6px rgba(8,145,178,.6) !important; }
+.slot.happy .tab{ background:linear-gradient(90deg,#0e7490,#06b6d4) !important; }
+.slot.happy .pos, .slot.happy .tab .ico{ color:#ecfeff !important; }
+.slot .stamp.happy{ font-size:10.5px !important; padding:3px 9px !important; top:46% !important; }
+.happy-flag{ color:#0891b2 !important; }
+/* seasonal 'limited time': festive magenta — distinct from hot/treat/late/happy/misheard */
+.stamp.seasonal{ background:linear-gradient(90deg,#be1d6e,#e84393) !important; color:#fff0f7 !important; border-color:#7d1247 !important; }
+.slot.seasonal{ border-color:#d6337c !important; box-shadow:0 0 0 1px #f78fbb inset, 0 0 20px -6px rgba(214,51,124,.6) !important; }
+.slot.seasonal .tab{ background:linear-gradient(90deg,#be1d6e,#e84393) !important; }
+.slot.seasonal .pos, .slot.seasonal .tab .ico{ color:#fff0f7 !important; }
+.slot .stamp.seasonal{ font-size:10px !important; padding:3px 8px !important; top:46% !important; }
+.seasonal-flag{ color:#be1d6e !important; }
+
+/* ============ ECON EDITION ============ */
+.econ{
+  background:linear-gradient(180deg,var(--surface2),var(--surface));
+  border:1px solid var(--mint);border-radius:18px;padding:18px 16px;margin-bottom:18px;
+  box-shadow:var(--shadow), 0 0 0 1px rgba(55,210,160,.15) inset;
+}
+.econ-eyebrow{
+  font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--mint);margin-bottom:10px;
+}
+.econ-q{font-size:15px;line-height:1.5;margin-bottom:14px}
+.econ-q b{color:var(--mustard)}
+.rank-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.rank-card{
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  background:var(--asphalt2);border:1px solid var(--line);border-radius:12px;
+  padding:11px 13px;transition:border-color .15s,transform .12s,background .15s;
+}
+.rank-card:hover{border-color:var(--mint);transform:translateY(-1px)}
+.rank-card.ranked{border-color:var(--mint);background:#1c241f}
+.rank-num{
+  flex:0 0 30px;height:30px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  font-family:"DM Mono",monospace;font-size:13px;font-weight:500;
+  border:1px dashed var(--line);color:#5d5247;
+}
+.rank-card.ranked .rank-num{border:1px solid var(--mint);color:var(--asphalt);background:var(--mint);font-weight:700}
+.rank-card .rname{font-weight:700;font-size:14px}
+.rank-card .rhint{margin-left:auto;font-family:"DM Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#5d5247}
+.rank-card.ranked .rhint{color:var(--mint)}
+.quiz-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:4px}
+.quiz-opt{
+  text-align:left;background:var(--asphalt2);color:var(--cream);border:1px solid var(--line);
+  border-radius:12px;padding:12px 14px;font-size:14px;font-weight:500;
+}
+.quiz-opt:hover:not(:disabled){border-color:var(--mustard)}
+.quiz-opt.right{border-color:var(--mint);background:#1c241f;box-shadow:0 0 0 1px var(--mint) inset}
+.quiz-opt.wrong{border-color:var(--ketchup);background:#2b1a17;box-shadow:0 0 0 1px var(--ketchup) inset}
+.econ-feedback{
+  border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.5;margin-top:12px;
+  border:1px dashed var(--line);background:rgba(0,0,0,.2);
+}
+.econ-feedback.good{border-color:var(--mint)}
+.econ-feedback.bad{border-color:var(--ketchup)}
+.econ-feedback b{color:var(--mustard)}
+.oc-reveal{
+  text-align:center;padding:16px 12px;border:1px dashed var(--mint);border-radius:14px;
+  background:rgba(55,210,160,.06);margin-bottom:14px;
+}
+.oc-reveal .oc-label{font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--mint);margin-bottom:8px}
+.oc-reveal .oc-item{font-family:"Anton",sans-serif;font-size:26px;text-transform:uppercase;color:var(--cream);line-height:1.05}
+.oc-reveal .oc-sub{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5}
+.oc-reveal .oc-sub b{color:var(--cream)}
+.btn-econ{
+  width:100%;background:var(--mint);color:#0d2018;font-weight:700;margin-top:14px;
+  box-shadow:0 6px 0 #1e8f6b;
+}
+.btn-econ:hover:not(:disabled){filter:brightness(1.06)}
+.btn-econ:active:not(:disabled){box-shadow:0 3px 0 #1e8f6b;transform:translateY(3px)}
+/* debrief on the result card */
+.econ-debrief{
+  text-align:left;margin:0 auto 16px;max-width:420px;
+  border:1px dashed var(--line);border-radius:14px;padding:14px;
+  background:rgba(0,0,0,.18);
+}
+.econ-debrief h3{
+  font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--mint);margin-bottom:10px;text-align:center;font-weight:500;
+}
+.oc-row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:6px 2px;border-bottom:1px dashed rgba(90,72,54,.5)}
+.oc-row:last-of-type{border-bottom:none}
+.oc-row .oc-pick{font-weight:700}
+.oc-row .oc-cost{color:var(--muted);text-align:right}
+.oc-row .oc-cost b{color:var(--mustard);font-weight:700}
+.debrief-note{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.debrief-note b{color:var(--cream)}
+.contradiction{
+  margin-top:8px;font-size:12.5px;line-height:1.55;color:var(--cream);
+  border-left:3px solid var(--ketchup);padding:6px 10px;background:rgba(232,57,43,.08);border-radius:0 8px 8px 0;
+}
+.consistent{
+  margin-top:8px;font-size:12.5px;line-height:1.55;color:var(--cream);
+  border-left:3px solid var(--mint);padding:6px 10px;background:rgba(55,210,160,.08);border-radius:0 8px 8px 0;
+}
+.quiz-score{font-family:"DM Mono",monospace;font-size:12px;color:var(--mustard);text-align:center;margin-top:10px}
+/* taste tests (round 2) */
+.tt-intro{text-align:center;padding:6px 2px}
+.tt-eyebrow{
+  font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--mustard);text-align:center;margin:12px 0 10px;
+}
+.tt-msg{font-size:13.5px;color:var(--cream);line-height:1.55;max-width:36ch;margin:0 auto}
+.tt-q{font-size:14px;font-weight:700;text-align:center;margin-bottom:10px}
+.tt-opt{text-align:center;font-weight:700}
+.econ-slotnote{
+  font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:12px;
+  border-left:3px solid var(--mustard);padding:5px 10px;background:rgba(245,184,46,.06);border-radius:0 8px 8px 0;
+}
+.econ-slotnote b{color:var(--cream)}
+</style>
+</head>
+<body>
+<a href="https://drtremendous.netlify.app/" title="Back to Dr.Tremendous"
+   style="position:fixed;top:14px;left:16px;z-index:50;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--cream);font-family:'DM Sans',sans-serif;font-weight:700;font-size:15px;background:rgba(20,14,9,.7);border:1px solid var(--line);padding:6px 12px 6px 8px;border-radius:999px;backdrop-filter:blur(3px)">
+  <img src="trex.png" alt="" style="height:24px;width:auto;display:block">
+  <span>Dr.Tremendous</span>
+</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="ic-MAIN" viewBox="0 0 24 24">
+    <path d="M3.2 9.2C3.2 5.9 7.1 4.2 12 4.2s8.8 1.7 8.8 5H3.2z" fill="currentColor"/>
+    <rect x="3.4" y="10.4" width="17.2" height="2.3" rx="1.15" fill="currentColor"/>
+    <rect x="3.4" y="13.7" width="17.2" height="2.1" rx="1.05" fill="currentColor" opacity=".75"/>
+    <path d="M3.4 17.4h17.2c0 2-3.4 2.9-8.6 2.9s-8.6-.9-8.6-2.9z" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-SIDE" viewBox="0 0 24 24">
+    <rect x="8.6" y="3.4" width="1.7" height="8" rx=".85" fill="currentColor"/>
+    <rect x="11.2" y="2.2" width="1.7" height="9.2" rx=".85" fill="currentColor"/>
+    <rect x="13.8" y="4.2" width="1.7" height="7.2" rx=".85" fill="currentColor"/>
+    <path d="M6.8 10.4h10.4l-1.1 9.4a1 1 0 0 1-1 .9H8.9a1 1 0 0 1-1-.9L6.8 10.4z" fill="currentColor"/>
+    <rect x="6.4" y="10" width="11.2" height="2.2" rx="1.1" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-DRINK" viewBox="0 0 24 24">
+    <rect x="13" y="2" width="1.6" height="6.5" rx=".8" transform="rotate(13 13.8 5)" fill="currentColor"/>
+    <path d="M6 8.2h12l-1.3 11.6a1.2 1.2 0 0 1-1.2 1.1H8.5a1.2 1.2 0 0 1-1.2-1.1L6 8.2z" fill="currentColor"/>
+    <rect x="5" y="6.2" width="14" height="2.4" rx="1.2" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-DESSERT" viewBox="0 0 24 24">
+    <path d="M8 11.2l4 9.6 4-9.6z" fill="currentColor"/>
+    <circle cx="12" cy="8.4" r="4.3" fill="currentColor"/>
+    <circle cx="9.7" cy="9.6" r="2.7" fill="currentColor"/>
+    <circle cx="14.3" cy="9.6" r="2.7" fill="currentColor"/>
+  </symbol>
+  <symbol id="ic-SAUCE" viewBox="0 0 24 24">
+    <path d="M5.4 9.4h13.2l-1 9.6a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8L5.4 9.4z" fill="currentColor"/>
+    <ellipse cx="12" cy="9.2" rx="7.4" ry="2.4" fill="currentColor"/>
+    <ellipse cx="12" cy="8.9" rx="4.4" ry="1.3" fill="var(--asphalt2)"/>
+  </symbol>
+</svg>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Round <span id="roundNum">1</span> of 5</div>
+    <h1>Drive-Thru <span class="red">Draft</span></h1>
+    <div class="hero-badge">Econ Edition · 5 spins · 1 tray</div>
+    <p class="tag">Five spins. Each one deals you a random chain — draft one item, then rank what you left behind. Every choice reveals what you gave up. By spin five, you'll know exactly what yours cost.</p>
+  </header>
+
+  <!-- TRAY -->
+  <div class="tray">
+    <div class="tray-head">
+      <span class="tray-title">Your Tray</span>
+      <span class="skip-badge" id="skipBadge">SKIPS · 1</span>
+    </div>
+    <div class="slots" id="slots"></div>
+  </div>
+
+  <!-- MACHINE -->
+  <div class="machine" id="machine">
+    <div class="reel-window" id="reelWindow">
+      <div class="reel" id="reel"></div>
+      <div class="pay-zone"></div>
+      <div class="reel-mask"></div>
+      <div class="pointer"></div>
+    </div>
+    <div class="controls">
+      <button class="btn-spin" id="spinBtn">Spin the chain</button>
+      <button class="btn-skip" id="skipBtn">Skip (1)</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <!-- COUNTER (draft) -->
+  <div class="counter hidden" id="counter">
+    <div class="picker hidden" id="picker"></div>
+    <div class="counter-head">
+      <span class="chain-name" id="counterChain"></span>
+      <span class="hint">Tap an item to add it to your tray</span>
+    </div>
+    <div class="counter-status" id="counterStatus"></div>
+    <div class="menu" id="menu"></div>
+  </div>
+
+  <!-- ECON STEP (rank → opportunity cost) -->
+  <div class="econ hidden" id="econ"></div>
+
+  <!-- RESULT -->
+  <div class="result hidden" id="result"></div>
+
+  <footer>No refunds · no substitutions</footer>
+  <p class="lognote">Anonymous: your picks are logged to build the crowd ratings.</p>
+</div>
+
+<script>
+/* ============================================================
+   DATA — real chains, plausible signature items.
+   slots: which positions an item can fill. r: crowd-vibe rating (argument fuel, not gospople).
+   ============================================================ */
+const POSITIONS = ["MAIN","SIDE","DRINK","DESSERT","SAUCE"];
+const POS_LABEL = {MAIN:"Main",SIDE:"Side",DRINK:"Drink",DESSERT:"Dessert",SAUCE:"Sauce"};
+
+const CHAINS = [
+  {name:"McDonald's", items:[
+    {n:"Big Mac", s:["MAIN"], r:8},
+    {n:"10pc McNuggets", s:["MAIN","SIDE"], r:8},
+    {n:"World Famous Fries", s:["SIDE"], r:9},
+    {n:"McFlurry", s:["DESSERT"], r:7},
+    {n:"Coca-Cola", s:["DRINK"], r:7},
+    {n:"Sweet 'N Sour", s:["SAUCE"], r:7},
+    {n:"McRib", s:["MAIN"], r:8, season:[10,11,12]},
+    {n:"Shamrock Shake", s:["DESSERT","DRINK"], r:8, season:[2,3]},
+    {n:"Holiday Pie", s:["DESSERT"], r:7, season:[11,12]},
+  ]},
+  {name:"Chick-fil-A", items:[
+    {n:"Chicken Sandwich", s:["MAIN"], r:9},
+    {n:"Waffle Fries", s:["SIDE"], r:9},
+    {n:"8ct Nuggets", s:["MAIN","SIDE"], r:8},
+    {n:"Frosted Lemonade", s:["DRINK","DESSERT"], r:9},
+    {n:"CFA Sauce", s:["SAUCE"], r:9},
+    {n:"Peach Milkshake", s:["DESSERT","DRINK"], r:9, season:[6,7,8]},
+  ]},
+  {name:"Taco Bell", items:[
+    {n:"Crunchwrap Supreme", s:["MAIN"], r:8},
+    {n:"Cheesy Gordita Crunch", s:["MAIN"], r:8},
+    {n:"Mexican Pizza", s:["MAIN"], r:8},
+    {n:"Doritos Locos Taco", s:["MAIN","SIDE"], r:7},
+    {n:"Nacho Fries", s:["SIDE"], r:8},
+    {n:"Baja Blast", s:["DRINK"], r:9},
+    {n:"Cinnamon Twists", s:["DESSERT"], r:6},
+    {n:"Diablo Sauce", s:["SAUCE"], r:7},
+  ]},
+  {name:"Wendy's", items:[
+    {n:"Dave's Single", s:["MAIN"], r:8},
+    {n:"Baconator", s:["MAIN"], r:9},
+    {n:"Spicy Nuggets", s:["MAIN","SIDE"], r:8},
+    {n:"Frosty", s:["DESSERT","DRINK"], r:9},
+    {n:"Seasoned Fries", s:["SIDE"], r:6},
+    {n:"S'Awesome Sauce", s:["SAUCE"], r:6},
+    {n:"Peppermint Frosty", s:["DESSERT","DRINK"], r:8, season:[11,12]},
+  ]},
+  {name:"In-N-Out", items:[
+    {n:"Double-Double", s:["MAIN"], r:9},
+    {n:"Animal-Style Fries", s:["SIDE"], r:9},
+    {n:"Neapolitan Shake", s:["DESSERT","DRINK"], r:8},
+    {n:"Spread", s:["SAUCE"], r:8},
+  ]},
+  {name:"Popeyes", items:[
+    {n:"Chicken Sandwich", s:["MAIN"], r:9},
+    {n:"Cajun Fries", s:["SIDE"], r:8},
+    {n:"Buttermilk Biscuit", s:["SIDE","DESSERT"], r:8},
+    {n:"Sweet Tea", s:["DRINK"], r:7},
+    {n:"Blackened Ranch", s:["SAUCE"], r:8},
+  ]},
+  {name:"Raising Cane's", items:[
+    {n:"Chicken Fingers", s:["MAIN"], r:8},
+    {n:"Crinkle Fries", s:["SIDE"], r:7},
+    {n:"Texas Toast", s:["SIDE"], r:8},
+    {n:"Cane's Sauce", s:["SAUCE"], r:9},
+    {n:"Sweet Tea", s:["DRINK"], r:7},
+  ]},
+  {name:"Arby's", items:[
+    {n:"Classic Roast Beef", s:["MAIN"], r:6},
+    {n:"Beef 'n Cheddar", s:["MAIN"], r:8},
+    {n:"Curly Fries", s:["SIDE"], r:9},
+    {n:"Jamocha Shake", s:["DESSERT","DRINK"], r:8},
+    {n:"Mozzarella Sticks", s:["SIDE"], r:7},
+    {n:"Arby's Sauce", s:["SAUCE"], r:6},
+  ]},
+  {name:"Sonic", items:[
+    {n:"SuperSONIC Burger", s:["MAIN"], r:6},
+    {n:"Tots", s:["SIDE"], r:8},
+    {n:"Cherry Limeade", s:["DRINK"], r:9},
+    {n:"Oreo Blast", s:["DESSERT"], r:7},
+  ]},
+  {name:"Dairy Queen", items:[
+    {n:"Chicken Strip Basket", s:["MAIN"], r:6},
+    {n:"Fries", s:["SIDE"], r:5},
+    {n:"Blizzard", s:["DESSERT"], r:9},
+    {n:"MisterMisty", s:["DRINK"], r:6},
+    {n:"Pumpkin Pie Blizzard", s:["DESSERT"], r:9, season:[9,10,11]},
+  ]},
+  {name:"Whataburger", items:[
+    {n:"Whataburger", s:["MAIN"], r:8},
+    {n:"Honey BBQ Chicken Strip Sandwich", s:["MAIN"], r:7},
+    {n:"Fries", s:["SIDE"], r:6},
+    {n:"Dr Pepper Shake", s:["DESSERT","DRINK"], r:7},
+    {n:"Spicy Ketchup", s:["SAUCE"], r:7},
+  ]},
+  {name:"Cook Out", items:[
+    {n:"Cookout Style Burger", s:["MAIN"], r:8},
+    {n:"BBQ Sandwich", s:["MAIN"], r:8},
+    {n:"Hush Puppies", s:["SIDE"], r:8},
+    {n:"Quesadilla", s:["SIDE","MAIN"], r:7},
+    {n:"Cook Out Milkshake", s:["DESSERT","DRINK"], r:10},
+    {n:"Cheerwine", s:["DRINK"], r:8},
+    {n:"Cook Out Sauce", s:["SAUCE"], r:8},
+  ]},
+  {name:"Bojangles", items:[
+    {n:"Cajun Filet Biscuit", s:["MAIN"], r:9},
+    {n:"Supremes Tenders", s:["MAIN","SIDE"], r:8},
+    {n:"Bo-Tato Rounds", s:["SIDE"], r:8},
+    {n:"Dirty Rice", s:["SIDE"], r:7},
+    {n:"Legendary Sweet Tea", s:["DRINK"], r:9},
+    {n:"Bo-Berry Biscuit", s:["DESSERT"], r:8},
+    {n:"Bo's Sauce", s:["SAUCE"], r:7},
+  ]},
+  {name:"Zaxby's", items:[
+    {n:"Chicken Finger Plate", s:["MAIN"], r:6},
+    {n:"Nibblers", s:["MAIN","SIDE"], r:5},
+    {n:"Fried White Cheddar Bites", s:["SIDE"], r:6},
+    {n:"Crinkle Fries", s:["SIDE"], r:4},
+    {n:"Zax Sauce", s:["SAUCE"], r:9},
+    {n:"Sweet Tea", s:["DRINK"], r:6},
+  ]},
+  {name:"Hardee's", items:[
+    {n:"Original Thickburger", s:["MAIN"], r:8},
+    {n:"Famous Star", s:["MAIN"], r:7},
+    {n:"Hand-Breaded Tenders", s:["MAIN","SIDE"], r:7},
+    {n:"Curly Fries", s:["SIDE"], r:8},
+    {n:"Hand-Scooped Shake", s:["DESSERT","DRINK"], r:8},
+    {n:"Cinnamon Roll", s:["DESSERT"], r:7},
+  ]},
+  {name:"Krispy Kreme", items:[
+    {n:"Original Glazed", s:["DESSERT"], r:7},
+    {n:"Chocolate Iced Kreme-Filled", s:["DESSERT"], r:7},
+    {n:"Glazed Doughnut Holes", s:["DESSERT","SIDE"], r:6},
+    {n:"Original Glazed Latte", s:["DRINK"], r:6},
+    {n:"Coffee", s:["DRINK"], r:6},
+  ]},
+  {name:"Burger King", items:[
+    {n:"Whopper", s:["MAIN"], r:7},
+    {n:"Bacon King", s:["MAIN"], r:7},
+    {n:"Chicken Fries", s:["SIDE","MAIN"], r:6},
+    {n:"French Fries", s:["SIDE"], r:5},
+    {n:"Onion Rings", s:["SIDE"], r:6},
+    {n:"Hershey's Sundae Pie", s:["DESSERT"], r:6},
+    {n:"Frozen Fanta", s:["DRINK"], r:4},
+  ]},
+  {name:"KFC", items:[
+    {n:"Original Recipe Chicken", s:["MAIN"], r:7},
+    {n:"Famous Bowl", s:["MAIN","SIDE"], r:6},
+    {n:"Extra Crispy Tenders", s:["MAIN","SIDE"], r:6},
+    {n:"Mac & Cheese", s:["SIDE"], r:6},
+    {n:"Biscuit", s:["SIDE"], r:7},
+    {n:"Cole Slaw", s:["SIDE"], r:4},
+    {n:"Chocolate Chip Cookie", s:["DESSERT"], r:5},
+  ]},
+  {name:"Shake Shack", items:[
+    {n:"ShackBurger", s:["MAIN"], r:9},
+    {n:"SmokeShack", s:["MAIN"], r:9},
+    {n:"Chicken Shack", s:["MAIN"], r:8},
+    {n:"Crinkle-Cut Fries", s:["SIDE"], r:7},
+    {n:"Cheese Fries", s:["SIDE"], r:8},
+    {n:"Hand-Spun Shake", s:["DESSERT","DRINK"], r:9},
+    {n:"ShackSauce", s:["SAUCE"], r:8},
+  ]},
+  {name:"Five Guys", items:[
+    {n:"Cheeseburger", s:["MAIN"], r:9},
+    {n:"Little Bacon Burger", s:["MAIN"], r:8},
+    {n:"Five Guys Fries", s:["SIDE"], r:9},
+    {n:"Cajun Fries", s:["SIDE"], r:8},
+    {n:"Milkshake", s:["DESSERT","DRINK"], r:8},
+  ]},
+  {name:"Panera", items:[
+    {n:"Broccoli Cheddar Bread Bowl", s:["MAIN"], r:9},
+    {n:"Mac & Cheese", s:["MAIN","SIDE"], r:8},
+    {n:"Chipotle Chicken Avocado Melt", s:["MAIN"], r:7},
+    {n:"French Baguette", s:["SIDE"], r:7},
+    {n:"Kitchen Sink Cookie", s:["DESSERT"], r:8},
+    {n:"Cinnamon Crunch Bagel", s:["DESSERT","SIDE"], r:7},
+    {n:"Passion Papaya Green Tea", s:["DRINK"], r:7},
+  ]},
+  {name:"Starbucks", items:[
+    {n:"Bacon, Gouda & Egg Sandwich", s:["MAIN"], r:7},
+    {n:"Double-Smoked Bacon, Cheddar & Egg", s:["MAIN"], r:7},
+    {n:"Spinach, Feta & Egg White Wrap", s:["MAIN"], r:6},
+    {n:"Caramel Frappuccino", s:["DRINK","DESSERT"], r:8},
+    {n:"Brown Sugar Oat Shaken Espresso", s:["DRINK"], r:7},
+    {n:"Pumpkin Spice Latte", s:["DRINK"], r:8, season:[8,9,10,11]},
+    {n:"Peppermint Mocha", s:["DRINK"], r:8, season:[11,12]},
+    {n:"Cake Pop", s:["DESSERT"], r:6},
+    {n:"Cheese Danish", s:["DESSERT"], r:6},
+    {n:"Chocolate Croissant", s:["DESSERT","SIDE"], r:6},
+  ]},
+];
+
+
+const COMBO_ADJ = ["Greasy","Golden","Forbidden","Regional","Unstoppable","Cursed","Elite","Drive-Thru","Late-Night","Highway"];
+const COMBO_NOUN = ["Gauntlet","Special","Order","Lineup","Tray","Combo","Situation","Haul","Run","Masterpiece"];
+
+/* ============================================================
+   86'd — items that can be down on a given visit.
+   Keyed by "Chain::Item". p = chance it's out, why = the joke.
+   Anything not listed gets a small baseline chance of selling out.
+   ============================================================ */
+const OUTAGES = {
+  "McDonald's::McFlurry":            {p:0.45, why:"Ice cream machine down 😔"},
+  "Wendy's::Frosty":                 {p:0.18, why:"Frosty machine's down"},
+  "Dairy Queen::Blizzard":           {p:0.16, why:"Soft-serve machine down"},
+  "Taco Bell::Mexican Pizza":        {p:0.50, why:"Pulled from the menu. Again."},
+  "Popeyes::Chicken Sandwich":       {p:0.35, why:"Sold out (you're not surprised)"},
+  "Raising Cane's::Sweet Tea":       {p:0.20, why:"Machine's 'being cleaned' 🙄"},
+  "Sonic::Cherry Limeade":           {p:0.12, why:"Out of cherry"},
+  "Chick-fil-A::Frosted Lemonade":   {p:0.12, why:"Lemonade machine down"},
+  "In-N-Out::Neapolitan Shake":      {p:0.10, why:"Shake machine acting up"},
+  "Arby's::Jamocha Shake":           {p:0.12, why:"Shake machine down"},
+  "Bojangles::Cajun Filet Biscuit":  {p:0.28, why:"Out of biscuits 'til the next batch"},
+  "Cook Out::Cook Out Milkshake":    {p:0.14, why:"Shake line's backed up"},
+  "Zaxby's::Zax Sauce":              {p:0.15, why:"Out of Zax Sauce"},
+  "Taco Bell::Nacho Fries":          {p:0.55, why:"Gone again — limited time only"},
+  "Burger King::Frozen Fanta":       {p:0.22, why:"Machine's down (shocker)"},
+  "Burger King::Onion Rings":        {p:0.15, why:"Fryer's tied up"},
+  "KFC::Famous Bowl":                {p:0.20, why:"Out of gravy"},
+  "KFC::Biscuit":                    {p:0.18, why:"Next batch isn't out yet"},
+  "Starbucks::Cake Pop":             {p:0.20, why:"Last one went to the car ahead of you"},
+  "Starbucks::Bacon, Gouda & Egg Sandwich": {p:0.15, why:"Oven's still warming up"},
+  "Shake Shack::Hand-Spun Shake":    {p:0.12, why:"Custard machine resetting"},
+  "Shake Shack::Cheese Fries":       {p:0.12, why:"Out of cheese sauce"},
+  "Five Guys::Milkshake":            {p:0.12, why:"Mix-in station's closed"},
+  "Five Guys::Cajun Fries":          {p:0.10, why:"Out of Cajun seasoning"},
+};
+const BASELINE_OUT = 0.05;            // everything else: occasionally sells out
+const BASELINE_WHY = ["Sold out for the day","Kitchen's out of it","Just ran out","Not available right now"];
+
+function outageFor(chainName,item){
+  const cfg=OUTAGES[chainName+"::"+item.n];
+  if(cfg) return cfg;
+  return {p:BASELINE_OUT, why:BASELINE_WHY[Math.floor(Math.random()*BASELINE_WHY.length)]};
+}
+
+/* ============================================================
+   CHAIN-LEVEL EVENTS — fire occasionally when you land on the chain.
+   "closed"  = whole counter shut, forced free re-spin (no skip burned).
+   "hot"     = jackpot: every item on the chain gets a rating boost.
+   Rare overall because you only land on any one chain now and then.
+   ============================================================ */
+const CHAIN_EVENTS = {
+  "Chick-fil-A":  {type:"closed", p:0.20, msg:"It's Sunday — Chick-fil-A is closed. Spin again. (No skip used.)"},
+  "Krispy Kreme": {type:"hot",    p:0.45, boost:3, msg:"🔥 The HOT light is ON — everything here is elite right now."},
+  "Starbucks":    {type:"treat",  p:0.25, boost:2, msg:"☕ The car ahead paid it forward — your order's on the house. Whatever you pick comes out a little better."},
+  "Taco Bell":    {type:"latenight", p:0.40, boost:2, minRound:4, msg:"🌙 Late-night Taco Bell hits different. The whole menu's a little better right now."},
+  "Sonic":        {type:"happyhour", p:0.35, boost:2, slots:["DRINK"], msg:"🥤 Sonic Happy Hour — drinks are half price and twice as good."},
+};
+
+/* ============================================================
+   UNRELIABLE CHAINS — the drive-thru mishears your order. ~15% of the time
+   you draft here, the speaker box garbles it and a WORSE item from the same
+   chain (that still fits your slot) lands on your tray instead.
+   Your real pick is still logged as your true preference; the swap is a
+   scoring twist on top, recorded separately. ============================================================ */
+const MISHEAR = {
+  "Burger King":0.15, "KFC":0.15, "Arby's":0.15, "Cook Out":0.15,
+};
+
+/* gentle spinner weighting so the chains with the best jokes/jackpots
+   actually show up — fun chains come up a bit more than the plain ones */
+const CHAIN_WEIGHT = {
+  "Krispy Kreme":1.6, "Cook Out":1.5, "Bojangles":1.4, "Chick-fil-A":1.4,
+  "Taco Bell":1.4, "Popeyes":1.3, "McDonald's":1.3, "In-N-Out":1.2,
+  "Shake Shack":1.3, "Five Guys":1.3, "Burger King":1.2, "Starbucks":1.1,
+};
+/* every appearance this session halves a chain's odds, so rarely-seen
+   chains catch up instead of getting buried by the favorites */
+const seenCount = {};
+function weightedPick(pool){
+  const w=pool.map(c=>(CHAIN_WEIGHT[c.name]||1)/(1+(seenCount[c.name]||0)));
+  const sum=w.reduce((a,b)=>a+b,0);
+  let r=Math.random()*sum;
+  for(let i=0;i<pool.length;i++){ if((r-=w[i])<0) return pool[i]; }
+  return pool[pool.length-1];
+}
+
+/* ============================================================ STATE */
+let tray = {};            // pos -> {n, chain, r, pos}
+let skips = 1;
+let dealtChain = null;    // current chain object
+let spinning = false;
+let pendingItem = null;   // item awaiting slot choice
+let pendingSlots = [];    // the open slots that pending item may go in
+let outages = {};         // item index in dealt chain -> blackout reason (this visit)
+let blackoutsSeen = 0;    // tally of 86'd items witnessed across the game
+let jackpot = 0;          // rating boost active this visit (HOT light or treat); 0 = none
+let boostKind = null;     // 'hot' | 'treat' | 'latenight' | 'happyhour'
+let boostSlots = null;    // if set, only items filling these slots get the boost (Sonic = DRINK)
+let hotStreak = 0;        // consecutive HOT Krispy Kreme spins; each one climbs the boost
+let misheardCount = 0;    // times the drive-thru garbled your order this game
+let hotStreakHit = false; // did you ever catch a 2+ hot streak this game
+
+const CELL_W = 200;
+
+/* ============================================================ DOM */
+const $ = id => document.getElementById(id);
+const slotsEl=$("slots"), reelEl=$("reel"), spinBtn=$("spinBtn"), skipBtn=$("skipBtn"),
+      msgEl=$("msg"), counterEl=$("counter"), menuEl=$("menu"), counterChain=$("counterChain"),
+      pickerEl=$("picker"), resultEl=$("result"), machineEl=$("machine"),
+      skipBadge=$("skipBadge"), roundNum=$("roundNum"), counterStatus=$("counterStatus"),
+      reelWindow=$("reelWindow"), econEl=$("econ");
+
+/* ============================================================ DATA LOGGING
+   Crowd-stars + revealed-preference capture.
+   - stable item IDs (chain_id + item_id)
+   - two tables: events (one row per decision) + offers (one row per item shown)
+   - anonymous session id, in-memory + CSV/JSON export (works with NO network)
+   - optional Firebase: paste your config below to turn on shared crowd data
+   ============================================================ */
+
+// stable IDs: e.g. mcdonalds__world_famous_fries (never bare "Fries")
+function slug(s){ return s.toLowerCase().replace(/['’.]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,""); }
+CHAINS.forEach(c=>{ c.id=slug(c.name); c.items.forEach(it=>{ it.id=c.id+"__"+slug(it.n); }); });
+
+// shuffle the menu each visit so card position isn't confounded with the item.
+// flip to false if you'd rather keep a fixed menu order (signature item always first).
+const SHUFFLE_MENU = true;
+function shuffled(arr){ const a=arr.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+// seasonal items only appear in their real-world months (player's local date)
+function inSeason(it){ return !it.season || it.season.includes(new Date().getMonth()+1); }
+
+// ▼▼▼ PASTE YOUR FIREBASE WEB CONFIG HERE to turn on shared crowd data.
+// Leave apiKey "" to run in LOCAL mode (in-memory + CSV export, no network needed).
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBvnmtHxx9-cMf9q1qLiRG9nbjilZ3EoQY",
+  authDomain: "drivethrudraft.firebaseapp.com",
+  projectId: "drivethrudraft",
+  storageBucket: "drivethrudraft.firebasestorage.app",
+  messagingSenderId: "456514556463",
+  appId: "1:456514556463:web:03a1ce2fb8bf0e379dacda"
+};
+
+const DTD_LOG = (function(){
+  const mem = { events:[], offers:[], sessions:[] };
+  let session_id = null, fb = null, ready = false;
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
+                      : "s_"+Date.now()+"_"+Math.random().toString(36).slice(2));
+  const sid = () => session_id || (session_id = uuid());
+
+  async function initFirebase(){
+    if(!FIREBASE_CONFIG.apiKey) { console.log("[DTD] local mode (no Firebase config) — data kept in-memory; press Shift+D to export CSV"); return; }
+    try{
+      const appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+      const fsMod  = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+      const app = appMod.initializeApp(FIREBASE_CONFIG);
+      fb = { db: fsMod.getFirestore(app), addDoc: fsMod.addDoc, collection: fsMod.collection };
+      ready = true;
+      console.log("[DTD] Firebase logging ON");
+      flushQueue();                       // send anything captured before init finished
+    }catch(e){ console.warn("[DTD] Firebase init failed — staying local:", e); }
+  }
+
+  // ---- write queue: never block the UI on the async Firebase import, and never
+  //      lose the early rows (startGame + first decisions) that fire before ready ----
+  const queue = [];
+  let flushing = false;
+  async function send(coll, obj, attempt){
+    attempt = attempt || 0;
+    try{ await fb.addDoc(fb.collection(fb.db, coll), obj); }
+    catch(e){
+      const code = (e && e.code) || "";
+      // permission-denied = rules rejected it (permanent) -> never requeue, it'd loop forever
+      const permanent = code.indexOf("permission-denied") !== -1 || code.indexOf("invalid-argument") !== -1;
+      if(!permanent && attempt < 3){
+        const delay = 1000 * Math.pow(2, attempt);   // 1s, 2s, 4s backoff
+        setTimeout(()=> send(coll, obj, attempt+1), delay);
+      }else{
+        console.warn("[DTD] write failed ("+(permanent?"permanent":"gave up")+")", coll, code||e);
+      }
+    }
+  }
+  async function flushQueue(){
+    if(flushing) return; flushing = true;
+    while(queue.length){ const {coll, obj} = queue.shift(); await send(coll, obj); }
+    flushing = false;
+  }
+
+  // ---- client throttle: cap writes per rolling minute so a stuck/looping or
+  //      lightly-modified client can't flood Firestore. (Not a hard defense —
+  //      Firestore rules + App Check are — but it stops the dumb cases for free.) ----
+  const WRITES_PER_MIN = 120;             // a full game is ~35 writes; 120 is generous
+  let windowStart = Date.now(), windowCount = 0;
+  function throttled(){
+    const now = Date.now();
+    if(now - windowStart > 60000){ windowStart = now; windowCount = 0; }
+    if(windowCount >= WRITES_PER_MIN) return true;
+    windowCount++; return false;
+  }
+
+  function write(coll, obj){
+    mem[coll].push(obj);                  // local mirror always kept (Shift+D still works)
+    if(throttled()) return;               // over the per-minute cap → local only
+    if(ready && fb){ send(coll, obj); }   // live → fire (don't await; non-blocking)
+    else { queue.push({coll, obj}); }     // not ready yet → queue, flushed on init
+  }
+  function toCSV(rows){
+    if(!rows.length) return "";
+    // pin the join keys to the front so Excel work is painless, then the rest in first-seen order
+    const LEAD = ["event_id","session_id","round_number","chain_dealt"];
+    const seen = new Set(), cols = [];
+    LEAD.forEach(k=>{ if(rows.some(r=>k in r)){ cols.push(k); seen.add(k); } });
+    rows.forEach(r=>Object.keys(r).forEach(k=>{ if(!seen.has(k)){ seen.add(k); cols.push(k); } }));
+    const esc=v=>{ if(v==null)return""; v=Array.isArray(v)?v.join("|"):String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+    return cols.join(",")+"\n"+rows.map(r=>cols.map(c=>esc(r[c])).join(",")).join("\n");
+  }
+  function download(name, text, type){
+    const blob=new Blob([text],{type}); const url=URL.createObjectURL(blob);
+    const a=document.createElement("a"); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  return {
+    init(){ initFirebase(); },
+    // append-only by design: a 'start' with no matching 'finish' = an abandoned game.
+    startGame(){ session_id = uuid(); write("sessions",{session_id, event_type:"start", ts:Date.now(), mode:"econ"}); },
+    event(ev){ write("events", {session_id:sid(), ts:Date.now(), mode:"econ", ...ev}); },
+    offers(rows){ rows.forEach(r=> write("offers", {session_id:sid(), mode:"econ", ...r})); },
+    finishSession(s){ write("sessions", {session_id:sid(), event_type:"finish", ts:Date.now(), mode:"econ", ...s}); },
+    // display_rating: your anchor dominates early, crowd takes over with volume
+    blend(base, crowdRate, opportunities, k=50){
+      if(!opportunities) return base;
+      const w = opportunities/(opportunities+k);
+      return base*(1-w) + (crowdRate*10)*w;
+    },
+    mem,
+    exportCSV(){ download("dtd-events.csv", toCSV(mem.events), "text/csv");
+                 download("dtd-offers.csv", toCSV(mem.offers), "text/csv"); },
+    exportJSON(){ download("drive-thru-draft-data.json", JSON.stringify(mem,null,2), "application/json"); }
+  };
+})();
+DTD_LOG.init();
+let DTD_currentOffer = null;   // offer context for the chain currently on the counter
+const newEventId = () => (crypto.randomUUID ? crypto.randomUUID() : "e_"+Date.now()+"_"+Math.random().toString(36).slice(2));
+// dev: Shift+D exports the events + offers tables as CSV (for Excel)
+addEventListener("keydown", e=>{ if(e.shiftKey && (e.key==="D"||e.key==="d")) DTD_LOG.exportCSV(); });
+
+/* ============================================================ INIT */
+function init(){
+  tray={}; skips=1; dealtChain=null; pendingItem=null; pendingSlots=[]; outages={}; blackoutsSeen=0; jackpot=0; boostKind=null; boostSlots=null; hotStreak=0; misheardCount=0; hotStreakHit=false; spinning=false;
+  econLog=[]; econTaught=false; econState=null; skipLog=[]; econEl.classList.add("hidden");
+  DTD_currentOffer=null;
+  DTD_LOG.startGame();   // new anonymous session per playthrough
+  POSITIONS.forEach(p=>tray[p]=null);
+  resultEl.classList.add("hidden");
+  machineEl.classList.remove("hidden");
+  counterEl.classList.add("hidden");
+  pickerEl.classList.add("hidden");
+  buildReel();
+  renderTray();
+  updateChrome();
+  msgEl.textContent="Pull the lever — see what chain you're stuck with.";
+  spinBtn.disabled=false; skipBtn.disabled=true;
+  spinBtn.textContent="Pull up to the window";
+  reelEl.style.transition="none";
+  reelEl.style.transform="translateX(0)";
+}
+
+function filledCount(){return POSITIONS.filter(p=>tray[p]).length}
+function openPositions(){return POSITIONS.filter(p=>!tray[p])}
+
+function updateChrome(){
+  roundNum.textContent=Math.min(filledCount()+1,5);
+  skipBadge.textContent="SKIPS · "+skips;
+  skipBtn.textContent="Skip ("+skips+")";
+}
+
+/* ============================================================ REEL */
+function buildReel(){
+  // long repeated strip so the spin has room to travel
+  reelEl.innerHTML="";
+  const reps=12;
+  for(let i=0;i<reps;i++){
+    CHAINS.forEach(c=>{
+      const cell=document.createElement("div");
+      cell.className="cell";
+      cell.innerHTML=`<span class="chip">${c.name}</span>`;
+      reelEl.appendChild(cell);
+    });
+  }
+}
+
+function renderTray(){
+  slotsEl.innerHTML="";
+  const eligibleNow = dealtChain && !spinning;
+  POSITIONS.forEach(pos=>{
+    const it=tray[pos];
+    const div=document.createElement("div");
+    div.className="slot "+(it?"filled":"empty");
+    if(it&&it.hot) div.classList.add("hot");
+    if(it&&it.treat) div.classList.add("treat");
+    if(it&&it.late) div.classList.add("late");
+    if(it&&it.happy) div.classList.add("happy");
+    if(it&&it.seasonal) div.classList.add("seasonal");
+    if(it&&it.misheard) div.classList.add("misheard");
+    const canHighlight = !it && eligibleNow &&
+      (pendingItem ? pendingSlots.includes(pos) : chainCanFill(dealtChain,pos));
+    if(canHighlight) div.classList.add("eligible");
+    const tab=`<div class="tab">
+        <svg class="ico" aria-hidden="true"><use href="#ic-${pos}"></use></svg>
+        <span class="pos">${POS_LABEL[pos]}</span>
+      </div>`;
+    if(it){
+      div.innerHTML=(it.hot?`<span class="stamp hot">🔥 HOT</span>`:"")
+        +(it.treat?`<span class="stamp treat">☕ ON THE HOUSE</span>`:"")
+        +(it.late?`<span class="stamp late">🌙 LATE NIGHT</span>`:"")
+        +(it.happy?`<span class="stamp happy">🥤 HAPPY HOUR</span>`:"")
+        +(it.seasonal?`<span class="stamp seasonal">✨ LIMITED TIME</span>`:"")
+        +(it.misheard?`<span class="stamp misheard">🎙️ MISHEARD</span>`:"")
+        +tab+`<div class="body">
+        <span class="item-name">${it.n}</span>
+        <span class="item-chain">${it.chain}${it.misheard?` <span class="ordered-note">· you ordered ${it.intended}</span>`:""}</span>
+      </div>`;
+    }else{
+      const hint = canHighlight ? "open ↓" : "empty";
+      div.innerHTML=tab+`<div class="body"><span class="empty-hint">${hint}</span></div>`;
+    }
+    if(div.classList.contains("eligible")){
+      div.onclick=()=>{ if(pendingItem){ placeItem(pendingItem,pos); } };
+    }
+    slotsEl.appendChild(div);
+  });
+}
+
+function chainCanFill(chain,pos){
+  return chain.items.some(it=>it.s.includes(pos));
+}
+function chainHasAnyOpen(chain){
+  const open=openPositions();
+  return chain.items.some(it=>it.s.some(p=>open.includes(p)));
+}
+// roll which items on this chain are 86'd this visit
+function rollOutages(chain){
+  const o={};
+  chain.items.forEach((it,i)=>{
+    const cfg=outageFor(chain.name,it);
+    if(Math.random()<cfg.p) o[i]=cfg.why;
+  });
+  return o;
+}
+// is anything draftable RIGHT NOW (open slot + not 86'd)?
+function chainHasDraftableNow(chain,outs){
+  const open=openPositions();
+  return chain.items.some((it,i)=> !(i in outs) && it.s.some(p=>open.includes(p)));
+}
+
+/* ============================================================ SPIN */
+function spin(useChain){
+  if(spinning) return;
+  spinning=true;
+  spinBtn.disabled=true; skipBtn.disabled=true;
+  spinBtn.textContent="Spin the chain";
+  counterEl.classList.add("hidden");
+  pickerEl.classList.add("hidden");
+  pendingItem=null;
+  msgEl.textContent="Spinning…";
+  reelWindow.classList.add("live");
+  renderTray();
+
+  // choose a chain that has at least one item for an open slot
+  let pool=CHAINS.filter(chainHasAnyOpen);
+  if(pool.length===0) pool=CHAINS;
+  const target = useChain || weightedPick(pool);
+  seenCount[target.name]=(seenCount[target.name]||0)+1;
+
+  // find an index of target deep in the strip, land it under the pointer
+  const idxInChains = CHAINS.indexOf(target);
+  const reps=12;
+  const landRep = 8 + Math.floor(Math.random()*2); // land deep so it travels
+  const cellIndex = landRep*CHAINS.length + idxInChains;
+  const windowW = reelEl.parentElement.clientWidth;
+  const finalX = -(cellIndex*CELL_W + CELL_W/2 - windowW/2);
+
+  reelEl.style.transition="none";
+  reelEl.style.transform="translateX(0)";
+  // force reflow
+  void reelEl.offsetWidth;
+  // shorter, gentler spin when the user prefers reduced motion — still moves, never looks frozen
+  const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const dur = reduced ? 0.9 : 2.7;
+  reelEl.style.transition=`transform ${dur}s cubic-bezier(.16,.84,.3,1)`;
+  reelEl.style.transform=`translateX(${finalX}px)`;
+
+  setTimeout(()=>{ landed(target); }, dur*1000 + 120);
+}
+
+function landed(chain){
+  spinning=false;
+  reelWindow.classList.remove("live");
+  dealtChain=chain;
+  jackpot=0; boostKind=null; boostSlots=null;
+
+  // chain-level event first (whole-counter closure or jackpot)
+  const ev = CHAIN_EVENTS[chain.name];
+  let rolledHot = false, rolledTreat = false, rolledLate = false, rolledHappy = false;
+  const curRound = filledCount()+1;
+  if(ev && Math.random() < ev.p && !(ev.minRound && curRound < ev.minRound)){
+    if(ev.type==="closed"){
+      outages={}; jackpot=0; boostKind=null; hotStreak=0;   // a different chain broke any hot streak
+      counterEl.classList.add("hidden");
+      renderTray();
+      DTD_currentOffer=null;
+      DTD_LOG.event({
+        event_id:newEventId(), round_number:filledCount()+1, chain_dealt:chain.name, action_type:"closed",
+        open_slots_before:openPositions(), chosen_item_id:null, chosen_slot:null,
+        hot_light:false, hot_boost:0, boost_kind:null, boost_amount:0, boost_slots:null,
+        skip_available_before:skips, skip_used:false,
+        sold_out_count:0, chain_closed:true, offer_set_size:0
+      });
+      msgEl.textContent = ev.msg;          // forced free re-spin, no skip burned
+      spinBtn.disabled=false;
+      spinBtn.textContent="Re-spin (free)";
+      skipBtn.disabled=true;
+      return;
+    }
+    if(ev.type==="hot")       rolledHot = true;
+    if(ev.type==="treat")     rolledTreat = true;
+    if(ev.type==="latenight") rolledLate = true;
+    if(ev.type==="happyhour") rolledHappy = true;
+  }
+  if(rolledHot){
+    hotStreak++;                           // consecutive hot hit: +3, then +4, +5, …
+    if(hotStreak>=2) hotStreakHit=true;
+    jackpot = ev.boost + (hotStreak-1);    // 2nd in a row guarantees 10s, climbs from there
+    boostKind = 'hot';
+  }else if(rolledTreat){
+    jackpot = ev.boost; boostKind = 'treat'; hotStreak = 0;          // pay it forward (+2, whole menu)
+  }else if(rolledLate){
+    jackpot = ev.boost; boostKind = 'latenight'; hotStreak = 0;      // late-night Taco Bell (+2, whole menu)
+  }else if(rolledHappy){
+    jackpot = ev.boost; boostKind = 'happyhour'; boostSlots = ev.slots; hotStreak = 0; // Sonic happy hour (drinks only)
+  }else{
+    hotStreak = 0;                         // any non-boost spin breaks the streak
+  }
+
+  outages = jackpot ? {} : rollOutages(chain);
+  blackoutsSeen += Object.keys(outages).length;
+  renderTray();
+  openCounter(chain);
+  updateChrome();
+  // is anything actually draftable (open slot AND not 86'd)?
+  if(!chainHasDraftableNow(chain,outages)){
+    // dead chain: offers were shown but none draftable -> free re-spin (NOT a rejection)
+    if(DTD_currentOffer){
+      const off=DTD_currentOffer;
+      DTD_LOG.offers(off.offers);
+      DTD_LOG.event({
+        event_id:off.event_id, round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"free_respin",
+        open_slots_before:off.open_slots_before, chosen_item_id:null, chosen_slot:null,
+        hot_light:off.hot_light, hot_boost:off.hot_boost,
+        boost_kind:off.boost_kind, boost_amount:off.boost_amount, boost_slots:off.boost_slots,
+        skip_available_before:off.skip_available_before,
+        skip_used:false, sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
+      });
+      DTD_currentOffer=null;
+    }
+    const downCount=Object.keys(outages).length;
+    msgEl.textContent = downCount
+      ? `Everything you needed at ${chain.name} is sold out — free re-spin.`
+      : `${chain.name} can't fill what you've got open — free re-spin.`;
+    spinBtn.disabled=false;
+    spinBtn.textContent="Re-spin (free)";
+    skipBtn.disabled=true;
+    return;
+  }
+  if(jackpot){
+    msgEl.textContent = hotStreak>=2
+      ? `🔥🔥 HOT STREAK ×${hotStreak}! The light's only getting hotter — +${jackpot} boost.`
+      : ev.msg;                            // first HOT light celebration
+  }else{
+    const downCount=Object.keys(outages).length;
+    // "it's BACK!" — hype a seasonal item that's in season right now
+    const seasonalItem = chain.items.find(it=> it.season && inSeason(it));
+    if(seasonalItem){
+      msgEl.textContent = `🎉 The ${seasonalItem.n} is BACK at ${chain.name} — limited time only!`;
+    }else{
+      msgEl.textContent = downCount
+        ? `Dealt: ${chain.name}. Heads up — ${downCount} item${downCount>1?"s":""} sold out today.`
+        : `Dealt: ${chain.name}. Pick one item.`;
+    }
+  }
+  spinBtn.disabled=true;
+  skipBtn.disabled = skips<=0;
+}
+
+/* ============================================================ COUNTER */
+function openCounter(chain){
+  counterEl.classList.remove("hidden");
+  menuEl.classList.remove("hidden");
+  pickerEl.classList.add("hidden");
+  counterChain.textContent=chain.name;
+  const open=openPositions();
+
+  // what can this chain actually do for my OPEN slots right now?
+  const fillable = open.filter(p =>
+    chain.items.some((it,i)=> !(i in outages) && it.s.includes(p)));
+  // open slots whose only eligible items here are 86'd (the painful ones)
+  const blocked = open.filter(p =>
+    !fillable.includes(p) && chain.items.some(it=>it.s.includes(p)));
+
+  // build the situation line
+  const needTxt = open.map(p=>POS_LABEL[p]).join(", ");
+  let statusHTML =
+    `<span class="st-need">You still need: <b>${needTxt}</b></span>`;
+  if(fillable.length){
+    statusHTML += `<span class="st-can">${chain.name} can fill: <b>${fillable.map(p=>POS_LABEL[p]).join(", ")}</b></span>`;
+  }else{
+    statusHTML += `<span class="st-can">${chain.name} has nothing for your open slots.</span>`;
+  }
+  // name the culprit: which down item would have covered a blocked slot
+  if(blocked.length){
+    const p=blocked[0];
+    let culprit=null;
+    chain.items.forEach((it,i)=>{ if((i in outages)&&it.s.includes(p)&&!culprit) culprit=it.n; });
+    statusHTML += `<span class="st-block">Your <b>${POS_LABEL[p]}</b> slot would've been the <b>${culprit}</b> — but it's sold out today. Take another slot, or spin again.</span>`;
+  }
+  counterStatus.innerHTML=statusHTML;
+
+  menuEl.innerHTML="";
+  // out-of-season seasonal items simply aren't on the menu today
+  const inSeasonIdx = [...chain.items.keys()].filter(i=> inSeason(chain.items[i]));
+  const order = SHUFFLE_MENU ? shuffled(inSeasonIdx) : inSeasonIdx;
+  const draftableCount = order.reduce((n,i)=>{
+    const it=chain.items[i]; const down=i in outages;
+    return n + ((!down && it.s.some(p=>open.includes(p))) ? 1 : 0);
+  },0);
+  const offerRows=[];
+  const eid = newEventId();   // ties this decision's offers to its event row
+  order.forEach((i,displayPos)=>{
+    const it=chain.items[i];
+    const isDown = i in outages;
+    const eligibleSlots=it.s.filter(p=>open.includes(p));
+    const draftable = !isDown && eligibleSlots.length>0;
+    const qualifies = !boostSlots || it.s.some(p=>boostSlots.includes(p));
+    const boosted = jackpot>0 && !isDown && qualifies;
+    const isHot = boosted && boostKind==='hot';
+    const isTreat = boosted && boostKind==='treat';
+    const isLate = boosted && boostKind==='latenight';
+    const isHappy = boosted && boostKind==='happyhour';
+    const isSeasonal = !!it.season;   // only in-season items reach here
+    const card=document.createElement("div");
+    card.className="card "+(draftable?"draftable":"locked")+(isDown?" down":"")+(isHot?" hot":"")+(isTreat?" treat":"")+(isLate?" late":"")+(isHappy?" happy":"")+(isSeasonal?" seasonal":"");
+    const tags=it.s.map(p=>`<span class="pill ${open.includes(p)?"open":""}">${POS_LABEL[p]}</span>`).join("");
+    let cue;
+    if(isDown) cue=`<span class="draft-cue down-why">${outages[i]}</span>`;
+    else if(draftable) cue=`<span class="draft-cue">Add →</span>`;
+    else cue=`<span class="draft-cue">slot already filled</span>`;
+    // stars stay hidden while drafting — you pick on instinct, the receipt is the reveal
+    const leftFlag = isHot ? `<span class="hotflag">🔥 boosted</span>`
+                   : isTreat ? `<span class="hotflag treat-flag">☕ on the house</span>`
+                   : isLate ? `<span class="hotflag late-flag">🌙 late night</span>`
+                   : isHappy ? `<span class="hotflag happy-flag">🥤 happy hour</span>`
+                   : isSeasonal ? `<span class="hotflag seasonal-flag">✨ back for now</span>`
+                   : `<span class="crow-spacer"></span>`;
+    card.innerHTML=`
+      ${isDown?`<span class="stamp">SOLD OUT</span>`:""}
+      ${isHot?`<span class="stamp hot">🔥 HOT</span>`:""}
+      ${isTreat?`<span class="stamp treat">☕ ON THE HOUSE</span>`:""}
+      ${isLate?`<span class="stamp late">🌙 LATE NIGHT</span>`:""}
+      ${isHappy?`<span class="stamp happy">🥤 HAPPY HOUR</span>`:""}
+      ${isSeasonal&&!isDown?`<span class="stamp seasonal">✨ LIMITED TIME</span>`:""}
+      <div class="cname">${it.n}</div>
+      <div class="ctags">${tags}</div>
+      <div class="crow">
+        ${leftFlag}
+        ${cue}
+      </div>`;
+    if(draftable){
+      card.onclick=()=>chooseItem(it,chain,eligibleSlots);
+    }
+    menuEl.appendChild(card);
+    offerRows.push({
+      event_id: eid, round_number: filledCount()+1, chain_dealt: chain.name,
+      item_id: it.id, item_name: it.n,
+      item_slots: it.s.slice(), eligible_slots: eligibleSlots.slice(),
+      available: !isDown, sold_out: isDown, sold_out_reason: isDown?outages[i]:"",
+      draftable, base_rating: it.r, shown_rating: boosted?Math.min(10,it.r+jackpot):it.r,
+      display_position: displayPos, offer_set_size: draftableCount,
+      hot_light: isHot, boost_kind: boosted?boostKind:null, boost_amount: boosted?jackpot:0,
+      seasonal: isSeasonal,
+      chosen: false, chosen_slot_if_chosen: ""
+    });
+  });
+  // remember this decision's context so we can log whatever the player does next
+  DTD_currentOffer = {
+    event_id: eid, round_number: filledCount()+1, chain_dealt: chain.name,
+    open_slots_before: open.slice(), sold_out_count: Object.keys(outages).length,
+    hot_light: boostKind==='hot' && jackpot>0, hot_boost: jackpot,
+    boost_kind: jackpot>0?boostKind:null, boost_amount: jackpot, boost_slots: boostSlots,
+    skip_available_before: skips, draftable_count: draftableCount, offers: offerRows
+  };
+}
+
+function chooseItem(it,chain,eligibleSlots){
+  const qualifies = !boostSlots || it.s.some(p=>boostSlots.includes(p));
+  const boostedR = (jackpot>0 && qualifies) ? Math.min(10, it.r+jackpot) : it.r;
+  const gotBoost = (jackpot>0 && qualifies) && boostedR>it.r;
+  const item={id:it.id,n:it.n,chain:chain.name,r:boostedR,_base:it.r,
+              hot:gotBoost&&boostKind==='hot', treat:gotBoost&&boostKind==='treat',
+              late:gotBoost&&boostKind==='latenight', happy:gotBoost&&boostKind==='happyhour',
+              seasonal:!!it.season};
+  if(eligibleSlots.length===1){
+    placeItem(item,eligibleSlots[0]);
+  }else{
+    // multi-slot: take over the menu area so the choice is right where you clicked
+    pendingItem=item;
+    pendingSlots=eligibleSlots;
+    menuEl.classList.add("hidden");
+    pickerEl.classList.remove("hidden");
+    pickerEl.innerHTML=`
+      <p class="picker-q"><b>${it.n}</b> fits more than one slot.<br>Where should it go?</p>
+      <div class="picker-opts">${eligibleSlots.map(p=>`<button data-p="${p}">${POS_LABEL[p]}</button>`).join("")}</div>
+      <button class="picker-back" id="pickerBack">← pick a different item</button>`;
+    pickerEl.querySelectorAll(".picker-opts button").forEach(b=>{
+      b.onclick=()=>placeItem(item,b.dataset.p);
+    });
+    $("pickerBack").onclick=()=>{
+      pendingItem=null; pendingSlots=[];
+      pickerEl.classList.add("hidden");
+      menuEl.classList.remove("hidden");
+      renderTray();
+    };
+    renderTray(); // light up the eligible slots in the tray too
+    pickerEl.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+}
+
+function placeItem(item,pos){
+  // ---- mishear swap: unreliable chains garble your order ----
+  const chainObj = dealtChain;
+  let received = item, misheard = false;
+  const mp = chainObj ? (MISHEAR[chainObj.name]||0) : 0;
+  if(mp && Math.random() < mp){
+    // a strictly worse item from this chain that still fits this slot and isn't sold out
+    const worse = chainObj.items.filter((x,i)=> !(i in outages) && x.s.includes(pos) && x.r < item._base && x.id!==item.id);
+    if(worse.length){
+      const pick = worse[Math.floor(Math.random()*worse.length)];
+      received = {id:pick.id, n:pick.n, chain:item.chain, r:pick.r, _base:pick.r, hot:false, treat:false, late:false, happy:false};
+      misheard = true;
+      misheardCount++;
+    }
+  }
+  tray[pos]={...received, pos, misheard, intended: misheard? item.n : null};
+  // ---- ECON: freeze the alternatives at the moment of choice.
+  //      The player's TRUE pick is `item` (revealed preference #1); everything
+  //      else that was draftable is the set they gave up — the raw material
+  //      for the ranking screen and the opportunity-cost question. ----
+  let econAlts=[], econMulti=false;
+  if(DTD_currentOffer){
+    econAlts = DTD_currentOffer.offers
+      .filter(r=> r.draftable && r.item_id!==item.id)
+      .map(r=>({id:r.item_id, n:r.item_name}));
+    const ownRow = DTD_currentOffer.offers.find(r=>r.item_id===item.id);
+    econMulti = !!(ownRow && ownRow.eligible_slots && ownRow.eligible_slots.length>1);
+  }
+  // ---- log this draft. The player's TRUE pick is `item` (revealed preference);
+  //      the mishear swap is recorded separately so the crowd data stays honest. ----
+  if(DTD_currentOffer){
+    const off=DTD_currentOffer;
+    off.offers.forEach(r=>{ if(r.item_id===item.id){ r.chosen=true; r.chosen_slot_if_chosen=pos; } });
+    DTD_LOG.offers(off.offers);
+    DTD_LOG.event({
+      event_id:off.event_id, round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"draft",
+      open_slots_before:off.open_slots_before, chosen_item_id:item.id, chosen_item_name:item.n,
+      chosen_slot:pos, hot_light:off.hot_light, hot_boost:off.hot_boost,
+      boost_kind:off.boost_kind, boost_amount:off.boost_amount, boost_slots:off.boost_slots,
+      skip_available_before:off.skip_available_before, skip_used:false,
+      sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count,
+      misheard, received_item_id: misheard?received.id:null, received_item_name: misheard?received.n:null
+    });
+    DTD_currentOffer=null;
+  }
+  const wasMisheard = misheard, gotName = received.n, wantName = item.n;
+  dealtChain=null;
+  jackpot=0;
+  pendingItem=null;
+  pendingSlots=[];
+  pickerEl.classList.add("hidden");
+  counterEl.classList.add("hidden");
+  spinBtn.textContent="Spin the chain";
+  renderTray();
+  updateChrome();
+
+  if(filledCount()>=5){
+    // last pick still gets its econ moment before the receipt
+    startEconStep(item, econAlts, wasMisheard, gotName, wantName, true, pos, econMulti);
+  }else{
+    startEconStep(item, econAlts, wasMisheard, gotName, wantName, false, pos, econMulti);
+  }
+}
+
+/* ============================================================ ECON ENGINE
+   Pick → rank → opportunity cost.
+   The pick is revealed preference (a real choice, sealed stars, game stakes).
+   The 2-3-4… ranking is stated preference (cheap talk, committed in the
+   moment — BEFORE future menus are known, so it can't be reverse-engineered
+   to rationalize later picks). Spin 1 teaches the concept; spins 2–5 quiz it
+   with the classic misconception ("everything I rejected") as the distractor.
+   The debrief cross-checks stated rankings against later revealed choices.
+   ============================================================ */
+let econLog = [];        // one record per draft
+let skipLog = [];        // skips of live menus: {round, forgoneName, forgoneId}
+let econTaught = false;  // spin 1 = lesson, after that = quiz
+let econState = null;    // the step in progress
+
+function startEconStep(pick, alts, wasMisheard, gotName, wantName, isLast, pos, multiSlot){
+  econState = {pick, alts, wasMisheard, gotName, wantName, isLast, pos, multiSlot,
+               round: filledCount(), ranks: alts.map(()=>null)};
+  spinBtn.disabled=true; skipBtn.disabled=true;
+  msgEl.textContent = wasMisheard
+    ? `🎙️ "…one ${gotName}?" — they misheard you. (Your real pick still counts below.)`
+    : "";
+  if(alts.length===0) renderEconForced();
+  else renderEconRank();
+  econEl.classList.remove("hidden");
+  econEl.scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+function slotCostNote(){
+  const s=econState;
+  return s.multiSlot
+    ? `<div class="econ-slotnote">Slot choice has a cost too: parking the ${s.pick.n} in <b>${POS_LABEL[s.pos]}</b> means that slot is no longer open for anything later.</div>`
+    : "";
+}
+
+function renderEconForced(){
+  const s=econState;
+  const skipLine = skips>0
+    ? `But it wasn't quite a free lunch: you still held a <b>skip</b>. Taking this meant <i>not</i> gambling it on a fresh chain — the only real alternative was to keep searching.`
+    : `And with no skips left, keeping searching wasn't on the table either. This one genuinely cost you nothing.`;
+  econEl.innerHTML=`
+    <div class="econ-eyebrow">Econ Check · Spin ${s.round}</div>
+    <div class="oc-reveal">
+      <div class="oc-label">Opportunity cost this spin</div>
+      <div class="oc-item">${skips>0 ? "no item — just the search" : "— none —"}</div>
+      <div class="oc-sub">The <b>${s.pick.n}</b> was the only draftable item here, so there was no <b>item-level</b>
+      opportunity cost on this menu. ${skipLine}</div>
+    </div>
+    ${slotCostNote()}
+    <button class="btn-econ" id="econGo">Continue</button>`;
+  $("econGo").onclick=()=>finalizeEconStep(null, null, null, true);
+}
+
+function renderEconRank(){
+  const s=econState;
+  const one = s.alts.length===1;
+  if(one) s.ranks[0]=2; // a single reject is your #2 by default
+  econEl.innerHTML=`
+    <div class="econ-eyebrow">Econ Check · Spin ${s.round}</div>
+    <div class="econ-q">You picked the <b>${s.pick.n}</b>. ${one
+      ? `Only one item got left behind — confirm it as your <b>#2</b>: the thing you'd have taken if the ${s.pick.n} sold out.`
+      : `Now rank what you left behind. Tap in order — <b>#2</b> is what you'd have taken if the ${s.pick.n} sold out, then #3, and so on.`}</div>
+    <div class="rank-list" id="rankList"></div>
+    ${slotCostNote()}
+    <button class="btn-econ" id="econGo" ${one?"":"disabled"}>${one?"Confirm":"Lock in my ranking"}</button>`;
+  drawRankCards();
+  $("econGo").onclick=confirmRanking;
+}
+
+function drawRankCards(){
+  const s=econState, list=$("rankList");
+  list.innerHTML="";
+  s.alts.forEach((it,i)=>{
+    const r=s.ranks[i];
+    const card=document.createElement("div");
+    card.className="rank-card"+(r?" ranked":"");
+    card.innerHTML=`<span class="rank-num">${r?("#"+r):"·"}</span>
+      <span class="rname">${it.n}</span>
+      <span class="rhint">${r?"tap to undo":"tap to rank"}</span>`;
+    card.onclick=()=>{
+      if(s.alts.length===1) return;
+      if(s.ranks[i]){
+        // unrank this one; slide everything ranked below it up
+        const removed=s.ranks[i]; s.ranks[i]=null;
+        s.ranks=s.ranks.map(x=> (x&&x>removed)? x-1 : x);
+      }else{
+        const next=2+s.ranks.filter(x=>x).length;
+        s.ranks[i]=next;
+      }
+      drawRankCards();
+      $("econGo").disabled = s.ranks.some(x=>!x);
+    };
+    list.appendChild(card);
+  });
+}
+
+function confirmRanking(){
+  const s=econState;
+  // ranking = alts in stated order (index 0 = the #2, i.e. the next-best alternative)
+  s.ranking = s.alts.map((it,i)=>({...it, rank:s.ranks[i]})).sort((a,b)=>a.rank-b.rank);
+  if(!econTaught) renderEconTeach();
+  else renderEconQuiz();
+}
+
+function renderEconTeach(){
+  const s=econState, next=s.ranking[0];
+  const others=s.ranking.slice(1).map(r=>r.n);
+  const notLine = others.length
+    ? `Not the ${others.join(others.length>1?", or the ":" or the ")} too — those were never your next move.`
+    : ``;
+  econEl.innerHTML=`
+    <div class="econ-eyebrow">Econ Check · Spin ${s.round}</div>
+    <div class="oc-reveal">
+      <div class="oc-label">Your opportunity cost this spin</div>
+      <div class="oc-item">${next.n}</div>
+      <div class="oc-sub">${notLine} Opportunity cost is the <b>single next-best alternative</b> you give up —
+      your #2, nothing more. From here on, you tell <i>us</i> what each spin cost you.</div>
+    </div>
+    <button class="btn-econ" id="econGo">Got it — keep drafting</button>`;
+  $("econGo").onclick=()=>{ econTaught=true; finalizeEconStep(s.ranking, null, null, false); };
+}
+
+function renderEconQuiz(){
+  const s=econState, correct=s.ranking[0];
+  const opts=[{kind:"next_best", label:`The ${correct.n} — my #2`}];
+  if(s.alts.length>=2) opts.push({kind:"all", label:`All ${s.alts.length} items I didn't choose`});
+  if(s.alts.length>=3) opts.push({kind:"worst", label:`The ${s.ranking[s.ranking.length-1].n} — my last pick`});
+  if(s.alts.length===1) opts.push({kind:"nothing", label:"Nothing — I got the item I wanted"});
+  // shuffle
+  for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [opts[i],opts[j]]=[opts[j],opts[i]]; }
+
+  econEl.innerHTML=`
+    <div class="econ-eyebrow">Econ Check · Spin ${s.round}</div>
+    <div class="econ-q">Ranking locked. So — what was the <b>opportunity cost</b> of picking the <b>${s.pick.n}</b>?</div>
+    <div class="quiz-opts" id="quizOpts">${opts.map((o,i)=>`<button class="quiz-opt" data-i="${i}">${o.label}</button>`).join("")}</div>
+    <div id="quizFb"></div>`;
+
+  const FEEDBACK={
+    next_best:`<div class="econ-feedback good">✔ Exactly. The <b>${correct.n}</b> — your next-best alternative. One item, not the whole pile.</div>`,
+    all:`<div class="econ-feedback bad">✘ The classic trap — and the #1 exam mistake. Opportunity cost isn't <i>everything</i> you rejected; you were only ever going to eat one of them. It's the <b>next-best alternative</b>: your #2, the <b>${correct.n}</b>.</div>`,
+    worst:`<div class="econ-feedback bad">✘ That's the item you gave up most <i>happily</i>. Cost is measured by the best thing you sacrificed, not the worst — the <b>${correct.n}</b>, your #2.</div>`,
+    nothing:`<div class="econ-feedback bad">✘ Even a happy choice has a cost. Picking the ${s.pick.n} meant giving up the <b>${correct.n}</b> — that forgone #2 is the opportunity cost.</div>`
+  };
+  econEl.querySelectorAll(".quiz-opt").forEach(btn=>{
+    btn.onclick=()=>{
+      const chosen=opts[+btn.dataset.i];
+      const isRight=chosen.kind==="next_best";
+      econEl.querySelectorAll(".quiz-opt").forEach((b,bi)=>{
+        b.disabled=true;
+        if(opts[bi].kind==="next_best") b.classList.add("right");
+        else if(b===btn && !isRight) b.classList.add("wrong");
+      });
+      $("quizFb").innerHTML=FEEDBACK[chosen.kind]+`<button class="btn-econ" id="econGo">Continue</button>`;
+      $("econGo").onclick=()=>finalizeEconStep(s.ranking, chosen.kind, isRight, false);
+    };
+  });
+}
+
+function finalizeEconStep(ranking, quizKind, quizCorrect, forced){
+  const s=econState;
+  econLog.push({
+    round:s.round, pickId:s.pick.id, pickName:s.pick.n, chain:s.pick.chain,
+    ranking: ranking? ranking.map(r=>({id:r.id,n:r.n})) : [],
+    forced, hadSkip: skips>0, quizKind, quizCorrect
+  });
+  DTD_LOG.event({
+    event_id:newEventId(), round_number:s.round, chain_dealt:s.pick.chain, action_type:"econ",
+    chosen_item_id:s.pick.id, chosen_item_name:s.pick.n,
+    stated_ranking: ranking? ranking.map(r=>r.id) : [],
+    forced_choice:forced, oc_item_id: ranking? ranking[0].id : null,
+    quiz_answer:quizKind, quiz_correct:quizCorrect,
+    alternatives_count: s.alts.length
+  });
+  econEl.classList.add("hidden");
+  econState=null;
+  if(s.isLast){ finish(); return; }
+  msgEl.textContent = s.wasMisheard
+    ? `🎙️ You ordered the ${s.wantName}, got the ${s.gotName}. Spin for your next slot.`
+    : "Locked in. Spin for your next slot.";
+  spinBtn.disabled=false;
+  skipBtn.disabled = skips<=0;
+}
+
+/* ---- Debrief: opportunity costs + stated-vs-revealed consistency ---- */
+function econContradictions(){
+  // Each spin commits a full order: the pick (rank 1), then the stated 2-3-4…
+  // Across spins, any item pair ordered one way earlier and the other way
+  // later is a revealed/stated inconsistency — a WARP-flavored gotcha.
+  const rel={}, out=[], seenPair=new Set();
+  econLog.forEach(rec=>{
+    const order=[{id:rec.pickId,n:rec.pickName}, ...rec.ranking];
+    for(let i=0;i<order.length;i++)for(let j=i+1;j<order.length;j++){
+      const a=order[i], b=order[j];
+      const key=a.id+"|"+b.id, rev=b.id+"|"+a.id, pair=[a.id,b.id].sort().join("|");
+      if(rel[rev] && !seenPair.has(pair)){
+        seenPair.add(pair);
+        out.push({s1:rel[rev].spin, hi1:rel[rev].high.n, lo1:rel[rev].low.n,
+                  hiId:rel[rev].high.id, loId:rel[rev].low.id, s2:rec.round});
+      }else if(!rel[key] && !rel[rev]){
+        rel[key]={spin:rec.round, high:a, low:b};
+      }
+    }
+  });
+  return out;
+}
+
+function buildConsistencyHTML(){
+  const contras=econContradictions();
+  let consistency;
+  if(contras.length){
+    const shown=contras.slice(0,3).map(c=>
+      `<div class="contradiction">Spin ${c.s1}: you put <b>${c.hi1}</b> above <b>${c.lo1}</b>. Spin ${c.s2}: you flipped it.</div>`).join("");
+    consistency = shown + `<div class="debrief-note">You said one thing and did another — <b>${contras.length} time${contras.length>1?"s":""}</b>.
+      Either your tastes changed with the context — different slots open, different things sold out — or your earlier
+      ranking was cheap talk. Economists start by trusting <b>choices</b> over words; good economists also ask
+      what constraints changed.</div>`;
+  }else{
+    consistency = `<div class="consistent">Every choice matched your stated rankings — no flip-flops across all five spins.
+      Economists would say your preferences passed the consistency check. Genuinely rare. Screenshot-worthy.</div>`;
+  }
+  return consistency + `<div class="debrief-note">The takeaway: opportunity cost is the <b>next-best alternative</b> forgone — one item,
+    never the whole pile of rejects. Your tray above shows what you got. This box shows what it cost.</div>`;
+}
+
+function buildEconDebrief(){
+  if(!econLog.length) return "";
+  const entries=[
+    ...econLog.map(rec=>({key:rec.round, html:
+      `<div class="oc-row"><span><span style="color:var(--muted)">Spin ${rec.round} ·</span> <span class="oc-pick">${rec.pickName}</span></span><span class="oc-cost">${rec.forced ? (rec.hadSkip ? `no item-level alternative; search was the only outside option` : `truly forced — no alternative at all`) : `gave up: <b>${rec.ranking[0].n}</b>`}</span></div>`})),
+    ...skipLog.map(rec=>({key:rec.round-0.5, html:
+      `<div class="oc-row"><span><span style="color:var(--muted)">Skip ·</span> <span class="oc-pick">walked away</span></span><span class="oc-cost">gave up: <b>${rec.forgoneName}</b> + your skip</span></div>`}))
+  ].sort((a,b)=>a.key-b.key);
+  const rows=entries.map(e=>e.html).join("");
+
+  const quizzed=econLog.filter(r=>r.quizKind!==null && r.quizKind!==undefined);
+  const right=quizzed.filter(r=>r.quizCorrect).length;
+  const scoreLine = quizzed.length
+    ? `<div class="quiz-score">OPPORTUNITY-COST CALLS · ${right}/${quizzed.length} CORRECT</div>` : "";
+
+  return `<div class="econ-debrief">
+    <h3>— What Your Tray Cost You —</h3>
+    ${rows}
+    ${scoreLine}
+    <div id="econVerdict"></div>
+  </div>`;
+}
+
+/* ============================================================ TASTE TESTS (Round 2)
+   Runs AFTER the receipt, so there's visibly nothing left to win — which is
+   the point. Round 1 choices are contaminated by strategy (slots, scarcity);
+   these are clean. The engine mines the player's own preference graph
+   (every pick + every stated ranking = directed edges) and manufactures
+   up to three head-to-heads:
+     retest  — re-serve a committed pair with the strategy stripped away.
+               Prioritizes any pair the player flipped on in Round 1, so the
+               clean test ADJUDICATES the flip: strategy, or cheap talk?
+     transit — finds A>B and B>C where A,C were never directly compared,
+               then serves {A,C}. Tests an inference the player never made.
+               A cycle here earns the money-pump speech.
+     triple  — serves three graph-connected items; does the predicted
+               favorite actually win when it's one tap and pure appetite?
+   Deterministic given the log; degrades gracefully (0–3 tests) when the
+   graph is sparse. Everything logs as action_type "econ_test".
+   ============================================================ */
+function buildPrefGraph(){
+  const edge={};            // "a|b" => a preferred to b (first commitment stands)
+  const conflicted=new Set(); // sorted "x|y" pairs that flipped across spins
+  const direct=new Set();   // sorted pairs directly compared at least once
+  const names={};
+  econLog.forEach(rec=>{
+    const order=[{id:rec.pickId,n:rec.pickName}, ...rec.ranking];
+    order.forEach(o=>names[o.id]=o.n);
+    for(let i=0;i<order.length;i++)for(let j=i+1;j<order.length;j++){
+      const a=order[i], b=order[j];
+      const k=a.id+"|"+b.id, rev=b.id+"|"+a.id, pair=[a.id,b.id].sort().join("|");
+      direct.add(pair);
+      if(edge[rev]) conflicted.add(pair);
+      else if(!edge[k]) edge[k]={spin:rec.round, pickPair:i===0};
+    }
+  });
+  return {edge, conflicted, direct, names};
+}
+
+function pickTasteTests(){
+  const g=buildPrefGraph();
+  const tests=[]; const usedItems=new Set();
+  const split=k=>k.split("|");
+  const fresh=ids=>ids.every(id=>!usedItems.has(id));
+  const claim=ids=>ids.forEach(id=>usedItems.add(id));
+
+  // --- retest: a conflicted pair beats everything; else a pick-vs-#2 pair; else any edge
+  const edgeKeys=Object.keys(g.edge);
+  let retestKey=null;
+  const confKey=edgeKeys.find(k=>{ const [a,b]=split(k); return g.conflicted.has([a,b].sort().join("|")); });
+  retestKey = confKey || edgeKeys.find(k=>g.edge[k].pickPair) || edgeKeys[0];
+  if(retestKey){
+    const [a,b]=split(retestKey);
+    tests.push({kind:"retest", options:[a,b], predicted:a, spin:g.edge[retestKey].spin,
+                adjudicates: !!confKey});
+    claim([a,b]);
+  }
+  // --- transitivity probe: A>B, B>C, with A vs C never directly compared
+  outer:
+  for(const k1 of edgeKeys){
+    const [A,B]=split(k1);
+    for(const k2 of edgeKeys){
+      const [B2,C]=split(k2);
+      if(B2!==B || C===A) continue;
+      if(g.direct.has([A,C].sort().join("|"))) continue;
+      if(!fresh([A,C])) continue;
+      tests.push({kind:"transit", options:[A,C], predicted:A, via:B});
+      claim([A,C]);
+      break outer;
+    }
+  }
+  // --- triple: a chain A>B>C, serve all three, predicted top A
+  outer2:
+  for(const k1 of edgeKeys){
+    const [A,B]=split(k1);
+    for(const k2 of edgeKeys){
+      const [B2,C]=split(k2);
+      if(B2!==B || C===A) continue;
+      if(!fresh([A,B,C])) continue;
+      tests.push({kind:"triple", options:[A,B,C], predicted:A});
+      claim([A,B,C]);
+      break outer2;
+    }
+  }
+  tests.forEach(t=>{ t.optionNames=t.options.map(id=>g.names[id]); t.predictedName=g.names[t.predicted];
+                     if(t.via) t.viaName=g.names[t.via]; });
+  return tests;
+}
+
+function runTasteRound(){
+  const slot=$("econVerdict");
+  if(!slot) return;
+  const tests=pickTasteTests();
+  if(!tests.length){ slot.innerHTML=buildConsistencyHTML(); return; }
+  const results=[];
+  let idx=0;
+
+  function intro(){
+    slot.innerHTML=`
+      <div class="tt-intro">
+        <div class="tt-eyebrow">✦ Wait — one more thing ✦</div>
+        <div class="tt-msg">The kitchen has questions. No tray. No slots. No score.
+        ${tests.length} quick taste test${tests.length>1?"s":""} — just tap what you'd actually eat.</div>
+        <button class="btn-econ" id="ttStart">Bring it on</button>
+      </div>`;
+    $("ttStart").onclick=showTest;
+  }
+
+  function showTest(){
+    const t=tests[idx];
+    slot.innerHTML=`
+      <div class="tt-eyebrow">Taste Test ${idx+1} of ${tests.length}</div>
+      <div class="tt-q">You're just hungry. Which one?</div>
+      <div class="quiz-opts">${t.options.map((id,i)=>
+        `<button class="quiz-opt tt-opt" data-i="${i}">${t.optionNames[i]}</button>`).join("")}</div>`;
+    slot.querySelectorAll(".tt-opt").forEach(btn=>{
+      btn.onclick=()=>{
+        const chosen=t.options[+btn.dataset.i];
+        const held = chosen===t.predicted;
+        results.push({...t, chosen, chosenName:t.optionNames[+btn.dataset.i], held});
+        DTD_LOG.event({
+          event_id:newEventId(), round_number:6, action_type:"econ_test",
+          test_kind:t.kind, test_options:t.options.slice(), predicted_item_id:t.predicted,
+          chosen_item_id:chosen, prediction_held:held, adjudicates_flip:!!t.adjudicates
+        });
+        slot.querySelectorAll(".tt-opt").forEach(b=>b.disabled=true);
+        btn.classList.add("right");
+        idx++;
+        setTimeout(()=> idx<tests.length ? showTest() : verdict(), 420);
+      };
+    });
+  }
+
+  function verdict(){
+    const cards=results.map(r=>{
+      if(r.kind==="retest"){
+        const head = r.adjudicates ? `The flip, adjudicated` : `The retest`;
+        const body = r.held
+          ? (r.adjudicates
+            ? `Round 1 you flipped on this pair. With the game gone you took the <b>${r.chosenName}</b> — matching your original word. Verdict: the flip was <b>strategy</b>, not taste. Economists forgive you.`
+            : `On spin ${r.spin} you committed to <b>${r.predictedName}</b> over ${r.optionNames.find(n=>n!==r.predictedName)}. Stakes gone, you chose the same. Your word held up.`)
+          : (r.adjudicates
+            ? `Round 1 you flipped on this pair — and with no strategy left to blame, you flipped <i>again</i>. Verdict: the stated ranking was <b>cheap talk</b>. This is exactly why economists trust what you do over what you say.`
+            : `On spin ${r.spin} you said <b>${r.predictedName}</b>. Just now, hungry and unscored, you took the <b>${r.chosenName}</b>. Cheap talk, meet revealed preference.`);
+        return `<div class="${r.held?'consistent':'contradiction'}"><b>${head}:</b> ${body}</div>`;
+      }
+      if(r.kind==="transit"){
+        return r.held
+          ? `<div class="consistent"><b>Transitivity check:</b> You'd shown <b>${r.predictedName}</b> > ${r.viaName} and ${r.viaName} > ${r.optionNames.find(n=>n!==r.predictedName)} — but never compared the ends. Logic predicted <b>${r.predictedName}</b>… and you took it. Your preferences chain cleanly. That's transitivity, and yours passed.</div>`
+          : `<div class="contradiction"><b>Transitivity check — a cycle:</b> You'd shown <b>${r.predictedName}</b> > ${r.viaName} > <b>${r.chosenName}</b>… and just now chose <b>${r.chosenName}</b> over <b>${r.predictedName}</b>. That's a loop. A clever vendor could trade you around that circle — ${r.chosenName} for ${r.viaName}, ${r.viaName} for ${r.predictedName}, ${r.predictedName} for ${r.chosenName} — charging a dollar at every step, forever. Economists call it a <b>money pump</b>. If these were stable preferences over the same alternatives, that loop is a genuine problem; if your appetite just changed mid-game, that's your defense — be ready to argue it.</div>`;
+      }
+      // triple
+      return r.held
+        ? `<div class="consistent"><b>The three-way:</b> Your Round-1 data predicted <b>${r.predictedName}</b> would win this — and it did. Your choices don't just happen; they're consistent enough to <i>forecast</i>.</div>`
+        : `<div class="contradiction"><b>The three-way:</b> Your Round-1 data predicted <b>${r.predictedName}</b> — you took the <b>${r.chosenName}</b>. One upset isn't a scandal, but it's a crack between what you said and what you do.</div>`;
+    }).join("");
+
+    const heldAll=results.every(r=>r.held);
+    slot.innerHTML=`
+      <div class="tt-eyebrow">— The Verdict —</div>
+      ${cards}
+      <div class="debrief-note">${heldAll
+        ? `Every clean test matched your Round-1 commitments. <b>Rational, consistent, transitive</b> — the full textbook checklist, passed on a fast-food tray.`
+        : `Round 1 had strategy in it — slots, scarcity, the score. These tests had none. Where they disagree with what you said earlier, believe the taps: <b>revealed preference is what survives when the excuses are gone.</b>`}
+      And the other lesson rides along: every one of these choices had an opportunity cost — the <b>next-best alternative</b>, one item, never the pile.</div>`;
+  }
+
+  intro();
+}
+
+
+function doSkip(){
+  if(skips<=0||spinning) return;
+  // ---- log the skip: whole offer set rejected ----
+  let skipDraftables=[];
+  if(DTD_currentOffer){
+    const off=DTD_currentOffer;
+    skipDraftables = off.offers.filter(r=>r.draftable).map(r=>({id:r.item_id, n:r.item_name}));
+    DTD_LOG.offers(off.offers);
+    DTD_LOG.event({
+      event_id:off.event_id, round_number:off.round_number, chain_dealt:off.chain_dealt, action_type:"skip",
+      open_slots_before:off.open_slots_before, chosen_item_id:null, chosen_item_name:null,
+      chosen_slot:null, hot_light:off.hot_light, hot_boost:off.hot_boost,
+      boost_kind:off.boost_kind, boost_amount:off.boost_amount, boost_slots:off.boost_slots,
+      skip_available_before:off.skip_available_before, skip_used:true,
+      sold_out_count:off.sold_out_count, chain_closed:false, offer_set_size:off.draftable_count
+    });
+    DTD_currentOffer=null;
+  }
+  skips--;
+  updateChrome();
+  // ---- ECON: skipping a live menu is revealed preference too — the player is
+  //      saying "a random future draw beats everything here." The cost of that
+  //      choice is the best item they walked away from. One tap identifies it. ----
+  if(skipDraftables.length){
+    showSkipEcon(skipDraftables);
+  }else{
+    msgEl.textContent="Skipped. New chain coming up…";
+    spin();
+  }
+}
+
+function showSkipEcon(draftables){
+  counterEl.classList.add("hidden");
+  spinBtn.disabled=true; skipBtn.disabled=true;
+  econEl.innerHTML=`
+    <div class="econ-eyebrow">Econ Check · The Skip</div>
+    <div class="econ-q">You just spent your skip to walk away from a live menu — trading everything on it
+    for one <b>random future draw</b>. The cost of that trade is the <b>best item you left on the counter</b>. Which was it?</div>
+    <div class="quiz-opts">${draftables.map((d,i)=>`<button class="quiz-opt" data-i="${i}">${d.n}</button>`).join("")}</div>
+    <div id="skipFb"></div>`;
+  econEl.classList.remove("hidden");
+  econEl.scrollIntoView({behavior:"smooth",block:"center"});
+  econEl.querySelectorAll(".quiz-opt").forEach(btn=>{
+    btn.onclick=()=>{
+      const best=draftables[+btn.dataset.i];
+      econEl.querySelectorAll(".quiz-opt").forEach(b=>b.disabled=true);
+      btn.classList.add("right");
+      skipLog.push({round:filledCount()+1, forgoneName:best.n, forgoneId:best.id});
+      DTD_LOG.event({
+        event_id:newEventId(), round_number:filledCount()+1, action_type:"econ_skip",
+        skip_forgone_best_id:best.id, skip_forgone_best_name:best.n,
+        skip_offer_size:draftables.length
+      });
+      $("skipFb").innerHTML=`
+        <div class="econ-feedback good">That <b>${best.n}</b> is this skip's opportunity cost — a sure thing traded
+        for a mystery chain, and your one re-roll spent with it. Hope the next window's worth it.</div>
+        <button class="btn-econ" id="skipGo">Spin the mystery chain</button>`;
+      $("skipGo").onclick=()=>{
+        econEl.classList.add("hidden");
+        msgEl.textContent="Skipped. New chain coming up…";
+        spin();
+      };
+    };
+  });
+}
+
+/* ============================================================ FINISH */
+// Earn a personality label from what's actually on the tray.
+function labelFor(){
+  const items=POSITIONS.map(p=>tray[p]);
+  const total=items.reduce((a,b)=>a+b.r,0), pct=total/50;
+  const chains=items.map(i=>i.chain);
+  const distinctChains=new Set(chains).size;
+  const maxChainReps=Math.max(...chains.map(c=>chains.filter(x=>x===c).length));
+  const rs=items.map(i=>i.r), spread=Math.max(...rs)-Math.min(...rs);
+  const weakest=Math.min(...rs);
+  const S=tray.SAUCE.r, M=tray.MAIN.r, SI=tray.SIDE.r, DE=tray.DESSERT.r, DR=tray.DRINK.r;
+  const PREMIUM=new Set(["Shake Shack","Five Guys","In-N-Out","Whataburger"]);
+  const premiumCount=chains.filter(c=>PREMIUM.has(c)).length;
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+  // priority order: special compositions & memorable events beat generic tiers
+  if(pct>=.94) return pick(["Drive-Thru Royalty","Michelin Drive-Thru Inspector","Certified Tray Architect","The Combo-Meal Connoisseur","Five-Star Drive-Off"]);
+  if(misheardCount>=2) return pick(["The Drive-Thru Hates You","Order Accuracy: 0%"]);
+  if(hotStreakHit) return pick(["Rode the Hot Streak","Caught the Light"]);
+  if(maxChainReps>=5) return pick(["Brand-Loyal to a Fault","Five-for-Five Stan"]);
+  if(S>=9 && pct>=.78) return pick(["Sauce Sommelier","Elite Sauce Merchant"]);
+  if(premiumCount>=4 && pct>=.78) return pick(["Gourmet Burger Tour","No Notes, Just Beef"]);
+  if(distinctChains===5 && pct>=.8) return pick(["Regional Menace","The Interstate Gourmand","Tour de Drive-Thru"]);
+  if(DE>=9 && DR>=8) return pick(["Dessert-First Fiend","Pro-Dessert Lobbyist","Sugar-First Strategist"]);
+  if(M>=9 && SI>=9) return pick(["Burger-and-Fries Classicist","Keeper of the Old Faithful"]);
+  if(misheardCount>=1) return pick(["Lost in Translation","Speaker-Box Victim"]);
+  if(maxChainReps>=3) return pick(["Ride-or-Die Loyalist","Brand Loyalist of the Year"]);
+  if(blackoutsSeen>=4) return pick(["Survivor of the Machine","Veteran of the Sold-Out Wars"]);
+  if(spread>=4 && pct>=.66) return pick(["Emotional-Support Combo","Chaotic-Neutral Tray","A Tray of Contradictions"]);
+  if(weakest<=5 && pct>=.7) return pick(["One Tragic Slot From Greatness","So Close, Yet One Slot Away"]);
+  if(distinctChains===5) return pick(["Cross-Country Road Trip","The Scenic Route"]);
+  if(pct>=.76) return pick(["Airport Food Court Royalty","Reliable Crowd-Pleaser","A Solid Tuesday Order"]);
+  if(pct>=.6) return pick(["Honest Gas-Station Meal","The People's Tray","Unpretentious and Proud"]);
+  // low score: celebrate the taste instead of grading it
+  return pick(["Connoisseur of the Underrated","The Crowd Isn't Ready","Certified Contrarian","Acquired Taste","Misunderstood Visionary","Ahead of Your Time","Cursed Haul","Menu Anarchist"]);
+}
+
+const DARES=[
+  "Could your tray beat this?",
+  "Send this to someone who thinks they know fast food.",
+  "Run it back — beat your own grade.",
+  "Screenshot it or it didn't happen.",
+];
+
+/* ============================================================ SHARE IMAGE
+   Hand-drawn on a canvas so it looks identical everywhere, needs no
+   library, and works offline. Produces a PNG to share or download.
+   ============================================================ */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function wrapLines(ctx,text,maxW){
+  const words=text.split(" "); const lines=[]; let line="";
+  for(const w of words){
+    const t=line?line+" "+w:w;
+    if(ctx.measureText(t).width>maxW && line){ lines.push(line); line=w; }
+    else line=t;
+  }
+  if(line) lines.push(line);
+  return lines;
+}
+async function buildShareCanvas(d){
+  // make sure the display fonts are ready before drawing text
+  try{
+    await Promise.all([
+      document.fonts.load("400 200px Anton"),
+      document.fonts.load("500 24px 'DM Mono'"),
+      document.fonts.load("700 26px 'DM Sans'"),
+      document.fonts.load("400 27px 'DM Sans'")
+    ]);
+    await document.fonts.ready;
+  }catch(e){}
+
+  const W=1080, H=1500, cx=W/2;
+  const c=document.createElement("canvas"); c.width=W; c.height=H;
+  const x=c.getContext("2d");
+
+  // background + warm top glow (burgundy night)
+  x.fillStyle="#1a0a08"; x.fillRect(0,0,W,H);
+  let g=x.createRadialGradient(cx,-120,80,cx,-120,1000);
+  g.addColorStop(0,"rgba(245,184,46,.20)"); g.addColorStop(1,"rgba(245,184,46,0)");
+  x.fillStyle=g; x.fillRect(0,0,W,700);
+  let g2=x.createRadialGradient(cx,40,40,cx,40,820);
+  g2.addColorStop(0,"rgba(232,57,43,.16)"); g2.addColorStop(1,"rgba(232,57,43,0)");
+  x.fillStyle=g2; x.fillRect(0,0,W,700);
+  x.textBaseline="alphabetic";
+
+  // title (two-tone, centered)
+  x.font="400 64px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  const t1="DRIVE-THRU ", t2="DRAFT";
+  const w1=x.measureText(t1).width, w2=x.measureText(t2).width;
+  let tx=cx-(w1+w2)/2;
+  x.textAlign="left";
+  x.fillStyle="#f7f1e3"; x.fillText(t1,tx,150);
+  x.fillStyle="#e8392b"; x.fillText(t2,tx+w1,150);
+
+  // ORDER COMPLETE
+  x.textAlign="center"; x.fillStyle="#f5b82e";
+  x.font="500 24px 'DM Mono', ui-monospace, monospace";
+  if("letterSpacing" in x) x.letterSpacing="8px";
+  x.fillText("ORDER COMPLETE",cx,205);
+  if("letterSpacing" in x) x.letterSpacing="0px";
+
+  // grade (ghost + bright)
+  x.textAlign="center";
+  x.font="400 330px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  x.fillStyle="rgba(245,184,46,.08)";
+  x.fillText(d.grade,cx,460);
+  x.font="400 190px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  x.fillStyle="#f5b82e";
+  x.fillText(d.grade,cx,440);
+
+  // label badge
+  x.font="400 36px 'Anton', Impact, 'Arial Narrow', sans-serif";
+  const lw=x.measureText(d.name.toUpperCase()).width;
+  const bw=lw+56, bx=cx-bw/2, by=485, bh=58;
+  x.fillStyle="#f5b82e"; roundRect(x,bx,by,bw,bh,bh/2); x.fill();
+  x.fillStyle="#1a140a"; x.fillText(d.name.toUpperCase(),cx,by+42);
+
+  // score line
+  x.font="500 24px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#bcae9b";
+  x.fillText(`CROWD SCORE  ${d.total} / 50`,cx,600);
+
+  // receipt (cream)
+  const rx=150, rw=W-300, ry=640;
+  const rowH=62, headH=80, totH=66;
+  const rh=headH + 5*rowH + totH + 24;
+  x.fillStyle="#fbf6ea"; roundRect(x,rx,ry,rw,rh,10); x.fill();
+  // torn edges (triangles)
+  x.fillStyle="#fbf6ea";
+  for(let i=0;i<rw;i+=24){
+    x.beginPath(); x.moveTo(rx+i,ry); x.lineTo(rx+i+12,ry-12); x.lineTo(rx+i+24,ry); x.closePath(); x.fill();
+    x.beginPath(); x.moveTo(rx+i,ry+rh); x.lineTo(rx+i+12,ry+rh+12); x.lineTo(rx+i+24,ry+rh); x.closePath(); x.fill();
+  }
+  // receipt header
+  x.fillStyle="#2a2018"; x.textAlign="center"; x.font="700 26px 'DM Mono', ui-monospace, monospace";
+  x.fillText("— YOUR TRAY —",cx,ry+40);
+  let yy=ry+headH+8;
+  POSITIONS.forEach(p=>{
+    const it=d.tray[p];
+    const isWeak = it===d.weakest;
+    if(isWeak){ x.fillStyle="rgba(232,57,43,.12)"; x.fillRect(rx+14,yy-32,rw-28,rowH-6); }
+    x.textAlign="left"; x.font="500 20px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#9a8c74";
+    x.fillText(POS_LABEL[p].toUpperCase(),rx+34,yy-10);
+    x.fillStyle="#2a2018"; x.font="700 26px 'DM Sans', system-ui, sans-serif";
+    let nm=it.n; while(x.measureText(nm).width>rw-260 && nm.length>6){ nm=nm.slice(0,-2); }
+    if(nm!==it.n) nm=nm.trim()+"…";
+    x.fillText(nm,rx+150,yy-12);
+    x.font="500 19px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#9a8c74";
+    x.fillText(it.chain,rx+150,yy+13);
+    if(it.id==='arbys__classic_roast_beef'){
+      const cw=x.measureText(it.chain).width;
+      x.font="italic 600 18px 'DM Sans', system-ui, sans-serif"; x.fillStyle="#b3300f";
+      x.fillText("🥩 The Meat Mountain",rx+150+cw+14,yy+13);
+    }
+    x.textAlign="right"; x.font="500 24px 'DM Mono', ui-monospace, monospace"; x.fillStyle=isWeak?"#e8392b":"#2a2018";
+    x.fillText("★"+it.r,rx+rw-34,yy-1);
+    yy+=rowH;
+  });
+  // total
+  x.strokeStyle="#2a2018"; x.lineWidth=3;
+  x.beginPath(); x.moveTo(rx+24,yy-18); x.lineTo(rx+rw-24,yy-18); x.stroke();
+  x.textAlign="left"; x.font="700 28px 'DM Mono', ui-monospace, monospace"; x.fillStyle="#2a2018";
+  x.fillText("TOTAL",rx+34,yy+24);
+  x.textAlign="right";
+  x.fillText(`${d.total}/50 · ${d.grade}`,rx+rw-34,yy+24);
+
+  // verdict (wrapped)
+  let vy=ry+rh+70;
+  x.textAlign="center"; x.fillStyle="#f7f1e3"; x.font="400 27px 'DM Sans', system-ui, sans-serif";
+  wrapLines(x,d.verdict,W-220).forEach(ln=>{ x.fillText(ln,cx,vy); vy+=38; });
+
+  // dare + brand
+  vy+=24;
+  x.fillStyle="#f5b82e"; x.font="500 24px 'DM Mono', ui-monospace, monospace";
+  x.fillText(d.dare,cx,vy);
+  vy+=52;
+  x.font="400 30px 'Anton', Impact, 'Arial Narrow', sans-serif"; x.fillStyle="#7d6f5c";
+  x.fillText("DRIVE-THRU DRAFT",cx,vy);
+
+  return c;
+}
+
+async function shareTray(btn,d){
+  let canvas;
+  try{ canvas=await buildShareCanvas(d); }
+  catch(e){ btn.textContent="Couldn't build image"; return; }
+  canvas.toBlob(async (blob)=>{
+    if(!blob){ btn.textContent="Couldn't build image"; return; }
+    const file=new File([blob],"drive-thru-draft.png",{type:"image/png"});
+    // mobile: native share sheet with the image; desktop: download the PNG
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:"Drive-Thru Draft", text:`${d.name} — Grade ${d.grade}. ${d.dare}`}); }
+      catch(e){ /* user dismissed */ }
+    }else{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a"); a.href=url; a.download="drive-thru-draft.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      btn.textContent="Saved ✓"; btn.classList.add("pulse");
+      setTimeout(()=>{ btn.textContent="Share my tray"; btn.classList.remove("pulse"); },1800);
+    }
+  },"image/png");
+}
+
+function finish(){
+  machineEl.classList.add("hidden");
+  counterEl.classList.add("hidden");
+  const items=POSITIONS.map(p=>tray[p]);
+  const total=items.reduce((a,b)=>a+b.r,0);          // out of 50
+  const weakest=items.reduce((a,b)=>b.r<a.r?b:a);
+  const pct=total/50;
+  let grade;
+  if(pct>=.94)grade="S"; else if(pct>=.86)grade="A"; else if(pct>=.76)grade="B";
+  else if(pct>=.64)grade="C"; else if(pct>=.5)grade="D"; else grade="F";
+
+  const name=labelFor();
+  const dare=DARES[Math.floor(Math.random()*DARES.length)];
+
+  // ---- log the completed tray (outcome context) ----
+  const items_by_slot={};
+  POSITIONS.forEach(p=>{ items_by_slot[p]= tray[p] ? tray[p].id : null; });
+  const _q=econLog.filter(r=>r.quizKind!==null && r.quizKind!==undefined);
+  DTD_LOG.finishSession({ final_score:total, grade, final_label:name, items_by_slot,
+    econ_quiz_asked:_q.length, econ_quiz_correct:_q.filter(r=>r.quizCorrect).length,
+    econ_contradictions:econContradictions().length });
+
+  const verdicts={
+    S:"A flawless tray. The spinner blinked first.",
+    A:"Genuinely elite. You'd defend this in a parking lot.",
+    B:"Strong order. One weak link keeps you humble.",
+    C:"It feeds you. Nobody's writing home about it.",
+    D:`Structurally a meal. That <b>${weakest.n}</b> is doing you dirty, though.`,
+    F:"Objectively chaos. Subjectively iconic. The crowd just isn't ready."
+  };
+
+  const receipt=POSITIONS.map(p=>{
+    const it=tray[p];
+    const isWeak = it===weakest;
+    return `<div class="r-row${isWeak?' weak':''}">
+      <span><span class="r-pos">${POS_LABEL[p]}</span> &nbsp;${it.n}${it.id==='arbys__classic_roast_beef'?' <span class="r-flair-tag">🥩 The Meat Mountain</span>':''}${isWeak?' <span class="r-weak-tag">◄ weak link</span>':''}${it.misheard?' <span class="r-misheard-tag">🎙️ misheard</span>':''}<span class="r-chain">${it.chain}${it.misheard?` · you ordered ${it.intended}`:''}</span></span>
+      <span>★${it.r}</span></div>`;
+  }).join("");
+
+  resultEl.innerHTML=`
+    <div class="order-complete">✦ Order Complete ✦</div>
+    <div class="grade-wrap"><span class="ghost">${grade}</span><span class="grade">${grade}</span></div>
+    <div class="label-badge">${name}</div>
+    <div class="score-line">CROWD SCORE ${total} / 50</div>
+    <div class="receipt">
+      <div class="r-head">— YOUR TRAY —</div>
+      ${receipt}
+      <div class="r-total"><span>TOTAL</span><span>${total}/50 · ${grade}</span></div>
+    </div>
+    <div class="vote-note">These stars move with every play — your picks just counted.</div>
+    ${buildEconDebrief()}
+    <div class="verdict">${verdicts[grade]}</div>
+    <div class="dare">${dare}</div>
+    <div class="result-btns">
+      <button class="btn-share" id="shareBtn">Share my tray</button>
+      <button class="btn-again" id="againBtn">Run it back</button>
+    </div>
+    <button class="btn-copytext" id="copyBtn">Copy as text instead</button>`;
+  resultEl.classList.remove("hidden");
+  resultEl.scrollIntoView({behavior:"smooth",block:"start"});
+  runTasteRound();   // Round 2: clean taste tests → verdict fills #econVerdict
+
+  const shareData={grade,name,total,dare,weakest,tray:{...tray},verdict:verdicts[grade].replace(/<[^>]+>/g,"")};
+
+  $("againBtn").onclick=init;
+  $("shareBtn").onclick=()=>{ const b=$("shareBtn"); b.textContent="Building…"; shareTray(b,shareData); };
+  $("copyBtn").onclick=()=>{
+    const txt=`${name} — Grade ${grade} (${total}/50)\n`+
+      POSITIONS.map(p=>`${POS_LABEL[p]}: ${tray[p].n} (${tray[p].chain})`).join("\n")+
+      `\n${dare} · Drive-Thru Draft`;
+    navigator.clipboard?.writeText(txt).then(
+      ()=>{ const b=$("copyBtn"); b.textContent="Copied ✓"; setTimeout(()=>b.textContent="Copy as text instead",1600); },
+      ()=>{ $("copyBtn").textContent="Copy failed"; }
+    );
+  };
+}
+
+/* ============================================================ WIRING */
+spinBtn.onclick=()=>spin();
+skipBtn.onclick=doSkip;
+window.addEventListener("resize",()=>{ if(!spinning && !dealtChain) { /* keep reel reset */ }});
+init();
+</script>
+</body>
+</html>

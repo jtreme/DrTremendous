@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Every Tab for Itself</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#14263b;
+    --navy-2:#1d3550;
+    --paper:#faf7f0;
+    --paper-2:#f1ece0;
+    --ink:#1c2b3a;
+    --orange:#c6501a;
+    --orange-2:#a8410f;
+    --pond-a:#2e7f86;
+    --pond-b:#3fa08f;
+    --pond-deep:#1f5a63;
+    --gold:#d9a441;
+    --grey:#8b8f94;
+    --radius:14px;
+    --shadow:0 2px 10px rgba(20,38,59,.10);
+    --font-display:"Fraunces", Georgia, serif;
+    --font-body:"IBM Plex Sans", system-ui, sans-serif;
+    --font-mono:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.5;
+    transition:filter 2s ease;
+  }
+  body.collapsed{ filter:grayscale(.92) contrast(.92); }
+
+  .wrap{max-width:1080px; margin:0 auto; padding:20px 20px 60px;}
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    flex-wrap:wrap; gap:8px 16px; margin-bottom:6px;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:900; font-size:clamp(1.7rem,4vw,2.5rem);
+    color:var(--navy); letter-spacing:-.01em;
+  }
+  h1 .tab-word{ color:var(--orange); font-style:italic;}
+  .byline{font-size:.85rem; color:var(--navy-2); opacity:.75;}
+  .round-chip{
+    font-family:var(--font-mono); font-size:.75rem; font-weight:600;
+    background:var(--navy); color:var(--paper);
+    padding:4px 12px; border-radius:999px; letter-spacing:.06em;
+  }
+  .intro{
+    font-size:.95rem; color:var(--navy-2); max-width:62ch; margin-bottom:18px;
+  }
+  .intro strong{color:var(--orange);}
+
+  /* ---------- layout ---------- */
+  .board{ display:grid; grid-template-columns: 1fr 340px; gap:18px; align-items:start;}
+  @media (max-width: 860px){ .board{grid-template-columns:1fr;} }
+
+  /* ---------- pond ---------- */
+  .pond-card{
+    position:relative; border-radius:var(--radius); overflow:hidden;
+    background:var(--pond-deep);
+    box-shadow:var(--shadow);
+    min-height:380px;
+    display:flex; flex-direction:column;
+  }
+  .pond-head{
+    position:relative; z-index:3;
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:16px 20px 0; color:var(--paper);
+  }
+  .pond-head .label{font-family:var(--font-mono); font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; opacity:.8;}
+  .pond-head .stock-num{font-family:var(--font-display); font-weight:700; font-size:2rem; line-height:1;}
+  .pond-head .stock-num small{font-size:.8rem; font-family:var(--font-mono); font-weight:400; opacity:.7;}
+  .water{
+    position:absolute; left:0; right:0; bottom:0; z-index:1;
+    background:linear-gradient(180deg, var(--pond-b), var(--pond-a) 55%, var(--pond-deep));
+    transition:height 1s ease;
+  }
+  .water::before{
+    content:""; position:absolute; top:-14px; left:-50%; width:200%; height:20px;
+    background:radial-gradient(circle at 10px 20px, var(--pond-b) 12px, transparent 13px);
+    background-size:36px 20px;
+    animation:lap 6s linear infinite;
+    opacity:.9;
+  }
+  @keyframes lap{ from{transform:translateX(0);} to{transform:translateX(36px);} }
+  @media (prefers-reduced-motion: reduce){ .water::before{animation:none;} }
+  .fish-layer{position:absolute; inset:0; z-index:2; pointer-events:none;}
+  .fish{
+    position:absolute; font-size:20px; opacity:.9;
+    transition:opacity .8s ease;
+    animation:swim 9s ease-in-out infinite alternate;
+  }
+  @keyframes swim{ from{transform:translateX(0) scaleX(1);} to{transform:translateX(46px) scaleX(1);} }
+  @media (prefers-reduced-motion: reduce){ .fish{animation:none;} }
+  .pond-foot{
+    position:relative; z-index:3; margin-top:auto;
+    display:flex; gap:18px; flex-wrap:wrap;
+    padding:14px 20px; color:var(--paper);
+    background:linear-gradient(0deg, rgba(20,38,59,.45), transparent);
+    font-family:var(--font-mono); font-size:.8rem;
+  }
+  .pond-foot b{font-size:1.05rem; display:block;}
+  .price-up{color:var(--gold);}
+
+  /* ---------- banner over pond ---------- */
+  .banner{
+    position:absolute; inset:0; z-index:5;
+    display:none; flex-direction:column; justify-content:center; align-items:center;
+    text-align:center; padding:28px;
+    background:rgba(20,38,59,.88); color:var(--paper);
+  }
+  .banner.show{display:flex;}
+  .banner h2{font-family:var(--font-display); font-weight:900; font-size:1.7rem; margin-bottom:12px;}
+  .banner p{max-width:46ch; margin-bottom:10px; font-size:1rem;}
+  .banner .lesson{
+    font-family:var(--font-display); font-style:italic; font-weight:500;
+    font-size:1.12rem; color:var(--gold); margin:8px 0 18px;
+  }
+
+  /* ---------- your boat ---------- */
+  .side{display:flex; flex-direction:column; gap:14px;}
+  .card{
+    background:#fff; border:1px solid var(--paper-2);
+    border-radius:var(--radius); box-shadow:var(--shadow); padding:16px 18px;
+  }
+  .card h3{
+    font-family:var(--font-mono); font-size:.72rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--navy-2); margin-bottom:8px;
+  }
+  .boat-name{font-family:var(--font-display); font-weight:700; font-size:1.3rem; color:var(--navy); margin-bottom:2px;}
+  .profit{font-family:var(--font-mono); font-size:1.9rem; font-weight:600; color:var(--navy); margin:6px 0 12px;}
+  .profit small{font-size:.75rem; color:var(--grey); font-weight:400;}
+
+  button{
+    font-family:var(--font-body); font-weight:600; font-size:1rem;
+    border:none; border-radius:10px; cursor:pointer;
+    padding:13px 18px; width:100%;
+    transition:transform .06s ease, background .2s ease, opacity .2s;
+  }
+  button:focus-visible{outline:3px solid var(--gold); outline-offset:2px;}
+  button:active{transform:scale(.985);}
+  button:disabled{opacity:.45; cursor:default; transform:none;}
+  .btn-fish{ background:var(--navy); color:var(--paper); font-size:1.1rem;}
+  .btn-fish:not(:disabled):hover{background:var(--navy-2);}
+  .btn-orange{ background:var(--orange); color:#fff;}
+  .btn-orange:not(:disabled):hover{background:var(--orange-2);}
+  .btn-quiet{ background:var(--paper-2); color:var(--navy); }
+  .haul-note{font-family:var(--font-mono); font-size:.78rem; color:var(--grey); margin-top:8px; min-height:1.2em;}
+  .quota-note{font-family:var(--font-mono); font-size:.78rem; margin-top:8px; color:var(--navy-2);}
+
+  /* ---------- fleet ---------- */
+  .fleet{margin-top:20px;}
+  .fleet h3{
+    font-family:var(--font-mono); font-size:.72rem; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--navy-2); margin-bottom:10px;
+  }
+  .fleet-row{display:flex; gap:12px; flex-wrap:wrap;}
+  .boat-card{
+    background:#fff; border:1px solid var(--paper-2); border-radius:10px;
+    box-shadow:var(--shadow); padding:10px 14px; min-width:150px;
+  }
+  .boat-card.me{border:2px solid var(--orange);}
+  .boat-card .nm{font-family:var(--font-display); font-weight:700; font-size:.95rem; color:var(--navy);}
+  .boat-card .pf{font-family:var(--font-mono); font-size:.95rem;}
+  .boat-card .flag{font-family:var(--font-mono); font-size:.7rem; color:var(--orange); font-weight:600;}
+  .hint{
+    margin-top:10px; font-size:.85rem; color:var(--navy-2);
+    background:var(--paper-2); border-radius:10px; padding:10px 14px; display:inline-block;
+  }
+
+  /* ---------- council / voting ---------- */
+  .vote-opts{display:flex; gap:10px; margin:10px 0;}
+  .vote-opts button{flex:1; background:var(--paper-2); color:var(--navy); font-family:var(--font-mono);}
+  .vote-opts button.picked{background:var(--navy); color:var(--paper);}
+  .season-bar{
+    height:6px; background:var(--paper-2); border-radius:99px; overflow:hidden; margin-top:8px;
+  }
+  .season-bar div{height:100%; background:var(--pond-b); transition:width .5s linear;}
+
+  footer{margin-top:34px; font-size:.8rem; color:var(--grey);}
+  footer a{color:var(--orange);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Every <span class="tab-word">Tab</span> for Itself</h1>
+    <span class="round-chip" id="roundChip">ROUND 1 · OPEN ACCESS</span>
+  </header>
+  <p class="byline"><a href="https://drtremendous.netlify.app/" style="color:var(--orange);text-decoration:none;font-weight:600;">← Dr. Tremendous</a> · Applied Microeconomics</p>
+  <p class="intro" style="margin-top:10px;">
+    Open this game in <strong>two or more browser tabs</strong>. Each tab is a fishing boat.
+    Your boat's score is private. The pond is shared.
+  </p>
+
+  <div class="board">
+    <!-- POND -->
+    <div class="pond-card" id="pondCard">
+      <div class="pond-head">
+        <div>
+          <div class="label">The Pond · shared by every tab</div>
+          <div class="stock-num"><span id="stockNum">1000</span> <small>fish</small></div>
+        </div>
+        <div style="text-align:right">
+          <div class="label">Boats on the water</div>
+          <div class="stock-num" id="boatCount">1</div>
+        </div>
+      </div>
+      <div class="fish-layer" id="fishLayer"></div>
+      <div class="water" id="water" style="height:78%"></div>
+      <div class="pond-foot">
+        <div><span>Price / fish</span><b class="price-up" id="priceNum">$10.00</b></div>
+        <div><span>Catch / trip</span><b id="catchNum">12</b></div>
+        <div><span>Fleet catch, all time</span><b id="totalCatch">0</b></div>
+        <div id="seasonWrap" style="display:none; min-width:180px;">
+          <span>Season <span id="seasonNum">1</span> of 3 · keep stock ≥ 520</span>
+          <div class="season-bar"><div id="seasonBar" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <!-- overlay banner -->
+      <div class="banner" id="banner">
+        <h2 id="bannerTitle"></h2>
+        <p id="bannerBody"></p>
+        <p class="lesson" id="bannerLesson"></p>
+        <div style="max-width:280px; width:100%;"><button class="btn-orange" id="bannerBtn"></button></div>
+      </div>
+    </div>
+
+    <!-- SIDE -->
+    <div class="side">
+      <div class="card">
+        <h3>Your boat</h3>
+        <div class="boat-name" id="boatName">—</div>
+        <div class="profit">$<span id="profitNum">0</span> <small>profit</small></div>
+        <button class="btn-fish" id="fishBtn">🎣 Fish</button>
+        <div class="haul-note" id="haulNote"></div>
+        <button class="btn-quiet" id="addBoatBtn" style="margin-top:10px;">⚓ Add another boat <span style="font-weight:400; font-size:.85rem;">(opens a new tab)</span></button>
+        <div class="quota-note" id="quotaNote" style="display:none;"></div>
+        <button class="btn-orange" id="defectBtn" style="display:none; margin-top:8px;">Fish over quota</button>
+      </div>
+
+      <div class="card" id="voteCard" style="display:none;">
+        <h3>Council vote — catch limit per boat, per season</h3>
+        <p style="font-size:.88rem; color:var(--navy-2);">The majority quota applies to <em>every</em> tab.
+        <strong>The goal: keep the stock above 520 fish for three seasons in a row.</strong></p>
+        <div class="vote-opts">
+          <button data-q="3">3 trips</button>
+          <button data-q="6">6 trips</button>
+          <button data-q="10">10 trips</button>
+        </div>
+        <div class="haul-note" id="voteStatus"></div>
+        <button class="btn-quiet" id="startAnywayBtn" style="display:none; margin-top:6px;">Start the season without waiting</button>
+      </div>
+
+      <div class="card" id="tipCard">
+        <h3>How it works</h3>
+        <p style="font-size:.86rem; color:var(--navy-2);">
+          Every trip earns <span style="font-family:var(--font-mono)">catch × price − $20 fuel</span>.
+          Fish get scarcer as the fleet works the pond — and prices rise as they do.
+          The pond regrows fastest at middle stocks. Each tab keeps its own score.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLEET -->
+  <div class="fleet">
+    <h3>The fleet — one boat per open tab</h3>
+    <div class="fleet-row" id="fleetRow"></div>
+    <div class="hint" id="soloHint" style="display:none;">
+      Only one boat on the water. Hit <strong>⚓ Add another boat</strong> — entry is free. That's the point.
+    </div>
+  </div>
+
+  <footer>
+    Built for ARE students · state is shared across tabs in <em>this</em> browser only ·
+    <a href="#" id="resetLink">reset the pond</a>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ constants ============ */
+  const K = 1000;                 // carrying capacity
+  const REGEN_R = 0.10;           // intrinsic growth per second (logistic)
+  const COLLAPSE_AT = 40;         // stock below this => collapse
+  const TRIP_COST = 20;
+  const TRIP_COOLDOWN = 650;      // ms
+  const SEASON_LEN = 25000;       // ms
+  const SEASONS_TO_WIN = 3;
+  const HEALTHY_STOCK = 520;      // stock needed at season end to count as "held"
+  const HEARTBEAT = 1200, STALE = 4200;
+  const LS_STATE = "etfi:v1:state";
+  const LS_TABS  = "etfi:v1:tabs";
+  const BOAT_NAMES = ["The Marginal Haul","Sunk Cost","Rent Seeker","The Free Rider",
+    "Invisible Hand-line","Deadweight Loss","Pareto's Prow","The Externality",
+    "Ceteris Paribus","The Equilibriyacht","Moral Hazard","Coase Guard"];
+
+  /* ============ identity ============ */
+  /* sessionStorage survives a refresh but is unique per tab —
+     so a reload keeps the same boat (and its quota use).
+     BUT: window.open() can copy the opener's sessionStorage into the
+     new tab, so the add-boat button passes ?newBoat=... to force a
+     genuinely new entrant. */
+  let tabId = null;
+  const params = new URLSearchParams(location.search);
+  const forceNewBoat = params.has("newBoat");
+
+  try{
+    if(!forceNewBoat) tabId = sessionStorage.getItem("etfi:tabId");
+  }catch(e){}
+
+  if(!tabId){
+    tabId = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+    try{ sessionStorage.setItem("etfi:tabId", tabId); }catch(e){}
+  }
+
+  if(forceNewBoat){
+    const clean = new URL(location.href);
+    clean.searchParams.delete("newBoat");
+    history.replaceState(null, "", clean.toString());
+  }
+  const bc = ("BroadcastChannel" in window) ? new BroadcastChannel("etfi") : null;
+
+  /* ============ storage helpers ============ */
+  function readJSON(key, fallback){
+    try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+    catch(e){ return fallback; }
+  }
+  function writeJSON(key, obj){ try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){} }
+  function freshState(){
+    return { epoch: Date.now(), phase:"round1", stock:K, totalCatch:0,
+             votes:{}, quota:null, season:1, seasonEndsAt:0,
+             defections:0, seasonsHeld:0 };
+  }
+  function getState(){
+    let s = readJSON(LS_STATE, null);
+    if(!s || typeof s.stock !== "number"){ s = freshState(); writeJSON(LS_STATE, s); }
+    return s;
+  }
+  function setState(mutator){
+    const s = getState(); mutator(s); writeJSON(LS_STATE, s); ping(); return s;
+  }
+  function getTabs(){ return readJSON(LS_TABS, {}); }
+  function setTabs(mutator){
+    const t = getTabs(); mutator(t); writeJSON(LS_TABS, t); return t;
+  }
+  function liveTabs(){
+    const t = getTabs(), now = Date.now(), out = {};
+    for(const id in t){ if(now - t[id].seen < STALE) out[id] = t[id]; }
+    return out;
+  }
+  function ping(){ if(bc) bc.postMessage({t:"ping"}); }
+
+  /* ============ join / heartbeat / leave ============ */
+  function join(){
+    setTabs(t=>{
+      if(t[tabId]){ t[tabId].seen = Date.now(); return; }   // refresh: same boat
+      const taken = Object.values(t).map(x=>x.name);
+      let name = BOAT_NAMES.find(n=>!taken.includes(n)) ||
+                 ("Boat " + (Object.keys(t).length+1));
+      t[tabId] = { seen:Date.now(), name, profit:0, defected:false,
+                   hauls:{season:0,count:0}, joined:Date.now() };
+    });
+    ping();
+  }
+  join();
+  setInterval(()=>{
+    setTabs(t=>{
+      if(!t[tabId]) t[tabId] = {seen:0, name:"Late Boat", profit:0, defected:false,
+                                hauls:{season:0,count:0}, joined:Date.now()};
+      t[tabId].seen = Date.now();
+      // prune very stale entries so the registry doesn't grow forever
+      for(const id in t){ if(Date.now()-t[id].seen > STALE*4) delete t[id]; }
+    });
+  }, HEARTBEAT);
+  /* No beforeunload cleanup: a refresh fires beforeunload too, which would
+     delete the boat record the reloaded page needs to reclaim. Exits are
+     handled by the heartbeat instead — a closed tab goes stale in ~4s and
+     drops out of liveTabs(), and the registry prune removes it later. */
+
+  /* ============ economics ============ */
+  function priceAt(stock){ return 10 * Math.pow(K / Math.max(stock, 25), 0.7); }
+  function catchAt(stock){ return Math.max(1, Math.round(stock * 0.012)); }
+
+  /* ============ my per-tab game vars ============ */
+  const myRec = getTabs()[tabId] || {};
+  let myProfit = myRec.profit || 0, lastTrip = 0, myVote = null;
+  let myHauls = myRec.hauls || { season: 0, count: 0 };  // mirrored to shared registry
+  let localCollapseShown = false;
+
+  /* ============ leader election (lowest joined timestamp) ============ */
+  function iAmLeader(){
+    const t = liveTabs(); let best = null;
+    for(const id in t){ if(best===null || t[id].joined < t[best].joined ||
+      (t[id].joined===t[best].joined && id < best)) best = id; }
+    return best === tabId;
+  }
+
+  /* ============ leader tick: regen + season clock ============ */
+  setInterval(()=>{
+    if(!iAmLeader()) return;
+    let seasonRolled = false;
+    setState(s=>{
+      if(s.phase==="round1" || s.phase==="round2"){
+        // logistic regrowth, dt = .5s
+        const g = REGEN_R * s.stock * (1 - s.stock/K) * 0.5;
+        s.stock = Math.min(K, s.stock + g);
+        if(s.stock < COLLAPSE_AT){
+          s.phase = (s.phase==="round1") ? "collapsed1" : "collapsed2";
+        }
+      }
+      if(s.phase==="round2" && Date.now() > s.seasonEndsAt){
+        // season ends: did the commons hold?
+        if(s.stock >= HEALTHY_STOCK) s.seasonsHeld++;
+        if(s.seasonsHeld >= SEASONS_TO_WIN){ s.phase = "success"; }
+        else {
+          s.season++; s.seasonEndsAt = Date.now() + SEASON_LEN; s.defections = 0;
+          seasonRolled = true;
+        }
+      }
+    });
+    if(seasonRolled){
+      // a defect flag lasts one season, then the slate is clean
+      setTabs(t=>{ for(const id in t){ t[id].defected = false; } });
+      ping();
+    }
+  }, 500);
+
+  /* ============ actions ============ */
+  function fish(overQuota){
+    const s = getState();
+    const now = Date.now();
+    if(now - lastTrip < TRIP_COOLDOWN) return;
+    if(s.phase!=="round1" && s.phase!=="round2") return;
+
+    if(s.phase==="round2"){
+      if(myHauls.season !== s.season){ myHauls = {season:s.season, count:0}; }
+      if(!overQuota && myHauls.count >= s.quota){ return; }
+    }
+    lastTrip = now;
+
+    let haulTxt = "";
+    setState(st=>{
+      const mult = overQuota ? 1.5 : 1;
+      const c = Math.round(catchAt(st.stock) * mult);
+      const take = Math.min(c, Math.max(0, st.stock));
+      const p = priceAt(st.stock);
+      const profit = Math.round(take * p - TRIP_COST);
+      st.stock = Math.max(0, st.stock - take);
+      st.totalCatch += take;
+      if(overQuota) st.defections++;
+      myProfit += profit;
+      haulTxt = `Hauled ${take} fish @ $${p.toFixed(2)} → ${profit>=0?"+":"−"}$${Math.abs(profit)}`;
+      if(st.stock < COLLAPSE_AT){ st.phase = (st.phase==="round1")?"collapsed1":"collapsed2"; }
+    });
+    if(s.phase==="round2") myHauls.count++;
+    setTabs(t=>{ if(t[tabId]){
+      t[tabId].profit = myProfit;
+      t[tabId].hauls = myHauls;
+      if(overQuota) t[tabId].defected = true;
+    }});
+    ping();
+    el.haulNote.textContent = haulTxt;
+    render();
+  }
+
+  function castVote(q){
+    myVote = q;
+    setState(s=>{ s.votes[tabId] = q; });
+    render();
+  }
+
+  function tallyAndStart(){
+    setState(s=>{
+      const live = liveTabs();
+      const counts = {};
+      for(const id in s.votes){ if(live[id]) counts[s.votes[id]] = (counts[s.votes[id]]||0)+1; }
+      let quota = 6, best = -1;
+      [3,6,10].forEach(q=>{ const c = counts[q]||0;
+        if(c > best || (c===best && q===6)){ best=c; quota=q; } });
+      s.quota = quota;
+      s.phase = "round2";
+      s.season = 1; s.seasonsHeld = 0; s.defections = 0;
+      s.seasonEndsAt = Date.now() + SEASON_LEN;
+    });
+    myHauls = {season:1, count:0};
+    setTabs(t=>{ for(const id in t){ t[id].hauls = {season:1,count:0}; t[id].defected = false; } });
+  }
+
+  function startRound2Council(){
+    setState(s=>{
+      s.phase = "council";
+      s.stock = Math.max(s.stock, 600);   // partial recovery under a moratorium
+      s.votes = {};
+    });
+    myVote = null;
+  }
+
+  function resetAll(){
+    writeJSON(LS_STATE, freshState());
+    myProfit = 0; myVote = null; myHauls = {season:0,count:0}; localCollapseShown=false;
+    setTabs(t=>{ for(const id in t){ t[id].profit = 0; t[id].defected = false; t[id].hauls = {season:0,count:0}; } });
+    el.haulNote.textContent = "";
+    ping(); render();
+  }
+
+  /* ============ DOM ============ */
+  const $ = id => document.getElementById(id);
+  const el = {
+    stockNum:$("stockNum"), boatCount:$("boatCount"), priceNum:$("priceNum"),
+    catchNum:$("catchNum"), totalCatch:$("totalCatch"), water:$("water"),
+    fishLayer:$("fishLayer"), fleetRow:$("fleetRow"), soloHint:$("soloHint"),
+    boatName:$("boatName"), profitNum:$("profitNum"), fishBtn:$("fishBtn"),
+    haulNote:$("haulNote"), banner:$("banner"), bannerTitle:$("bannerTitle"),
+    bannerBody:$("bannerBody"), bannerLesson:$("bannerLesson"), bannerBtn:$("bannerBtn"),
+    roundChip:$("roundChip"), voteCard:$("voteCard"), voteStatus:$("voteStatus"),
+    startAnywayBtn:$("startAnywayBtn"), quotaNote:$("quotaNote"), defectBtn:$("defectBtn"),
+    seasonWrap:$("seasonWrap"), seasonNum:$("seasonNum"), seasonBar:$("seasonBar"),
+    tipCard:$("tipCard")
+  };
+
+  /* fish sprites */
+  const FISH_N = 14, fishEls = [];
+  for(let i=0;i<FISH_N;i++){
+    const f = document.createElement("div");
+    f.className = "fish"; f.textContent = "🐟";
+    f.style.left = (6 + Math.random()*70) + "%";
+    f.style.bottom = (8 + Math.random()*55) + "%";
+    f.style.animationDelay = (-Math.random()*9)+"s";
+    f.style.animationDuration = (7+Math.random()*5)+"s";
+    el.fishLayer.appendChild(f); fishEls.push(f);
+  }
+
+  el.fishBtn.addEventListener("click", ()=>fish(false));
+  el.defectBtn.addEventListener("click", ()=>fish(true));
+  document.getElementById("addBoatBtn").addEventListener("click", ()=>{
+    const url = new URL(location.href);
+    url.searchParams.set("newBoat", Date.now().toString(36) + Math.random().toString(36).slice(2));
+    window.open(url.toString(), "_blank", "noopener");
+  });
+  document.querySelectorAll(".vote-opts button").forEach(b=>{
+    b.addEventListener("click", ()=>castVote(parseInt(b.dataset.q,10)));
+  });
+  el.startAnywayBtn.addEventListener("click", tallyAndStart);
+  $("resetLink").addEventListener("click", e=>{ e.preventDefault(); resetAll(); });
+
+  el.bannerBtn.addEventListener("click", ()=>{
+    const s = getState();
+    if(s.phase==="collapsed1") startRound2Council();
+    else resetAll();
+  });
+
+  /* ============ render ============ */
+  function render(){
+    const s = getState();
+    const tabs = liveTabs();
+    const n = Math.max(1, Object.keys(tabs).length);
+    const stock = Math.round(s.stock);
+
+    // pond
+    el.stockNum.textContent = stock;
+    el.boatCount.textContent = n;
+    el.priceNum.textContent = "$" + priceAt(s.stock).toFixed(2);
+    el.catchNum.textContent = catchAt(s.stock);
+    el.totalCatch.textContent = Math.round(s.totalCatch);
+    el.water.style.height = Math.max(6, 78 * (s.stock/K)) + "%";
+    const visFish = Math.round(FISH_N * (s.stock/K));
+    fishEls.forEach((f,i)=>{ f.style.opacity = i < visFish ? .9 : 0; });
+
+    // my card
+    const me = getTabs()[tabId];
+    el.boatName.textContent = me ? me.name : "—";
+    el.profitNum.textContent = myProfit;
+
+    // fleet
+    el.fleetRow.innerHTML = "";
+    const ordered = Object.entries(tabs).sort((a,b)=>a[1].joined-b[1].joined);
+    ordered.forEach(([id,t])=>{
+      const d = document.createElement("div");
+      d.className = "boat-card" + (id===tabId ? " me":"");
+      d.innerHTML = `<div class="nm">${t.name}${id===tabId?" (you)":""}</div>
+        <div class="pf">$${t.profit||0}</div>
+        ${ (s.phase==="round2" && t.defected) ? '<div class="flag">⚑ fished over quota</div>' : "" }`;
+      el.fleetRow.appendChild(d);
+    });
+    el.soloHint.style.display = (n<2 && (s.phase==="round1")) ? "inline-block" : "none";
+
+    // phase-dependent UI
+    const collapsed = (s.phase==="collapsed1" || s.phase==="collapsed2");
+    document.body.classList.toggle("collapsed", collapsed);
+
+    el.voteCard.style.display = (s.phase==="council") ? "block" : "none";
+    el.tipCard.style.display = (s.phase==="council") ? "none" : "block";
+    el.seasonWrap.style.display = (s.phase==="round2") ? "block" : "none";
+    el.defectBtn.style.display = (s.phase==="round2") ? "block" : "none";
+    el.quotaNote.style.display = (s.phase==="round2") ? "block" : "none";
+
+    if(s.phase==="round1"){
+      el.roundChip.textContent = "ROUND 1 · OPEN ACCESS";
+      el.fishBtn.disabled = false;
+      el.banner.classList.remove("show");
+    }
+    else if(s.phase==="collapsed1"){
+      el.roundChip.textContent = "THE POND IS EMPTY";
+      el.fishBtn.disabled = true;
+      showBanner("The fishery collapsed.",
+        "Every tab greyed out at the same moment — because every tab was fishing the same pond.",
+        "You controlled every boat. You knew the stock was falling. You still had a reason to keep fishing in each tab.",
+        "Convene the council →");
+    }
+    else if(s.phase==="council"){
+      el.roundChip.textContent = "ROUND 2 · THE COUNCIL";
+      el.fishBtn.disabled = true;
+      el.banner.classList.remove("show");
+      // vote UI state
+      document.querySelectorAll(".vote-opts button").forEach(b=>{
+        b.classList.toggle("picked", myVote===parseInt(b.dataset.q,10));
+      });
+      const live = liveTabs();
+      const voted = Object.keys(s.votes).filter(id=>live[id]).length;
+      const total = Object.keys(live).length;
+      el.voteStatus.textContent = `${voted} of ${total} boats have voted.`;
+      el.startAnywayBtn.style.display = voted>0 ? "block":"none";
+      if(voted>=total && total>0 && iAmLeader()){ tallyAndStart(); }
+    }
+    else if(s.phase==="round2"){
+      el.roundChip.textContent = `ROUND 2 · QUOTA: ${s.quota} TRIPS / SEASON`;
+      el.banner.classList.remove("show");
+      if(myHauls.season !== s.season){ myHauls = {season:s.season, count:0}; }
+      const left = Math.max(0, s.quota - myHauls.count);
+      el.quotaNote.textContent = left>0
+        ? `${left} of ${s.quota} quota trips left this season`
+        : `Quota reached. The orange button is right there.`;
+      el.fishBtn.disabled = (left<=0);
+      const remain = Math.max(0, s.seasonEndsAt - Date.now());
+      el.seasonNum.textContent = s.season;
+      el.seasonBar.style.width = (100*remain/SEASON_LEN)+"%";
+    }
+    else if(s.phase==="collapsed2"){
+      el.roundChip.textContent = "COLLAPSED AGAIN";
+      el.fishBtn.disabled = true; el.defectBtn.style.display="none";
+      showBanner("The quota wasn't the problem. The temptation was.",
+        "A rule on paper is not a rule in the water. Enough boats fished over quota that the stock crashed anyway.",
+        "Institutions only work when defection costs more than it pays — to the person deciding.",
+        "Restock the pond and try again");
+    }
+    else if(s.phase==="success"){
+      el.roundChip.textContent = "THE COMMONS HELD";
+      el.fishBtn.disabled = true; el.defectBtn.style.display="none";
+      document.body.classList.remove("collapsed");
+      showBanner("Three seasons. The pond is still alive.",
+        "The fleet earned less per trip than open access promised — and will earn it forever.",
+        "The quota didn't beat self-interest. It redirected it.",
+        "Play again from open access");
+    }
+  }
+
+  function showBanner(title, body, lesson, btn){
+    el.bannerTitle.textContent = title;
+    el.bannerBody.textContent = body;
+    el.bannerLesson.textContent = lesson;
+    el.bannerBtn.textContent = btn;
+    el.banner.classList.add("show");
+  }
+
+  /* ============ sync listeners ============ */
+  if(bc) bc.onmessage = render;
+  window.addEventListener("storage", e=>{
+    if(e.key===LS_STATE || e.key===LS_TABS) render();
+  });
+  setInterval(render, 500);   // covers regen ticks + season countdown
+  render();
+})();
+</script>
+</body>
+</html>

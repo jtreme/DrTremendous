@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>Faculty &amp; Department — Dr.Tremendous</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..700,0..60;1,9..144,400..600,0..40&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #f9f2e2;
+    --cream-deep: #efe4ca;
+    --cream-warm: #f3e9d2;
+    --navy: #141b34;
+    --navy-soft: #2a3354;
+    --navy-mute: #4a5274;
+    --gold: #d8a249;
+    --gold-deep: #b88532;
+    --gold-soft: #e8be7b;
+    --gray: #6b6f7a;
+    --rule: rgba(20, 27, 52, 0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream);
+    color: var(--navy);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 56px; }
+
+  nav {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .nav-links {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .nav-logo {
+    display: flex; align-items: baseline; gap: 0;
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    text-decoration: none !important;
+    line-height: 1;
+    border: none;
+  }
+  .nav-logo:visited, .nav-logo:hover, .nav-logo:active { text-decoration: none; }
+  .nav-logo .navy { color: var(--navy); }
+  .nav-logo .gold { color: var(--gold); }
+  .nav-links a {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 600;
+    color: var(--navy-soft); text-decoration: none;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    padding: 6px 0;
+    border-bottom: 1.5px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold-deep); border-bottom-color: var(--gold); }
+
+  .hero {
+    padding: 36px 56px 40px;
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
+    background: var(--cream);
+    margin: 0 -56px;
+  }
+  .hero-lockup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    margin-bottom: 16px;
+  }
+  .hero-trex {
+    height: 150px; width: auto;
+    display: block;
+  }
+  .hero-wordmark-img {
+    height: 150px; width: auto;
+    display: block;
+  }
+  .hero-intro {
+    text-align: center;
+    padding: 36px 0 8px;
+  }
+  .hero-lede {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 21px;
+    line-height: 1.4;
+    color: var(--navy);
+    max-width: 680px;
+    margin: 0 auto 28px;
+    letter-spacing: -0.005em;
+  }
+  .hero-lede .gold-word { color: var(--gold); font-style: italic; }
+  .hero-cta { display: flex; gap: 16px; align-items: center; justify-content: center; }
+  .btn-primary {
+    background: var(--navy); color: var(--cream);
+    border: none; padding: 14px 28px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    border-radius: 2px; cursor: pointer;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--gold-deep); }
+  .btn-secondary {
+    color: var(--navy-soft); text-decoration: none;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 14px 4px;
+    border-bottom: 1.5px solid var(--navy-soft);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn-secondary:hover { color: var(--gold-deep); border-color: var(--gold); }
+
+  .section-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 72px 0 40px;
+  }
+  .section-head .left { max-width: 600px; }
+  .section-head .eyebrow {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold-deep); margin-bottom: 14px;
+  }
+  .section-head h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 44px;
+    color: var(--navy); letter-spacing: -0.015em; line-height: 1.05;
+  }
+  .section-head h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
+
+  .tools-live { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+  .tool-group { margin-bottom: 8px; }
+  .group-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--gold-deep);
+    margin: 52px 0 18px; padding-bottom: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  #collection .tool-group:first-of-type .group-label { margin-top: 28px; }
+  .tool-group.featured .group-label {
+    color: var(--navy); font-size: 12px;
+    border-bottom: 2px solid var(--gold);
+  }
+  .tool-group.featured .group-label .lede {
+    color: var(--gold-deep); font-weight: 700;
+  }
+  .tool {
+    background: var(--cream-warm);
+    padding: 36px 32px 30px;
+    display: flex; flex-direction: column;
+    text-decoration: none; color: inherit;
+    border: 1px solid var(--rule);
+    border-radius: 4px; position: relative;
+    min-height: 320px; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .tool:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(20, 27, 52, 0.08);
+    border-color: var(--gold);
+  }
+  .tool-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .tool-tag {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--gold-deep);
+    background: rgba(216, 162, 73, 0.12);
+    padding: 6px 10px; border-radius: 2px;
+  }
+  .tool-num {
+    font-family: 'Fraunces', serif;
+    font-style: italic; font-size: 18px;
+    color: var(--navy-mute); opacity: 0.55;
+  }
+  .tool-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 28px;
+    line-height: 1.1; color: var(--navy);
+    margin-bottom: 14px; letter-spacing: -0.015em;
+  }
+  .tool-desc {
+    font-size: 15px; line-height: 1.6;
+    color: var(--navy-mute); margin-bottom: 22px; flex: 1;
+  }
+  .tool-use {
+    font-size: 12.5px; font-weight: 600; color: var(--gold-deep);
+    margin: -10px 0 20px; line-height: 1.4;
+  }
+  .tool-principle {
+    font-family: 'Space Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase;
+    color: #9b6a18; border-top: 1px solid var(--rule);
+    padding-top: 12px; margin-bottom: 14px;
+  }
+  .tool-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 18px; border-top: 1px solid var(--rule);
+  }
+  .tool-course {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--navy-mute);
+  }
+  .tool-launch {
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--navy);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tool-launch::after { content: '→'; color: var(--gold); transition: transform 0.2s; }
+  .tool:hover .tool-launch::after { transform: translateX(5px); }
+
+  /* Preview window: poster on load, clip plays on hover */
+  .tool-preview {
+    position: relative;
+    margin: -36px -32px 22px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: var(--cream-deep);
+    border-bottom: 1px solid var(--rule);
+  }
+  .tool-preview::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(20, 27, 52, 0.14);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .tool-preview .tp-poster,
+  .tool-preview .tp-video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .tool-preview .tp-video { opacity: 0; transition: opacity 0.3s ease; }
+  .tool:hover .tool-preview .tp-video { opacity: 1; }
+  /* portrait (mobile-format) clips: letterbox instead of crop */
+  .tool-preview.portrait { background: #120c07; }
+  .tool-preview.portrait .tp-poster,
+  .tool-preview.portrait .tp-video { object-fit: contain; }
+  .tp-what {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 22px 14px 11px;
+    background: linear-gradient(transparent, rgba(20, 27, 52, 0.86));
+    color: #fff; font-size: 12.5px; line-height: 1.4;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .tool:hover .tp-what { opacity: 1; transform: none; }
+  .tp-what b {
+    display: block; margin-bottom: 2px;
+    color: var(--gold-soft); font-weight: 700;
+    font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  }
+  /* coming-soon poster */
+  .tool-soon { overflow: hidden; }
+  .tool-soon .soon-preview {
+    position: relative; margin: -24px -22px 16px;
+    aspect-ratio: 16 / 9; overflow: hidden;
+    border-bottom: 1px dashed rgba(20, 27, 52, 0.22);
+  }
+  .tool-soon .soon-preview img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; filter: grayscale(0.3) brightness(0.92);
+  }
+  .tool-soon .soon-preview .soon-badge {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--navy); color: var(--cream);
+    font-size: 9.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 5px 9px; border-radius: 2px;
+  }
+
+  .tools-coming {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  }
+  .tool-soon {
+    background: transparent;
+    border: 1px dashed rgba(20, 27, 52, 0.22);
+    border-radius: 4px;
+    padding: 24px 22px 20px;
+    display: flex; flex-direction: column;
+    min-height: 200px; position: relative;
+    opacity: 0.92;
+    transition: opacity 0.2s, border-color 0.2s;
+  }
+  .tool-soon:hover { opacity: 1; border-color: var(--gold); }
+  .tool-soon .tool-tag {
+    background: transparent;
+    border: 1px solid var(--gold-deep);
+    color: var(--gold-deep);
+    align-self: flex-start; margin-bottom: 16px;
+  }
+  .tool-soon .tool-title-sm {
+    font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 20px;
+    line-height: 1.15; color: var(--navy);
+    margin-bottom: 10px; letter-spacing: -0.01em;
+  }
+  .tool-soon .tool-desc-sm {
+    font-size: 13.5px; line-height: 1.55;
+    color: var(--navy-mute); flex: 1; margin-bottom: 16px;
+  }
+  .tool-soon .tool-course-sm {
+    font-size: 10.5px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--navy-mute);
+    padding-top: 14px; border-top: 1px solid var(--rule);
+  }
+
+  .pull-band {
+    margin: 96px -56px 0;
+    padding: 80px 56px;
+    background: var(--navy-soft);
+    text-align: center;
+  }
+  .pull-band blockquote {
+    font-family: 'Fraunces', serif;
+    font-style: italic; font-weight: 400;
+    font-size: 32px; line-height: 1.35;
+    color: var(--cream); max-width: 780px;
+    margin: 0 auto; letter-spacing: -0.01em;
+  }
+  .pull-band blockquote::before { content: '"'; color: var(--gold); margin-right: 1px; }
+  .pull-band blockquote::after { content: '"'; color: var(--gold); margin-left: 4px; }
+  .pull-band .attr {
+    margin-top: 24px;
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold);
+  }
+
+  footer {
+    margin-top: 0; padding: 56px 0 72px;
+    display: grid; grid-template-columns: 1.4fr 1fr 1fr;
+    gap: 48px; align-items: start;
+  }
+  .footer-logo {
+    font-family: 'Fraunces', serif;
+    font-weight: 700; font-size: 22px;
+    line-height: 1; margin-bottom: 12px;
+    text-decoration: none;
+  }
+  .footer-logo .navy { color: var(--navy); }
+  .footer-logo .gold { color: var(--gold); }
+  .footer-tag {
+    font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--gray);
+  }
+  .footer-col h4 {
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--navy); margin-bottom: 16px;
+  }
+  .footer-col a {
+    display: block; color: var(--navy-mute);
+    text-decoration: none; font-size: 14px;
+    margin-bottom: 8px; transition: color 0.2s;
+  }
+  .footer-col a:hover { color: var(--gold-deep); }
+  .footer-colophon {
+    grid-column: 1 / -1;
+    margin-top: 40px; padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-size: 12px; color: var(--gray);
+    font-style: italic; font-family: 'Fraunces', serif;
+  }
+
+  @media (max-width: 900px) {
+    .wrap { padding: 0 28px; }
+    .hero { padding: 28px 28px 32px; margin: 0 -28px; }
+    .hero-lockup { flex-direction: column; gap: 12px; }
+    .hero-trex { height: 104px; }
+    .hero-wordmark-img { height: 104px; }
+    .hero-intro { padding: 28px 0 4px; }
+    .hero-lede { font-size: 17px; }
+    .tools-live { grid-template-columns: 1fr; }
+    .tools-coming { grid-template-columns: 1fr; }
+    .section-head { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .section-head h2 { font-size: 32px; }
+    .pull-band { margin: 64px -28px 0; padding: 56px 28px; }
+    .pull-band blockquote { font-size: 22px; }
+    footer { grid-template-columns: 1fr; gap: 32px; }
+    .nav-links { max-width: 100%; padding: 0 4px; }
+    .nav-links a { font-size: 10px; }
+  }
+
+  /* --- de-AI pass: display face wonk, mono labels, paper grain, card depth --- */
+  body { font-optical-sizing: auto; }
+  .hero-lede, .section-head h2, .tool-title, .footer-logo, .pull-band blockquote,
+  .tool-num, .tool-soon .tool-title-sm { font-variation-settings: "SOFT" 28; }
+  .eyebrow, .section-head .eyebrow, .group-label, .tool-tag, .tool-course,
+  .tool-launch, .nav-links a, .footer-col h4, .footer-tag {
+    font-family: 'Space Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: 0.08em;
+  }
+  .tool-tag { font-size: 9.5px; }
+  .tool { border: none; border-radius: 2px;
+    box-shadow: inset 0 0 0 1px rgba(20,27,52,0.06), 0 2px 6px rgba(65,50,26,0.05); }
+  .tool:hover { box-shadow: inset 0 0 0 1px var(--gold), 0 14px 34px rgba(20,27,52,0.10); }
+  body::before { content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
+    opacity:0.045; mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* --- collection: philosophy intro, filter pills, quotes, contrast --- */
+  .collection-sub { font-family:'Fraunces',serif; font-size:19px; line-height:1.5; color:var(--navy-soft); max-width:900px; margin:-14px 0 12px; }
+  .collection-origin { font-size:13.5px; line-height:1.6; color:var(--navy-mute); max-width:640px; margin:0 0 4px; }
+  .collection-origin em { font-family:'Fraunces',serif; font-style:italic; color:var(--navy); }
+  .filter-pills { display:flex; flex-wrap:wrap; gap:9px; margin:2px 0 26px; }
+  .pill { font-family:'Space Mono',monospace; font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    padding:8px 15px; border:1.5px solid var(--rule); border-radius:999px; background:var(--cream-warm); color:var(--navy-mute);
+    cursor:pointer; transition:background .15s, color .15s, border-color .15s, box-shadow .15s; }
+  .pill:hover { border-color:var(--gold); color:var(--navy); background:#fff; box-shadow:0 2px 9px rgba(20,27,52,0.10); }
+  .pill.active { background:var(--navy); color:var(--cream); border-color:var(--navy); }
+  .pill.active:hover { background:var(--navy-soft); box-shadow:none; }
+  #coming { margin-top: 54px; }
+  .tool.hide { display:none; }
+  .tool-credit { font-size:12px; font-style:italic; color:var(--navy-mute); margin:-6px 0 16px; }
+  .quotes-strip { margin-top:60px; }
+  .quotes { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px; }
+  .quote { background:var(--cream-warm); border-left:3px solid var(--gold); border-radius:0 4px 4px 0; padding:22px 24px; }
+  .quote blockquote { font-family:'Fraunces',serif; font-size:18px; line-height:1.45; color:var(--navy); font-style:italic; margin-bottom:14px; }
+  .quote figcaption { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.03em; color:var(--navy-mute); }
+  .quote figcaption span { color:#8a6414; }
+  /* contrast: darker gold for small labels on cream */
+  .section-head .eyebrow, .group-label, .tool-tag { color:#8a6414; }
+  .opensource-band { text-align:center; font-size:15px; color:var(--navy-soft);
+    max-width:680px; margin:8px auto 0; padding:0 24px; line-height:1.6; }
+  .opensource-band strong { color:var(--navy); font-weight:600; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <nav>
+    <div class="nav-links">
+      <a href="index.html#collection">The Collection</a>
+      <a href="about.html">About</a>
+      <a href="faculty.html">Faculty &amp; Department</a>
+    </div>
+  </nav>
+
+  <section id="collection" style="margin-top:32px;">
+    <div class="section-head">
+      <div class="left">
+        <div class="eyebrow">For colleagues, not students</div>
+        <h2>Faculty &amp; <em>Department</em>.</h2>
+      </div>
+    </div>
+    <p class="collection-sub">Tools built for the teaching side of the house — peer review, worksheet generation, and quick content edits. Not part of the student-facing collection, but here when a colleague needs them.</p>
+
+    <div class="tool-group">
+      <div class="tools-live">
+        <a href="peer-review-navigator.html" class="tool" data-cat="faculty">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/peer-review-navigator.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Follow the review workflow for your rank and role.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Navigator · Live</div>
+          </div>
+          <div class="tool-title">Peer Review<br>Navigator</div>
+          <div class="tool-desc">
+            A step-by-step guide to the faculty teaching peer-review process — tailored to your rank and whether you're the reviewer or the one being reviewed. Walks the full workflow from initiation to the final report, with the rubrics and NC State Reg 3.3 rules at each stage.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">Faculty · Teaching Review</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="supply-demand-generator.html" class="tool" data-cat="faculty">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/supply-demand-generator.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Generate a problem; print student + key versions.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Generator · Live</div>
+          </div>
+          <div class="tool-title">Supply &amp; Demand<br>Generator</div>
+          <div class="tool-desc">
+            Endless clean linear S&amp;D problems with whole-number intercepts and real equilibria. Add a binding floor or ceiling and the short-side quantity, CS/PS, and deadweight loss are worked out and shaded. Self-check, or print matching student and answer-key worksheets.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Surplus &amp; Controls</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="content-editor.html" class="tool" data-cat="faculty">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/content-editor.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Click visible text, fix it, download a clean file.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">HTML Editor · Live</div>
+          </div>
+          <div class="tool-title">Edit the page,<br>not the code.</div>
+          <div class="tool-desc">
+            Open an HTML file, click the visible text to fix it, and download a clean copy. Locked spots tell you why they need a code edit — and it strips browser-extension junk for you.
+          </div>
+          <div class="tool-foot">
+            <div class="tool-course">Local-first · No login</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      <div class="footer-logo">
+        <span class="navy">Dr.Treme</span><span class="gold">ndous</span>
+      </div>
+      <div class="footer-tag">Solutions, made visible.</div>
+      <div style="font-size:11px; color:var(--gray); margin-top:10px; max-width:360px; line-height:1.55;">Every tool here is open source. Take one, adapt it, teach with it.</div>
+    </div>
+    <div class="footer-col">
+      <h4>Browse</h4>
+      <a href="index.html#collection">Live Tools</a>
+      <a href="index.html#coming">In the Works</a>
+    </div>
+    <div class="footer-col">
+      <h4>About</h4>
+      <a href="about.html">About</a>
+      <a href="faculty.html">Faculty &amp; Department</a>
+    </div>
+    <div class="footer-colophon">
+      Built by Julianne Treme.
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
