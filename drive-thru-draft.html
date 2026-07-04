@@ -801,6 +801,15 @@ const CHAINS = [
     {n:"Cajun Fries", s:["SIDE"], r:8},
     {n:"Milkshake", s:["DESSERT","DRINK"], r:8},
   ]},
+  {name:"Panera", items:[
+    {n:"Broccoli Cheddar Bread Bowl", s:["MAIN"], r:9},
+    {n:"Mac & Cheese", s:["MAIN","SIDE"], r:8},
+    {n:"Chipotle Chicken Avocado Melt", s:["MAIN"], r:7},
+    {n:"French Baguette", s:["SIDE"], r:7},
+    {n:"Kitchen Sink Cookie", s:["DESSERT"], r:8},
+    {n:"Cinnamon Crunch Bagel", s:["DESSERT","SIDE"], r:7},
+    {n:"Passion Papaya Green Tea", s:["DRINK"], r:7},
+  ]},
   {name:"Starbucks", items:[
     {n:"Bacon, Gouda & Egg Sandwich", s:["MAIN"], r:7},
     {n:"Double-Smoked Bacon, Cheddar & Egg", s:["MAIN"], r:7},
@@ -886,12 +895,15 @@ const MISHEAR = {
 /* gentle spinner weighting so the chains with the best jokes/jackpots
    actually show up — fun chains come up a bit more than the plain ones */
 const CHAIN_WEIGHT = {
-  "Krispy Kreme":2.4, "Cook Out":2.2, "Bojangles":1.8, "Chick-fil-A":1.8,
-  "Taco Bell":1.8, "Popeyes":1.6, "McDonald's":1.6, "In-N-Out":1.5,
-  "Shake Shack":1.7, "Five Guys":1.7, "Burger King":1.4, "Starbucks":1.3,
+  "Krispy Kreme":1.6, "Cook Out":1.5, "Bojangles":1.4, "Chick-fil-A":1.4,
+  "Taco Bell":1.4, "Popeyes":1.3, "McDonald's":1.3, "In-N-Out":1.2,
+  "Shake Shack":1.3, "Five Guys":1.3, "Burger King":1.2, "Starbucks":1.1,
 };
+/* every appearance this session halves a chain's odds, so rarely-seen
+   chains catch up instead of getting buried by the favorites */
+const seenCount = {};
 function weightedPick(pool){
-  const w=pool.map(c=>CHAIN_WEIGHT[c.name]||1);
+  const w=pool.map(c=>(CHAIN_WEIGHT[c.name]||1)/(1+(seenCount[c.name]||0)));
   const sum=w.reduce((a,b)=>a+b,0);
   let r=Math.random()*sum;
   for(let i=0;i<pool.length;i++){ if((r-=w[i])<0) return pool[i]; }
@@ -1182,6 +1194,7 @@ function spin(useChain){
   let pool=CHAINS.filter(chainHasAnyOpen);
   if(pool.length===0) pool=CHAINS;
   const target = useChain || weightedPick(pool);
+  seenCount[target.name]=(seenCount[target.name]||0)+1;
 
   // find an index of target deep in the strip, land it under the pointer
   const idxInChains = CHAINS.indexOf(target);
