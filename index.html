@@ -938,7 +938,7 @@
           </div>
           <div class="tool-title">Drive-Thru<br>Draft</div>
           <div class="tool-desc">
-            Spin five fast-food chains, draft one item per slot, and dodge the sold-out machine — then get graded and share your tray. No learning objectives; some tools exist because building them is the fun part.
+            Spin five fast-food chains, draft one item per slot, and dodge the sold-out machine — then get graded and share your tray. Secretly, it's the economist's optimal-stopping problem, with fries.
           </div>
           <div class="tool-foot">
             <div class="tool-course">Icebreaker</div>
@@ -1023,6 +1023,14 @@
       grid.querySelectorAll('a.tool').forEach(function(c){
         c.classList.toggle('hide', f!=='all' && c.dataset.cat!==f);
       });
+    });
+  });
+  document.querySelectorAll('a[href="#faculty"]').forEach(function(a){
+    a.addEventListener('click',function(e){
+      e.preventDefault();
+      document.getElementById('all-tools').scrollIntoView({behavior:'smooth'});
+      var pill=document.querySelector('#pills .pill[data-f="faculty"]');
+      if(pill) pill.click();
     });
   });
 })();
