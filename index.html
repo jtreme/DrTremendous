@@ -238,6 +238,14 @@
     background: var(--cream-deep);
     border-bottom: 1px solid var(--rule);
   }
+  .tool-preview::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 0 1px rgba(20, 27, 52, 0.14);
+    pointer-events: none;
+    z-index: 1;
+  }
   .tool-preview .tp-poster,
   .tool-preview .tp-video {
     position: absolute; inset: 0;
@@ -587,7 +595,7 @@
           <div class="tool-top">
             <div class="tool-tag">Visualizer · Live</div>
           </div>
-          <div class="tool-title">The OLS<br>Sorting Machine</div>
+          <div class="tool-title">The Sorting<br>Machine</div>
           <div class="tool-desc">
             Watch variance in Y get sorted into bins for each predictor. Crank the correlation and draw new samples to see coefficients swing — and flip sign — while R² holds steady. Multicollinearity, made visible.
           </div>
@@ -633,6 +641,25 @@
           <div class="tool-principle">Predict before reveal</div>
           <div class="tool-foot">
             <div class="tool-course">ARE 201 · Supply and Demand</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="whisper-market.html" class="tool" data-cat="markets">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/whisper-market.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Whisper a rumor, decide the weather, watch belief move prices before facts do.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">The Whisper<br>Market</div>
+          <div class="tool-desc">
+            Five towns, one rumor. Plant a whisper of drought in a trader's ear, then watch supply shift on belief alone — before you've even decided whether the drought is real. Three rounds: the Whisper, the Washout, and Your Valley, wide open.
+          </div>
+          <div class="tool-principle">Expectations move markets</div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Expectations &amp; Price Signals</div>
             <div class="tool-launch">Launch</div>
           </div>
         </a>

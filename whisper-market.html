@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Whisper Market</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1B3A5C; --navy-deep:#14243B; --gold:#C8901C; --gold-soft:#E8B84B;
+    --paper:#FBF6EA; --parchment:#F4ECDA; --parchment-2:#ECE1C8;
+    --ink:#241E14; --ink-soft:#5A5245; --line:#D8CCAF;
+    --scarce:#B03A2E; --glut:#3E7C59;
+    --f-display:'Fraunces', Georgia, serif;
+    --f-ui:'Archivo', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--f-ui);
+    display:flex; flex-direction:column; min-height:100vh; font-size:16px;
+  }
+  header{
+    display:flex; align-items:baseline; gap:16px; padding:16px 22px 12px;
+    background:var(--navy-deep); color:var(--paper);
+    border-bottom:4px solid var(--gold); flex-wrap:wrap;
+  }
+  header h1{font-family:var(--f-display); font-weight:900; font-size:30px; letter-spacing:.5px;}
+  header .tag{font-size:15px; color:#C9D3E2;}
+  header .tag b{color:var(--gold-soft);}
+  header .day{margin-left:auto; font-size:16px; color:var(--gold-soft); font-weight:700; letter-spacing:1.5px; text-transform:uppercase;}
+
+  .layout{display:flex; flex:1; min-height:0;}
+  .map-wrap{flex:1.6; position:relative; min-width:0; display:flex; flex-direction:column; background:var(--parchment);}
+  svg#map{flex:1; width:100%; height:100%; display:block;}
+
+  /* ---- Map key ---- */
+  .map-key{
+    display:flex; gap:22px; flex-wrap:wrap; align-items:center;
+    padding:10px 20px; background:var(--paper); border-top:2px solid var(--line);
+    font-size:15px;
+  }
+  .map-key .k{display:flex; align-items:center; gap:8px;}
+  .map-key .swatch{width:20px; height:20px; border-radius:50%; border:2px solid var(--ink); flex:none;}
+  .map-key .note{color:var(--ink-soft); font-size:14px;}
+
+  .side{flex:1; min-width:360px; max-width:470px; border-left:2px solid var(--line);
+    display:flex; flex-direction:column; min-height:0; background:var(--paper);}
+
+  /* ---- Coach bar ---- */
+  #coach{
+    padding:14px 18px; background:#FFF7DF; border-bottom:2px solid var(--gold);
+    font-size:16px; line-height:1.5; min-height:52px; display:flex; align-items:center; gap:12px;
+  }
+  #coach .step-dot{width:11px; height:11px; border-radius:50%; background:var(--gold); flex:none;
+    animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  /* ---- Powers ---- */
+  .powers{padding:14px 18px; border-bottom:2px solid var(--line);}
+  .powers h2, .gazette h2, .charts h2{
+    font-family:var(--f-ui); font-size:13px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:10px;
+  }
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
+  button{
+    font-family:var(--f-ui); font-size:15.5px; font-weight:600; cursor:pointer;
+    border:2px solid var(--navy); background:var(--navy); color:#fff;
+    padding:10px 15px; border-radius:8px; transition:background .15s, border-color .15s, transform .05s;
+  }
+  button:hover{background:var(--navy-deep);}
+  button:active{transform:translateY(1px);}
+  button:focus-visible{outline:3px solid var(--gold); outline-offset:2px;}
+  button.armed{background:var(--gold); border-color:var(--gold); color:var(--ink);}
+  button:disabled{opacity:.4; cursor:default;}
+  button.weather{background:#fff; color:var(--navy); border-color:var(--navy);}
+  button.weather:hover{background:#EDF2F9;}
+  .powers .hint{font-size:15px; color:var(--ink-soft); margin-top:10px; line-height:1.5; min-height:20px;}
+  .powers .hint b{color:var(--ink);}
+
+  .tickbar{display:flex; align-items:center; gap:10px; margin-top:12px;}
+  .tickbar button{padding:7px 12px; font-size:14px; background:#fff; color:var(--navy);}
+  .tickbar button:hover{background:#EDF2F9;}
+  .tickbar .spacer{flex:1;}
+
+  /* ---- Town lens ---- */
+  .lens{padding:12px 18px; border-bottom:2px solid var(--line);}
+  .lens h2 span{text-transform:none; letter-spacing:0; color:var(--navy); font-size:14px;}
+  .lens-empty{font-size:14.5px; color:var(--ink-soft); padding:6px 0 2px;}
+  #lensBody svg{width:100%; height:170px; display:block; background:#fff; border:1px solid var(--line); border-radius:6px;}
+  .lens-caption{font-size:14px; line-height:1.45; margin-top:7px; color:var(--ink);}
+  .lens-caption b{color:var(--scarce);}
+  .sd-axis{stroke:#241E14; stroke-width:1.5;}
+  .sd-label{font-family:var(--f-ui); font-size:13px; font-weight:700; fill:#241E14;}
+  .sd-small{font-size:11px; fill:#5A5245;}
+  .sd-D{stroke:#1B3A5C; stroke-width:2.5; fill:none;}
+  .sd-S{stroke:#241E14; stroke-width:2.5; fill:none;}
+  .sd-Sshift{stroke-width:2.5; stroke-dasharray:6 4; fill:none;}
+  .sd-price{stroke:#C8901C; stroke-width:2; stroke-dasharray:3 3;}
+  .sd-eq{fill:#241E14;}
+
+  /* ---- Gazette ---- */
+  .gazette{flex:1; min-height:200px; display:flex; flex-direction:column; padding:12px 18px 8px;}
+  #paper{
+    flex:1; overflow-y:auto; background:#fff; color:var(--ink);
+    border:2px solid var(--line); border-radius:8px; padding:14px 16px 22px;
+  }
+  #paper .masthead{
+    font-family:var(--f-display); font-weight:900; text-align:center; font-size:22px;
+    border-bottom:3px solid var(--ink); padding-bottom:6px; margin-bottom:2px; letter-spacing:.5px;
+  }
+  #paper .masthead-sub{
+    text-align:center; font-size:11px; letter-spacing:1.8px; text-transform:uppercase;
+    border-bottom:1px solid var(--ink); padding-bottom:7px; margin-bottom:12px; color:var(--ink-soft);
+  }
+  .story{padding:10px 0; border-bottom:1px dotted #C9BD9F; animation:slideIn .4s ease;}
+  @keyframes slideIn{from{opacity:0; transform:translateY(-6px);}to{opacity:1; transform:none;}}
+  .story .hl{font-family:var(--f-display); font-weight:900; font-size:18px; line-height:1.25;}
+  .story .sub{font-size:14.5px; margin-top:4px; line-height:1.45; color:#4a4335;}
+  .story .dateline{font-size:11px; letter-spacing:1.2px; text-transform:uppercase; color:#9a8f76; margin-top:5px;}
+
+  /* ---- Charts ---- */
+  .charts{padding:12px 18px 16px; border-top:2px solid var(--line);}
+  .charts h2 span{text-transform:none; letter-spacing:0; color:var(--ink-soft); font-size:13px;}
+  .spark-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:10px;}
+  .spark{text-align:center; background:#fff; border:1px solid var(--line); border-radius:6px; padding:6px 4px 4px;}
+  .spark svg{width:100%; height:56px; display:block;}
+  .spark .lbl{font-size:13px; color:var(--ink-soft); margin-top:3px; font-weight:600;}
+  .spark .val{font-size:16px; font-weight:800;}
+
+  /* ---- Map SVG styling ---- */
+  .road{stroke:#B7A681; stroke-width:7; stroke-linecap:round; cursor:pointer; transition:stroke .2s;}
+  .road:hover{stroke:var(--gold);}
+  .road.closed{stroke:var(--scarce); stroke-dasharray:5 11; opacity:.7;}
+  .road-hit{stroke:transparent; stroke-width:26; cursor:pointer;}
+  .river{stroke:#9DBBD3; stroke-width:16; fill:none; stroke-linecap:round;}
+  .town-dot{stroke:#241E14; stroke-width:2.5; cursor:pointer;}
+  .town-name{font-family:var(--f-display); font-weight:900; font-size:23px; fill:var(--ink);
+    paint-order:stroke; stroke:var(--parchment); stroke-width:5px; pointer-events:none;}
+  .town-price{font-family:var(--f-ui); font-weight:800; font-size:17px; fill:#fff;
+    paint-order:stroke; stroke:rgba(20,25,35,.55); stroke-width:3.5px; pointer-events:none;}
+  .town-trader{font-size:13.5px; fill:var(--ink-soft); font-weight:600;
+    paint-order:stroke; stroke:var(--parchment); stroke-width:4px; pointer-events:none;}
+  .cart{fill:var(--gold); stroke:#241E14; stroke-width:1.6;}
+  .vign{font-size:22px; pointer-events:none;}
+  .vign-label{font-size:14px; font-weight:700; fill:var(--ink);
+    paint-order:stroke; stroke:#FFF7DF; stroke-width:4.5px; pointer-events:none;}
+  .cart-name{font-size:12px; font-weight:700; fill:var(--ink);
+    paint-order:stroke; stroke:var(--parchment); stroke-width:4px; pointer-events:none;}
+  .ripple{fill:none; stroke:var(--gold); stroke-width:3; pointer-events:none;}
+  .belief-ring{fill:none; stroke:var(--gold); pointer-events:none;}
+  .river-label{fill:#6E8CA8; font-size:13px; letter-spacing:3px; font-weight:700;}
+
+  /* ---- Modals ---- */
+  .modal-veil{position:fixed; inset:0; background:rgba(24,20,12,.62); display:flex;
+    align-items:center; justify-content:center; z-index:50; padding:18px;}
+  .modal{
+    background:var(--paper); color:var(--ink); max-width:640px; width:100%;
+    border-radius:10px; border:3px solid var(--navy-deep); padding:30px 32px;
+    box-shadow:0 24px 70px rgba(0,0,0,.45); max-height:88vh; overflow-y:auto;
+  }
+  .modal h2{font-family:var(--f-display); font-weight:900; font-size:30px; margin-bottom:5px;}
+  .modal h3{font-family:var(--f-display); font-weight:600; font-size:18px; color:#7a6426; margin-bottom:16px;}
+  .modal p{font-size:16px; line-height:1.6; margin-bottom:13px;}
+  .modal .powers-list{margin:10px 0 16px; padding-left:0; list-style:none;}
+  .modal .powers-list li{font-size:15.5px; line-height:1.55; margin-bottom:8px; padding-left:28px; position:relative;}
+  .modal .powers-list li::before{content:"◈"; position:absolute; left:4px; color:var(--gold);}
+  .modal button{font-size:16px; padding:12px 24px;}
+  .modal .chain{border-left:4px solid var(--gold); padding:2px 0 2px 16px; margin:14px 0; background:#FFF9E8; border-radius:0 6px 6px 0;}
+  .modal .chain div{font-size:15px; line-height:1.5; padding:5px 0;}
+  .modal .chain div::before{content:"↓ "; color:var(--gold); font-weight:900; margin-right:6px;}
+  .modal .chain div:first-child::before{content:"● ";}
+  .modal .kicker{font-size:12px; letter-spacing:2px; text-transform:uppercase; color:#9a8f76; margin-bottom:7px;}
+
+  .track-toggle{display:flex; gap:8px; margin:6px 0 14px;}
+  .track-btn{background:#fff; color:var(--navy); border:2px solid var(--navy); padding:7px 16px; font-size:14px;}
+  .track-btn.active{background:var(--navy); color:#fff;}
+  .debrief-section{margin-bottom:16px;}
+  .debrief-round{font-family:var(--f-display); font-weight:700; font-size:15.5px; color:var(--navy);
+    border-bottom:1px solid var(--line); padding-bottom:5px; margin-bottom:8px;}
+  .debrief-list{padding-left:22px;}
+  .debrief-list li{font-size:14.5px; line-height:1.55; margin-bottom:9px;}
+
+  @media (max-width: 980px){
+    .layout{flex-direction:column;}
+    .side{max-width:none; min-width:0; border-left:none; border-top:2px solid var(--line);}
+    .map-wrap{min-height:440px;}
+    #paper{min-height:200px;}
+    header h1{font-size:24px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Whisper Market</h1>
+  <div class="tag">Markets respond to beliefs, not just facts. You are the rumor. <b>Whisper wisely.</b></div>
+  <div class="day" id="dayLabel">Day 1</div>
+</header>
+
+<div class="layout">
+  <div class="map-wrap">
+    <svg id="map" viewBox="0 0 1000 660" role="img" aria-label="Map of five grain towns connected by roads. Town circles show price by color; carts move grain along roads.">
+      <!-- river flowing past Millbrook from the north -->
+      <path class="river" d="M 430 -10 C 470 60, 400 120, 460 170 C 510 210, 430 260, 470 320"/>
+      <text x="386" y="52" class="river-label" transform="rotate(70 386 52)">U P R I V E R</text>
+      <g id="roads"></g>
+      <g id="beliefRings"></g>
+      <g id="towns"></g>
+      <g id="carts"></g>
+      <g id="vignettes"></g>
+      <g id="ripples"></g>
+    </svg>
+    <div class="map-key">
+      <div class="k"><span class="swatch" style="background:#3E7C59;"></span> green = grain is <b>cheap</b></div>
+      <div class="k"><span class="swatch" style="background:#D9A62E;"></span> gold = <b>normal</b> ($10)</div>
+      <div class="k"><span class="swatch" style="background:#B03A2E;"></span> red = grain is <b>expensive</b></div>
+      <div class="k"><span class="swatch" style="background:var(--parchment); box-shadow:0 0 0 4px var(--gold-soft);"></span> gold ring = town <b>believes the rumor</b></div>
+      <div class="k"><span style="display:inline-block;width:24px;height:14px;background:#C8901C;border:2px solid #241E14;border-radius:3px;"></span> cart hauling grain</div>
+      <div class="note">Bigger circle = more grain in storage · Click any road to close or reopen it</div>
+    </div>
+  </div>
+
+  <div class="side">
+    <div id="coach"><div class="step-dot"></div><div id="coachText"></div></div>
+
+    <div class="powers">
+      <h2>Your powers</h2>
+      <div class="btn-row">
+        <button id="btnWhisper">🗣 Whisper a rumor</button>
+        <button id="btnDrought" class="weather">☀️ Let the drought come</button>
+        <button id="btnRain" class="weather">🌧 Let the rains come</button>
+      </div>
+      <div class="hint" id="powerHint">Rumor: “A drought is coming upriver.” Choose whose ear it lands in.</div>
+      <div class="tickbar">
+        <button id="btnPause">⏸ Pause</button>
+        <button id="btnSpeed">Speed: 1×</button>
+        <div class="spacer"></div>
+        <button id="btnDebrief" style="display:none; background:#fff; color:var(--navy);">📋 Discussion questions</button>
+        <button id="btnReset">↺ Start over</button>
+      </div>
+    </div>
+
+    <div class="lens">
+      <h2>Town lens · <span id="lensTitle">click any town on the map</span></h2>
+      <div id="lensBody" class="lens-empty">Click a town to see its supply and demand curves move in real time.</div>
+    </div>
+
+    <div class="gazette">
+      <h2>The Valley Gazette</h2>
+      <div id="paper">
+        <div class="masthead">The Valley Gazette</div>
+        <div class="masthead-sub">All the grain news fit to guess at · 2¢</div>
+        <div id="stories"></div>
+      </div>
+    </div>
+
+    <div class="charts">
+      <h2>Grain price, by town <span style="text-transform:none; letter-spacing:0; color:#5f6b82;">(all five share one scale · dotted line = the old normal price, $10)</span></h2>
+      <div class="spark-grid" id="sparks"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-veil" id="introModal">
+  <div class="modal">
+    <div class="kicker">A Dr. Tremendous field experiment</div>
+    <h2>The Whisper Market</h2>
+    <h3>One rumor. Five towns. Watch what a price signal does.</h3>
+    <p>Markets don’t respond only to facts. They respond to what people <em>believe</em> is about to happen. In this valley, five towns trade grain along the roads. Nobody is in charge. Nobody can be ordered to do anything — including by you.</p>
+    <p>You have exactly three powers:</p>
+    <ul class="powers-list">
+      <li><strong>Whisper.</strong> Plant a rumor of drought in one trader’s ear. True? Not even you know yet.</li>
+      <li><strong>Weather.</strong> When the moment comes, decide: does the drought actually arrive, or do the rains come?</li>
+      <li><strong>Roads.</strong> Click any road to close or reopen it, and see what trade does about it.</li>
+    </ul>
+    <p>No prices are set by you. No one is commanded. Everything that happens, happens because someone, somewhere, acted on a belief.</p>
+    <p style="font-size:14px; color:#5a5245;"><b>Three rounds:</b> the Whisper (a rumor moves prices), the Washout (a road dies, trade reroutes), and Your Valley (everything unlocked). Tip: click any town anytime to open its live supply-and-demand lens.</p>
+    <button id="btnBegin">Enter the valley →</button>
+  </div>
+</div>
+
+<div class="modal-veil" id="revealModal" style="display:none;">
+  <div class="modal" id="revealBody"></div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   THE WHISPER MARKET — v1 sandbox
+   Beliefs are the core data structure. Prices are posted per
+   town and adjust toward (fundamental value × belief premium).
+   Carters chase price gradients. Vignettes render consequences.
+   ============================================================ */
+
+const BASE_P = 10, TARGET_STOCK = 100;
+const TICK_MS = 620;
+
+const TOWNS = [
+  {id:"millbrook",  name:"Millbrook",   x:500, y:130, trader:"Odell Marsh"},
+  {id:"ashford",    name:"Ashford",     x:205, y:315, trader:"Prue Calloway"},
+  {id:"corvale",    name:"Corvale",     x:500, y:355, trader:"Ezra Whitfield"},
+  {id:"petersfield",name:"Petersfield", x:795, y:315, trader:"June Aldana"},
+  {id:"ryehollow",  name:"Ryehollow",   x:500, y:552, trader:"Sam Beckett"},
+];
+const ROADS = [
+  ["millbrook","corvale"], ["millbrook","ashford"], ["millbrook","petersfield"],
+  ["ashford","corvale"], ["petersfield","corvale"], ["ryehollow","corvale"],
+  ["ashford","ryehollow"], ["petersfield","ryehollow"],
+];
+const CARTERS = ["Wren","Barlow","Ines","Tobias","Mercy","Gil"];
+
+let S; // sim state
+function freshState(){
+  const towns = {};
+  for(const t of TOWNS){
+    towns[t.id] = {
+      ...t,
+      stock: TARGET_STOCK,
+      price: BASE_P,
+      belief: 0,           // believed chance of upriver drought, 0..1
+      holding: false,      // farmers/trader withholding grain
+      hoard: 0,            // trader's private hoard
+      potato: false,       // households substituting
+      noFlour: false,
+      queue: false,
+      history: [BASE_P],
+      flags: {},           // one-shot vignette/headline flags
+    };
+  }
+  return {
+    tick: 0, round: 1, roundTick: 0, washout: null, washoutSnapshot: null, towns,
+    roads: ROADS.map(([a,b])=>({a,b,open:true})),
+    carts: CARTERS.map((n,i)=>({name:n, at:TOWNS[i%5].id, dest:null, cargo:0, progress:0, x:0, y:0, buyPrice:0})),
+    weather: "unknown",    // unknown | drought | rain
+    droughtTicksLeft: 0,
+    whisperUsed: false, whisperTown: null, whisperTick: null,
+    paused: false, speed: 1,
+    coachStep: 0,
+    spikePeak: {}, // per-town max price seen
+    revealShown: false,
+    causal: [],    // causal chain log for the reveal
+    headlinesShown: new Set(),
+  };
+}
+
+/* -------------------- geometry helpers -------------------- */
+const townById = id => S.towns[id];
+function roadBetween(a,b){ return S.roads.find(r=>(r.a===a&&r.b===b)||(r.a===b&&r.b===a)); }
+function neighbors(id){
+  return S.roads.filter(r=>r.open&&(r.a===id||r.b===id)).map(r=>r.a===id?r.b:r.a);
+}
+function dist(a,b){ const A=townById(a),B=townById(b); return Math.hypot(A.x-B.x,A.y-B.y); }
+
+/* -------------------- the gazette -------------------- */
+function headline(key, hl, sub, once=true){
+  if(once && S.headlinesShown.has(key)) return;
+  S.headlinesShown.add(key);
+  const el = document.createElement("div");
+  el.className="story";
+  el.innerHTML = `<div class="hl">${hl}</div>${sub?`<div class="sub">${sub}</div>`:""}
+    <div class="dateline">Day ${Math.floor(S.tick/6)+1} · The Valley</div>`;
+  const box = document.getElementById("stories");
+  box.prepend(el);
+  while(box.children.length>26) box.removeChild(box.lastChild);
+}
+function causal(msg){ if(S.causal[S.causal.length-1]!==msg) S.causal.push(msg); }
+
+/* -------------------- coach -------------------- */
+const COACH = [
+  `<b>Round 1 · The Whisper.</b> Press <b>Whisper a rumor</b>, then click a town to choose whose ear it lands in. Millbrook sits closest to the river.`,
+  `The rumor is loose. Click the whispered town to open its <b>Town lens</b> and watch its supply curve. No drought has happened. <i>Nothing real has changed yet.</i>`,
+  `Prices are moving on belief alone — check the lens: supply has shifted left with zero change in the harvest. When ready, decide the weather: <b>drought</b> or <b>rains</b>.`,
+  `The weather is decided. Watch what the valley does with the truth — and what the Gazette decides to blame.`,
+  `<b>Round 2 · The Washout.</b> A storm has taken out a road. Watch the carts find the long way around — and watch prices at the cut-off towns. Click roads to close or reopen others if you dare.`,
+  `<b>Round 3 · Your valley.</b> Everything is unlocked: whisper anywhere, decide the weather, cut any road. Challenge: cause a price spike in Ryehollow <i>without</i> whispering to Ryehollow.`,
+];
+function setCoach(n){
+  S.coachStep = n;
+  document.getElementById("coachText").innerHTML = COACH[Math.min(n,COACH.length-1)];
+}
+
+/* -------------------- sim core -------------------- */
+function stepTown(t){
+  // production: farmers grow ~5/tick; drought cuts Millbrook hard
+  let produced = 5.5;
+  if(S.weather==="drought" && t.id==="millbrook" && S.droughtTicksLeft>0) produced = 2;
+
+  // hoarding kicks in when the trader believes scarcity is coming
+  const wasHolding = t.holding;
+  t.holding = t.belief > 0.62 && !(S.weather==="rain");
+  if(t.holding && !wasHolding){
+    fireVignette(t,"hold","🌾🔒","holds grain back");
+    headline("hold-"+t.id, `${t.trader} of ${t.name} Quietly Stops Selling`,
+      `Wagonloads that usually reach market are staying in the barn. ${t.trader} declined to comment.`);
+    causal(`${t.trader} (${t.name}) believed the rumor and began withholding grain`);
+  }
+
+  let sold = t.holding ? produced*0.55 : produced;
+  t.stock += sold;
+
+  // trader hoards on top of withholding
+  if(t.holding && t.stock > 18){
+    const grab = Math.min(1.2, t.stock-18);
+    t.stock -= grab; t.hoard += grab;
+  }
+  // release hoard when belief collapses or price is irresistible
+  if(t.hoard>0 && (t.belief<0.2 || t.price>BASE_P*1.9)){
+    const rel = Math.min(5, t.hoard);
+    t.hoard -= rel; t.stock += rel;
+    if(t.belief<0.2 && !t.flags.dumped){
+      t.flags.dumped = true;
+      headline("dump-"+t.id, `Hoarded Grain Floods ${t.name} Market`,
+        `${t.trader}'s barn empties overnight as prices tumble. Neighbors are not amused.`);
+    }
+  }
+
+  // consumption: households + bakers eat ~5/tick; potato substitution trims it
+  t.potato = t.price > BASE_P*1.6;
+  let demand = t.potato ? 3.4 : 5;
+  if(S.round===2 && t.id==="millbrook") demand += 2.6; // the flour contract: Millbrook now imports
+  const eaten = Math.min(demand, Math.max(t.stock,0));
+  t.stock -= eaten;
+  t.noFlour = t.stock < 12;
+  t.queue = t.price > BASE_P*1.4;
+
+  // price: fundamentals × belief premium, smoothed
+  const sRatio = TARGET_STOCK / Math.min(Math.max(t.stock, 32), 420);
+  const fundamental = BASE_P * Math.pow(sRatio, 0.72);
+  const premium = 1 + t.belief*0.5;
+  const target = fundamental * premium;
+  t.price += 0.13*(target - t.price);
+  t.price = Math.max(4, Math.min(26, t.price));
+
+  t.history.push(t.price);
+  if(t.history.length>140) t.history.shift();
+  S.spikePeak[t.id] = Math.max(S.spikePeak[t.id]||BASE_P, t.price);
+}
+
+function stepBeliefs(){
+  for(const id in S.towns){
+    const t = S.towns[id];
+    if(S.weather==="rain"){
+      t.belief *= 0.80; if(t.belief<0.03) t.belief=0;
+      continue;
+    }
+    if(S.weather==="drought"){
+      // truth confirms fast where the fields are; elsewhere it travels as news
+      if(t.id==="millbrook") t.belief += (1-t.belief)*0.12;
+      else t.belief += (0.72-t.belief)*0.03;
+      continue;
+    }
+    // rumor diffusion along open roads: word spreads toward the loudest neighbor
+    const nb = neighbors(id).map(n=>S.towns[n].belief);
+    const loudest = nb.length? Math.max(...nb)*0.72 : 0;
+    if(loudest > t.belief){
+      const before = t.belief;
+      t.belief += (loudest - t.belief)*0.035;
+      if(before<0.3 && t.belief>=0.3 && id!==S.whisperTown){
+        causal(`the rumor reached ${t.name} by road — nobody carried a single fact, only a story`);
+      }
+    }
+    t.belief *= 0.997; // slow decay without confirmation
+  }
+}
+
+function stepCarts(){
+  for(const c of S.carts){
+    if(c.dest){
+      c.progress += 0.26;
+      if(c.progress>=1){
+        const d = S.towns[c.dest];
+        if(c.cargo>0){
+          d.stock += c.cargo;
+          const profit = (d.price - c.buyPrice)*c.cargo - 2;
+          if(profit>25 && !d.flags.carterRich){
+            d.flags.carterRich = true;
+            headline("cart-"+c.name, `Carter ${c.name} Makes a Killing Hauling Grain to ${d.name}`,
+              `“I just follow the prices,” ${c.name} shrugged, counting cash.`);
+          }
+          c.cargo = 0;
+        }
+        c.at = c.dest; c.dest=null; c.progress=0;
+      }
+      continue;
+    }
+    // idle: find best arbitrage among open neighbor roads
+    const here = S.towns[c.at];
+    let best=null, bestMargin=1.2;
+    for(const n of neighbors(c.at)){
+      const margin = S.towns[n].price - here.price - 1.6;
+      if(margin>bestMargin){ bestMargin=margin; best=n; }
+    }
+    if(best && here.stock>22){
+      const load = Math.min(13, here.stock-14);
+      here.stock -= load;
+      c.cargo = load; c.buyPrice = here.price; c.dest = best; c.progress = 0;
+      if(!S.towns[best].flags.cartInbound && S.towns[best].price>BASE_P*1.25){
+        S.towns[best].flags.cartInbound = true;
+        fireVignette(S.towns[best],"cart","🛞","carts rerouting here");
+        causal(`carters rerouted toward ${S.towns[best].name}, chasing the price gap`);
+      }
+    } else if(!best && Math.random()<0.05){
+      // wander occasionally so carts don't freeze
+      const nb = neighbors(c.at);
+      if(nb.length) { c.dest = nb[Math.floor(Math.random()*nb.length)]; c.progress=0; }
+    }
+  }
+}
+
+function stepVignettesAndNews(){
+  for(const id in S.towns){
+    const t = S.towns[id];
+    if(t.queue && !t.flags.queue){
+      t.flags.queue = true;
+      fireVignette(t,"queue","🧍🧍🧍","the bakery line grows");
+      causal(`bread got dear in ${t.name}; the bakery line stretched down the street`);
+    }
+    if(!t.queue) t.flags.queue = false;
+
+    if(t.noFlour && !t.flags.noflour){
+      t.flags.noflour = true;
+      fireVignette(t,"noflour","🚫🥖","NO FLOUR TODAY");
+      headline("noflour-"+t.id, `“NO FLOUR TODAY”: ${t.name} Mill Shutters Its Window`,
+        `The miller says there is simply nothing to grind. Housewives disagree about whose fault that is.`);
+    }
+    if(!t.noFlour) t.flags.noflour = false;
+
+    if(t.potato && !t.flags.potato){
+      t.flags.potato = true;
+      fireVignette(t,"potato","🥔","families switch to potatoes");
+      headline("potato-"+t.id, `${t.name} Families Turn to Potatoes as Bread Soars`,
+        `“You can't rumor a potato,” one grandmother observed, correctly.`);
+      causal(`households in ${t.name} substituted potatoes for bread — demand itself bent to the price`);
+    }
+
+    // the gazette blames what it can SEE, not what caused it
+    if(t.price>BASE_P*1.5 && !t.flags.blamed){
+      t.flags.blamed = true;
+      const culprit = t.holding ? t.trader : S.towns[S.whisperTown||"millbrook"].trader;
+      headline("blame-"+t.id, `GRAIN PANIC IN ${t.name.toUpperCase()}: ${culprit} Accused of Hoarding`,
+        `Prices have leapt with no drought yet in sight. The Gazette has identified the obvious villain. (The Gazette has not identified you.)`);
+      if(!t.flags.blamedCausal){ t.flags.blamedCausal=true;
+        causal(`the Gazette blamed ${culprit} — the visible symptom, not the cause`); }
+    }
+  }
+
+  // weather-resolution stories
+  if(S.weather==="drought" && !S.headlinesShown.has("w-drought")){
+    headline("w-drought", `DROUGHT CONFIRMED UPRIVER`,
+      `Millbrook's fields crack in the sun. The hoarders, it turns out, were right — which will make them insufferable.`);
+    causal(`the drought arrived: the belief became fact, and the early hoarders were vindicated`);
+  }
+  if(S.weather==="rain" && !S.headlinesShown.has("w-rain")){
+    headline("w-rain", `THE RAINS COME; SPECULATORS RUINED`,
+      `Fat clouds over Millbrook. Grain hoards are suddenly worth less by the hour. Somewhere, a trader is weeping into a very full barn.`);
+    causal(`the rains came: the drought never happened — but the price spike already had`);
+  }
+}
+
+function tickOnce(){
+  S.tick++;
+  if(S.droughtTicksLeft>0){
+    S.droughtTicksLeft--;
+    if(S.droughtTicksLeft===0 && S.round===3){
+      S.weather="unknown";
+      S.headlinesShown.delete("w-drought"); S.headlinesShown.delete("w-rain");
+      document.getElementById("btnDrought").disabled=false;
+      document.getElementById("btnRain").disabled=false;
+      headline("recover-"+S.tick, `Millbrook Fields Recover`,
+        `The land forgives. The grain trade, being the grain trade, immediately begins worrying about next season.`, false);
+    }
+  }
+  if(S.weather==="rain" && S.round===3 && S.tick-(S.weatherTick||0)>50){
+    S.weather="unknown";
+    S.headlinesShown.delete("w-drought"); S.headlinesShown.delete("w-rain");
+    document.getElementById("btnDrought").disabled=false;
+    document.getElementById("btnRain").disabled=false;
+  }
+  stepBeliefs();
+  for(const id in S.towns) stepTown(S.towns[id]);
+  stepCarts();
+  stepVignettesAndNews();
+
+  // coach transitions & round scheduling
+  if(S.round===1){
+    if(S.coachStep===1 && S.whisperTown && S.towns[S.whisperTown].price>BASE_P*1.15) setCoach(2);
+    if(S.coachStep===3 && S.weather!=="unknown" && S.tick - (S.weatherTick||0) > 55 && !S.revealShown) showReveal();
+  } else if(S.round===2){
+    if(!S.washout && S.tick - S.roundTick === 14) triggerWashout();
+    if(S.washout && S.tick - S.washoutSnapshot.tick === 70) showRound2Debrief();
+  }
+
+  document.getElementById("dayLabel").textContent = "Day " + (Math.floor(S.tick/6)+1);
+  render();
+}
+
+/* -------------------- player powers -------------------- */
+let whisperArmed = false;
+function armWhisper(){
+  whisperArmed = !whisperArmed;
+  document.getElementById("btnWhisper").classList.toggle("armed", whisperArmed);
+  document.getElementById("powerHint").innerHTML = whisperArmed
+    ? `Now <b>click a town</b>. The rumor — “a drought is coming upriver” — lands in that trader's ear.`
+    : `Rumor: “A drought is coming upriver.” Choose whose ear it lands in.`;
+}
+function whisperAt(townId){
+  const t = S.towns[townId];
+  t.belief = Math.max(t.belief, 0.92);
+  S.whisperUsed = true; S.whisperTown = townId; S.whisperTick = S.tick;
+  whisperArmed = false;
+  document.getElementById("btnWhisper").classList.remove("armed");
+  document.getElementById("powerHint").innerHTML =
+    `You whispered to <b>${t.trader}</b> in ${t.name}. That's all you did. Watch.`;
+  spawnRipple(t.x, t.y);
+  headline("whisper", `Rumor of Upriver Drought Reaches ${t.name}`,
+    `Sources close to ${t.trader} report “a very reliable whisper.” The sky remains, for now, unhelpfully blue.`);
+  causal(`you whispered “drought upriver” to ${t.trader} in ${t.name} — one sentence, zero facts`);
+  if(S.coachStep===0) setCoach(1);
+  if(S.coachStep>=4){ /* sandbox re-whisper, no coach change */ }
+}
+function setWeather(kind){
+  if(S.round===2) return;
+  if(S.weather!=="unknown" && S.round!==3) return;
+  S.weather = kind; S.weatherTick = S.tick;
+  if(kind==="drought") S.droughtTicksLeft = 70;
+  document.getElementById("btnDrought").disabled = true;
+  document.getElementById("btnRain").disabled = true;
+  if(S.coachStep<=2) setCoach(3);
+}
+
+/* -------------------- the reveal -------------------- */
+function showReveal(){
+  S.revealShown = true;
+  S.paused = true; updatePauseBtn();
+  const peak = Math.max(...Object.values(S.spikePeak));
+  const pct = Math.round((peak/BASE_P-1)*100);
+  const rain = S.weather==="rain";
+  const chain = S.causal.map(c=>`<div>${c}</div>`).join("");
+  const body = document.getElementById("revealBody");
+  body.innerHTML = `
+    <div class="kicker">What just happened</div>
+    <h2>${rain ? "The drought never came." : "The drought came —"}</h2>
+    <h3>${rain ? "The price spike happened anyway." : "but prices moved long before it did."}</h3>
+    <p>${rain
+      ? `Grain peaked around <b>$${peak.toFixed(1)}</b> — up ~${pct}% — and not one raindrop failed to fall. Nothing real was ever scarce. People <em>believed</em> grain would be scarce, acted on the belief, and their actions made it true for a while: withheld grain, redirected carts, empty mill windows, potato dinners.`
+      : `By the time the sun did its damage, prices had already climbed toward <b>$${peak.toFixed(1)}</b> (~${pct}% up). The market moved on the <em>expectation</em> — the drought merely confirmed a price that belief had already set. That head start is what pulled grain toward Millbrook before the shortage even existed.`}
+    </p>
+    <div class="kicker">The causal chain — everything traces back to one whisper</div>
+    <div class="chain">${chain || "<div>you watched, and touched nothing — a rare act of monetary restraint</div>"}</div>
+    <p style="font-size:13.5px; color:#5a5245;">Notice what you never did: you never set a price, hired a cart, or gave an order. You changed <b>one belief</b>. The price system did everything else — including inventing a villain for the newspaper.</p>
+    <button id="btnSandbox">Next round: The Washout →</button>
+  `;
+  document.getElementById("revealModal").style.display="flex";
+  document.getElementById("btnSandbox").onclick = beginRound2;
+}
+
+/* -------------------- Round 2: The Washout -------------------- */
+function beginRound2(){
+  document.getElementById("revealModal").style.display="none";
+  S.round = 2; S.roundTick = S.tick;
+  S.weather="unknown"; S.droughtTicksLeft=0;
+  // new season: calm baseline so the washout's effect is legible
+  for(const id in S.towns){
+    const t=S.towns[id];
+    t.belief=0; t.holding=false; t.stock=100; t.hoard=0;
+    t.potato=false; t.noFlour=false; t.queue=false; t.flags={};
+  }
+  headline("r2contract", `Millbrook Mill Wins Big Flour Contract Downriver`,
+    `The mill will be buying far more grain than the town grows. Good news for Millbrook — as long as the roads hold.`);
+  document.getElementById("btnDrought").disabled=true;
+  document.getElementById("btnRain").disabled=true;
+  document.getElementById("powerHint").innerHTML = `Weather powers rest this round. The storm has its own plans for the roads.`;
+  setCoach(4);
+  S.paused=false; updatePauseBtn();
+  headline("r2", `STORM WARNING: Heavy Rains Forecast in the Hills`,
+    `Carters are advised to check the bridges. Carters, as usual, are advising each other to hurry.`);
+}
+function triggerWashout(){
+  // cut the busiest artery still open: prefer Millbrook–Corvale
+  let r = S.roads.find(x=>x.open && ((x.a==="millbrook"&&x.b==="corvale")||(x.a==="corvale"&&x.b==="millbrook")));
+  if(!r) r = S.roads.find(x=>x.open);
+  if(!r) return;
+  r.open = false; r.washout = true;
+  S.washout = r;
+  const A=townById(r.a), B=townById(r.b);
+  S.washoutSnapshot = {a:S.towns[r.a].price, b:S.towns[r.b].price, tick:S.tick};
+  spawnRipple((A.x+B.x)/2, (A.y+B.y)/2);
+  headline("washout", `BRIDGE OUT: ${A.name}–${B.name} Road Washed Away`,
+    `No carts can pass. Grain will have to find another way around — and it will charge for the detour.`);
+  causal(`the storm cut the ${A.name}–${B.name} road — trade did not stop, it rerouted`);
+}
+function showRound2Debrief(){
+  S.paused = true; updatePauseBtn();
+  const r = S.washout, A=townById(r.a), B=townById(r.b);
+  const pa0=S.washoutSnapshot.a, pb0=S.washoutSnapshot.b;
+  const pa1=S.towns[r.a].price, pb1=S.towns[r.b].price;
+  const fmt=(x0,x1)=>`$${x0.toFixed(1)} → $${x1.toFixed(1)} (${x1>=x0?"+":""}${(((x1/x0)-1)*100).toFixed(0)}%)`;
+  const body = document.getElementById("revealBody");
+  body.innerHTML = `
+    <div class="kicker">Round 2 debrief</div>
+    <h2>The road died. The trade didn't.</h2>
+    <h3>Transport costs are part of the price of grain.</h3>
+    <p>When the ${A.name}–${B.name} bridge went out, no official rerouted a single cart. Carters simply found that the old margin was gone and a new one had appeared on the long way around.</p>
+    <p><b>${A.name}:</b> ${fmt(pa0,pa1)} &nbsp;·&nbsp; <b>${B.name}:</b> ${fmt(pb0,pb1)}</p>
+    <p style="font-size:14.5px; color:#5a5245;">In lecture terms: closing a route raises the effective transport cost between two markets, so the law-of-one-price band widens. Prices in connected towns can now drift further apart before arbitrage snaps them back.</p>
+    <button id="btnRound3">Next round: Your valley →</button>`;
+  document.getElementById("revealModal").style.display="flex";
+  document.getElementById("btnRound3").onclick = beginRound3;
+}
+function beginRound3(){
+  document.getElementById("revealModal").style.display="none";
+  S.round = 3; S.roundTick = S.tick;
+  // reopen washed-out road, restore all powers
+  if(S.washout){ S.washout.open = true; S.washout = null; }
+  document.getElementById("btnDrought").disabled=false;
+  document.getElementById("btnRain").disabled=false;
+  S.weather="unknown"; S.droughtTicksLeft=0;
+  document.getElementById("powerHint").innerHTML =
+    `All powers unlocked. Rumor: “A drought is coming upriver.” Whisper it anywhere, as often as you like.`;
+  setCoach(5);
+  S.paused=false; updatePauseBtn();
+  headline("r3", `Bridge Rebuilt; Valley Declared “Back to Normal”`,
+    `The Gazette's editors are confident nothing strange will ever happen again.`);
+  document.getElementById("btnDebrief").style.display = "inline-block";
+  render();
+}
+
+/* -------------------- debrief panel -------------------- */
+const DEBRIEF = {
+  "201": {
+    label: "ARE 201 — Principles",
+    intro: "Four questions on Round 1, plus one synthesis prompt. Keep it to the core mechanism: beliefs move prices before facts do.",
+    sections: [
+      { round: "Round 1 · The Whisper", qs: [
+        "Before the weather was decided, the price in Millbrook had already moved. What caused that price change, if not scarcity?",
+        "If the rains had come instead of the drought, would the price spike in Round 1 have been a “mistake” by the market? Why or why not?",
+        "Name one thing that changed in the <i>real world</i> between the moment you whispered and the moment the price first ticked up.",
+        "The Gazette blamed a specific trader for hoarding. Was the trader wrong to hoard, given what they believed at the time?",
+      ]},
+      { round: "Synthesis", qs: [
+        "In two sentences: explain why the price spiked even though the drought never happened.",
+      ]},
+    ]
+  },
+  "495": {
+    label: "ARE 495 — Market Shocks",
+    intro: "All three rounds, plus a tie-in to real commodity markets. Expect students to connect this back to futures, transport costs, and rationing mechanisms.",
+    sections: [
+      { round: "Round 1 · The Whisper", qs: [
+        "Before the weather was decided, the price in Millbrook had already moved. What caused that price change, if not scarcity?",
+        "If the rains had come instead of the drought, would the price spike in Round 1 have been a “mistake” by the market? Why or why not?",
+        "Name one thing that changed in the <i>real world</i> between the moment you whispered and the moment the price first ticked up.",
+        "The Gazette blamed a specific trader for hoarding. Was the trader wrong to hoard, given what they believed at the time?",
+        "Relate this to a real commodity market: how do futures markets and inventory data let real grain traders act on beliefs about future supply, the way our traders acted on a rumor?",
+      ]},
+      { round: "Round 2 · The Washout", qs: [
+        "Look at the price gap between the two towns on either side of the washed-out road right after it happened, and again a few days later. What's happening to that gap over time, and why?",
+        "Nobody ordered any cart to change its route. So who — or what — decided the new routes?",
+        "If a second, parallel road had already existed between those two towns, would the price spike from the washout have been bigger or smaller? Why?",
+        "In your own words: what does this round teach about transportation costs and the “law of one price”?",
+      ]},
+      { round: "Round 3 · Your Valley", qs: [
+        "Describe how you managed to move Ryehollow's price without whispering to Ryehollow. What did you use instead?",
+        "Was there a point where the price in a town you whispered to went back down even though you never “undid” the rumor? What caused that?",
+        "If you were a regulator trying to prevent panic-driven price spikes in this valley, what's one tool you'd want that you weren't given here — and what would go wrong if you used it badly?",
+      ]},
+    ]
+  }
+};
+let debriefTrack = "201";
+function renderDebrief(){
+  const d = DEBRIEF[debriefTrack];
+  const body = document.getElementById("revealBody");
+  body.innerHTML = `
+    <div class="kicker">Discussion questions</div>
+    <h2>Debrief the Valley</h2>
+    <div class="track-toggle">
+      <button class="track-btn ${debriefTrack==='201'?'active':''}" data-track="201">ARE 201</button>
+      <button class="track-btn ${debriefTrack==='495'?'active':''}" data-track="495">ARE 495</button>
+    </div>
+    <p style="font-size:14px; color:#5a5245;">${d.intro}</p>
+    ${d.sections.map(sec => `
+      <div class="debrief-section">
+        <div class="debrief-round">${sec.round}</div>
+        <ol class="debrief-list">
+          ${sec.qs.map(q=>`<li>${q}</li>`).join("")}
+        </ol>
+      </div>
+    `).join("")}
+    <button id="btnCloseDebrief">Close</button>
+  `;
+  document.getElementById("revealModal").style.display="flex";
+  body.querySelectorAll(".track-btn").forEach(b=>{
+    b.onclick = ()=>{ debriefTrack = b.dataset.track; renderDebrief(); };
+  });
+  document.getElementById("btnCloseDebrief").onclick = ()=>{
+    document.getElementById("revealModal").style.display="none";
+    S.paused = S.debriefPrevPaused || false; updatePauseBtn();
+  };
+}
+
+/* -------------------- rendering -------------------- */
+const svgNS = "http://www.w3.org/2000/svg";
+function priceColor(p){
+  // green (<9) -> gold (10, the old normal) -> orange (12) -> red (15+)
+  const lerp=(a,b,u)=>Math.round(a+(b-a)*u);
+  const mix=(c1,c2,u)=>`rgb(${lerp(c1[0],c2[0],u)},${lerp(c1[1],c2[1],u)},${lerp(c1[2],c2[2],u)})`;
+  const GREEN=[62,124,89], GOLD=[217,166,46], ORANGE=[203,102,24], RED=[176,58,46];
+  if(p<=9) return mix(GREEN,GREEN,0);
+  if(p<=10.3) return mix(GREEN,GOLD,(p-9)/1.3);
+  if(p<=11.8) return mix(GOLD,ORANGE,(p-10.3)/1.5);
+  if(p<=14) return mix(ORANGE,RED,(p-11.8)/2.2);
+  return mix(RED,RED,0);
+}
+
+function buildStatic(){
+  const g = document.getElementById("roads");
+  g.innerHTML="";
+  for(const r of S.roads){
+    const A=townById(r.a), B=townById(r.b);
+    const vis = document.createElementNS(svgNS,"line");
+    vis.setAttribute("x1",A.x); vis.setAttribute("y1",A.y);
+    vis.setAttribute("x2",B.x); vis.setAttribute("y2",B.y);
+    vis.setAttribute("class","road"); vis.dataset.a=r.a; vis.dataset.b=r.b;
+    const hit = document.createElementNS(svgNS,"line");
+    hit.setAttribute("x1",A.x); hit.setAttribute("y1",A.y);
+    hit.setAttribute("x2",B.x); hit.setAttribute("y2",B.y);
+    hit.setAttribute("class","road-hit");
+    hit.addEventListener("click",()=>{
+      r.open=!r.open;
+      headline(`road-${r.a}-${r.b}-${S.tick}`,
+        r.open? `Road Between ${A.name} and ${B.name} Reopens` : `Road Between ${A.name} and ${B.name} Washed Out`,
+        r.open? `Carters celebrate. Toll collectors, less so.` : `Grain must now find another way around. It will.`, false);
+      render();
+    });
+    g.appendChild(vis); g.appendChild(hit);
+  }
+
+  const tg = document.getElementById("towns");
+  tg.innerHTML="";
+  for(const id in S.towns){
+    const t=S.towns[id];
+    const grp = document.createElementNS(svgNS,"g");
+    grp.setAttribute("id","town-"+id);
+    const c = document.createElementNS(svgNS,"circle");
+    c.setAttribute("cx",t.x); c.setAttribute("cy",t.y); c.setAttribute("r",34);
+    c.setAttribute("class","town-dot");
+    c.addEventListener("click",()=>{ if(whisperArmed) whisperAt(id); else selectLens(id); });
+    const name = document.createElementNS(svgNS,"text");
+    name.setAttribute("x",t.x); name.setAttribute("y",t.y-48);
+    name.setAttribute("text-anchor","middle"); name.setAttribute("class","town-name");
+    name.textContent = t.name;
+    const price = document.createElementNS(svgNS,"text");
+    price.setAttribute("x",t.x); price.setAttribute("y",t.y+6);
+    price.setAttribute("text-anchor","middle"); price.setAttribute("class","town-price");
+    const trader = document.createElementNS(svgNS,"text");
+    trader.setAttribute("x",t.x); trader.setAttribute("y",t.y+58);
+    trader.setAttribute("text-anchor","middle"); trader.setAttribute("class","town-trader");
+    trader.textContent = "trader: "+t.trader;
+    grp.append(c,name,price,trader);
+    tg.appendChild(grp);
+  }
+
+  // sparks scaffolding
+  const sg = document.getElementById("sparks");
+  sg.innerHTML="";
+  for(const id in S.towns){
+    const d = document.createElement("div");
+    d.className="spark"; d.id="spark-"+id;
+    d.innerHTML = `<svg viewBox="0 0 100 44" preserveAspectRatio="none">
+        <line x1="0" x2="100" y1="32" y2="32" stroke="#9a8f76" stroke-dasharray="3 3" stroke-width="1"/>
+        <polyline fill="none" stroke="#1B3A5C" stroke-width="2.5" points=""/>
+      </svg>
+      <div class="val">–</div><div class="lbl">${S.towns[id].name}</div>`;
+    sg.appendChild(d);
+  }
+}
+
+function spawnRipple(x,y){
+  const g = document.getElementById("ripples");
+  for(let i=0;i<3;i++){
+    const c = document.createElementNS(svgNS,"circle");
+    c.setAttribute("cx",x); c.setAttribute("cy",y); c.setAttribute("r",10);
+    c.setAttribute("opacity","0");
+    c.setAttribute("class","ripple");
+    g.appendChild(c);
+    const t0 = performance.now()+i*260;
+    const anim = now=>{
+      const u = (now-t0)/1100;
+      if(u<0){ requestAnimationFrame(anim); return; }
+      if(u>1){ c.remove(); return; }
+      c.setAttribute("r", 14+u*90);
+      c.setAttribute("opacity", 0.75*(1-u));
+      requestAnimationFrame(anim);
+    };
+    requestAnimationFrame(anim);
+  }
+}
+
+const activeVignettes = [];
+function fireVignette(t, kind, glyph, label){
+  activeVignettes.push({townId:t.id, glyph, label, born:S.tick, slot:activeVignettes.filter(v=>v.townId===t.id && S.tick-v.born<28).length});
+}
+function renderVignettes(){
+  const g = document.getElementById("vignettes");
+  g.innerHTML="";
+  for(let i=activeVignettes.length-1;i>=0;i--){
+    const v = activeVignettes[i];
+    if(S.tick - v.born > 28){ activeVignettes.splice(i,1); continue; }
+    const t = S.towns[v.townId];
+    const age = S.tick - v.born;
+    const fade = age>22 ? (28-age)/6 : 1;
+    const y = t.y - 72 - v.slot*24 - Math.min(age,4)*2;
+    const glyph = document.createElementNS(svgNS,"text");
+    glyph.setAttribute("x", t.x+40); glyph.setAttribute("y", y);
+    glyph.setAttribute("class","vign"); glyph.setAttribute("opacity",fade);
+    glyph.textContent = v.glyph;
+    const lbl = document.createElementNS(svgNS,"text");
+    lbl.setAttribute("x", t.x+70); lbl.setAttribute("y", y-1);
+    lbl.setAttribute("class","vign-label"); lbl.setAttribute("opacity",fade);
+    lbl.textContent = v.label;
+    g.append(glyph,lbl);
+  }
+}
+
+/* -------------------- town lens: live supply & demand -------------------- */
+let lensTown = null;
+function selectLens(id){
+  lensTown = id;
+  document.getElementById("lensTitle").textContent = S.towns[id].name + " — " + S.towns[id].trader;
+  renderLens();
+}
+function renderLens(){
+  if(!lensTown) return;
+  const t = S.towns[lensTown];
+  // Curves calibrated so original equilibrium is (Q=100, P=10s):
+  //   D:  P = 20 - 0.10 Q      S:  P = 2 + 0.08 Q
+  // The shifted curve S' is ANCHORED TO THE SIM: its intersection with demand
+  // equals the sim's current target price, so the posted price (gold dashes)
+  // visibly converges to the drawn new equilibrium.
+  const dShift = t.potato ? 16 : 0; // potato substitution: D shifts left
+  const sRatio = TARGET_STOCK / Math.min(Math.max(t.stock, 32), 420);
+  const targetP = Math.max(5, Math.min(24, BASE_P*Math.pow(sRatio,0.72)*(1+t.belief*0.5)));
+  const qNew = (20-targetP)/0.10 - dShift;          // Q at new equilibrium on D'
+  let sShift = ((targetP-2)/0.08) - qNew;           // horizontal shift of S (left if +)
+  sShift = Math.max(-45, Math.min(75, sShift));
+  const shifted = Math.abs(sShift) > 6;
+  const leftShift = sShift > 0;
+  const W=340,H=178, x0=42, y0=148, xMax=320, yTop=12;
+  const px = q => x0 + (Math.max(q,0)/150)*(xMax-x0);
+  const py = p => y0 - ((Math.max(p,2)-2)/22)*(y0-yTop);
+  const dP  = q => 20 - 0.10*(q + dShift);
+  const s0P = q => 2 + 0.08*q;
+  const s1P = q => 2 + 0.08*(q + sShift);
+  const line=(f,q1,q2)=>`M ${px(q1)} ${py(f(q1))} L ${px(q2)} ${py(f(q2))}`;
+  const shiftColor = leftShift ? "#B03A2E" : "#3E7C59";
+  document.getElementById("lensBody").innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Supply and demand for ${t.name}">
+      <line class="sd-axis" x1="${x0}" y1="${yTop}" x2="${x0}" y2="${y0}"/>
+      <line class="sd-axis" x1="${x0}" y1="${y0}" x2="${xMax}" y2="${y0}"/>
+      <text class="sd-small" x="${x0-6}" y="${yTop+4}" text-anchor="end">P</text>
+      <text class="sd-small" x="${xMax}" y="${y0+14}" text-anchor="end">Q grain</text>
+      <path class="sd-D" d="${line(dP,4,146)}"/>
+      <text class="sd-label" x="${px(142)}" y="${py(dP(142))-6}" fill="#1B3A5C">D${t.potato?"′":""}</text>
+      <path class="sd-S" d="${line(s0P,4,146)}"/>
+      <text class="sd-label" x="${px(142)+2}" y="${py(s0P(142))+16}" fill="#241E14">S</text>
+      ${shifted?`<path class="sd-Sshift" style="stroke:${shiftColor}" d="${line(s1P,4,146)}"/>
+      <text class="sd-label" x="${px(leftShift?104:146)+4}" y="${py(s1P(leftShift?104:146))-8}" fill="${shiftColor}">S′</text>
+      <path d="M ${px(74)} ${py(s0P(74))-3} L ${px(74-sShift*0.6)} ${py(s0P(74))-3}" stroke="${shiftColor}" stroke-width="2" marker-end="url(#arrowR)"/>`:""}
+      <circle class="sd-eq" cx="${px(100)}" cy="${py(10)}" r="4.5"/>
+      <text class="sd-small" x="${px(100)+7}" y="${py(10)+14}">old eq ($10)</text>
+      ${shifted?`<circle cx="${px(qNew)}" cy="${py(targetP)}" r="4.5" fill="#fff" stroke="${shiftColor}" stroke-width="2.5"/>
+      <text class="sd-small" x="${px(qNew)+7}" y="${py(targetP)-7}" fill="${shiftColor}">new eq ($${targetP.toFixed(1)})</text>`:""}
+      <line class="sd-price" x1="${x0}" y1="${py(t.price)}" x2="${xMax}" y2="${py(t.price)}"/>
+      <text class="sd-small" x="${x0-6}" y="${py(t.price)+4}" text-anchor="end" fill="#C8901C" font-weight="700">$${t.price.toFixed(1)}</text>
+      <defs><marker id="arrowR" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="${shiftColor}"/></marker></defs>
+    </svg>
+    <div class="lens-caption">${lensCaption(t, shifted, leftShift, targetP)}</div>`;
+}
+function lensCaption(t, shifted, leftShift, targetP){
+  const bits=[];
+  if(t.holding) bits.push(`<b>${t.trader} is withholding grain</b>: supply shifts left, S → S′ (dashed)`);
+  if(t.hoard>2 && !t.holding) bits.push(`a private hoard of ${t.hoard.toFixed(0)} units is returning to market: supply shifts right`);
+  if(S.weather==="drought" && t.id==="millbrook" && S.droughtTicksLeft>0) bits.push(`<b>drought</b> is cutting the harvest — a real supply shock on top of the belief`);
+  if(t.potato) bits.push(`households switched to potatoes: demand shifts left, D → D′`);
+  let base;
+  if(!bits.length){
+    base = `Nothing unusual: the market sits near the old equilibrium (● at $10). Belief here: ${(t.belief*100).toFixed(0)}%.`;
+  } else {
+    base = bits.join(" · ") + ".";
+  }
+  const gap = t.price - targetP;
+  if(shifted && Math.abs(gap) > 0.6){
+    base += ` The posted price (gold dashes) is ${gap>0?"above":"below"} the new equilibrium (○) because prices adjust <i>gradually</i> — the miller reposts a little each day, not all at once. Watch it converge.`;
+  } else if(shifted){
+    base += ` The posted price has converged to the new equilibrium (○).`;
+  }
+  return base;
+}
+
+function render(){
+  // roads
+  document.querySelectorAll(".road").forEach(el=>{
+    const r = roadBetween(el.dataset.a, el.dataset.b);
+    el.classList.toggle("closed", !r.open);
+  });
+  // towns
+  for(const id in S.towns){
+    const t = S.towns[id];
+    const grp = document.getElementById("town-"+id);
+    const c = grp.querySelector("circle.town-dot");
+    c.setAttribute("fill", priceColor(t.price));
+    c.setAttribute("r", 22 + Math.max(4, Math.min(22, t.stock/7)));
+    grp.querySelector(".town-price").textContent = "$"+t.price.toFixed(1);
+    // belief halo
+    let halo = grp.querySelector(".halo");
+    if(!halo){
+      halo = document.createElementNS(svgNS,"circle");
+      halo.setAttribute("class","halo belief-ring");
+      halo.setAttribute("cx",t.x); halo.setAttribute("cy",t.y);
+      grp.insertBefore(halo, c);
+    }
+    halo.setAttribute("r", 30 + Math.max(4, Math.min(22, t.stock/7)));
+    halo.setAttribute("stroke-width", 2 + t.belief*7);
+    halo.setAttribute("opacity", t.belief*0.85);
+  }
+  // carts
+  const cg = document.getElementById("carts");
+  cg.innerHTML="";
+  for(const c of S.carts){
+    let x,y;
+    if(c.dest){
+      const A=townById(c.at), B=townById(c.dest);
+      x = A.x + (B.x-A.x)*c.progress; y = A.y + (B.y-A.y)*c.progress;
+    } else { const A=townById(c.at); x=A.x+26; y=A.y+26; }
+    const r = document.createElementNS(svgNS,"rect");
+    r.setAttribute("x",x-11); r.setAttribute("y",y-7);
+    r.setAttribute("width",22); r.setAttribute("height",14); r.setAttribute("rx",3);
+    r.setAttribute("class","cart");
+    r.setAttribute("opacity", c.cargo>0?1:0.4);
+    cg.appendChild(r);
+    if(c.cargo>0){
+      const dotLbl = document.createElementNS(svgNS,"text");
+      dotLbl.setAttribute("x",x); dotLbl.setAttribute("y",y-11);
+      dotLbl.setAttribute("text-anchor","middle");
+      dotLbl.setAttribute("class","cart-name");
+      dotLbl.textContent = c.name;
+      cg.appendChild(dotLbl);
+    }
+  }
+  renderVignettes();
+  renderLens();
+  // sparklines: fixed shared scale $5..$25
+  for(const id in S.towns){
+    const t = S.towns[id];
+    const el = document.getElementById("spark-"+id);
+    const pts = t.history.slice(-100).map((p,i,arr)=>{
+      const x = (i/(Math.max(arr.length-1,1)))*100;
+      const y = 42 - ((p-4)/24)*40;
+      return x.toFixed(1)+","+Math.max(2,Math.min(42,y)).toFixed(1);
+    }).join(" ");
+    el.querySelector("polyline").setAttribute("points", pts);
+    el.querySelector("polyline").setAttribute("stroke", priceColor(t.price));
+    el.querySelector(".val").textContent = "$"+t.price.toFixed(1);
+    el.querySelector(".val").style.color = priceColor(t.price);
+  }
+}
+
+/* -------------------- controls & loop -------------------- */
+function updatePauseBtn(){
+  document.getElementById("btnPause").textContent = S.paused ? "▶ Play" : "⏸ Pause";
+}
+let loopHandle=null;
+function startLoop(){
+  if(loopHandle) clearInterval(loopHandle);
+  loopHandle = setInterval(()=>{ if(!S.paused){ tickOnce(); if(S.speed===2) tickOnce(); } }, TICK_MS);
+}
+
+function boot(){
+  S = freshState();
+  document.getElementById("stories").innerHTML="";
+  document.getElementById("btnDebrief").style.display="none";
+  buildStatic();
+  setCoach(0);
+  document.getElementById("btnDrought").disabled=false;
+  document.getElementById("btnRain").disabled=false;
+  document.getElementById("powerHint").innerHTML =
+    `Rumor: “A drought is coming upriver.” Choose whose ear it lands in.`;
+  headline("open", `Quiet Week Expected in Grain Trade`,
+    `Prices steady at $10 across the valley. “Nothing ever happens here,” said everyone, tempting fate.`);
+  render();
+  updatePauseBtn();
+  startLoop();
+}
+
+document.getElementById("btnBegin").onclick = ()=>{
+  document.getElementById("introModal").style.display="none";
+};
+document.getElementById("btnWhisper").onclick = armWhisper;
+document.getElementById("btnDrought").onclick = ()=>setWeather("drought");
+document.getElementById("btnRain").onclick = ()=>setWeather("rain");
+document.getElementById("btnPause").onclick = ()=>{ S.paused=!S.paused; updatePauseBtn(); };
+document.getElementById("btnSpeed").onclick = e=>{
+  S.speed = S.speed===1?2:1;
+  e.target.textContent = "Speed: "+S.speed+"×";
+};
+document.getElementById("btnReset").onclick = ()=>{ boot(); document.getElementById("introModal").style.display="flex"; };
+document.getElementById("btnDebrief").onclick = ()=>{
+  S.debriefPrevPaused = S.paused;
+  S.paused = true; updatePauseBtn();
+  renderDebrief();
+};
+
+boot();
+</script>
+</body>
+</html>
