@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<title>Treme Quiz Bowl Jeopardy — 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --red:#7a1010; --red-dark:#4a0808; --red-hover:#9a2020; --gold:#e8d080; --gold-dark:#a08840; --white:#f5f0e0; --green:#2d7a2d; --wrong-red:#aa2222; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#1a0505; color:var(--white); font-family:'Barlow',sans-serif; height:100vh; overflow:hidden; display:flex; flex-direction:column; }
+  #header { background:var(--red-dark); border-bottom:3px solid var(--gold); padding:10px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:14px; }
+  #header h1 { font-family:'Anton',sans-serif; font-size:22px; letter-spacing:2px; color:var(--gold); white-space:nowrap; }
+  #header h1 span { color:#ff8844; }
+  .round-selector { display:flex; gap:8px; flex-wrap:wrap; }
+  .round-btn { font-family:'Barlow',sans-serif; font-weight:600; font-size:13px; padding:6px 14px; border-radius:4px; border:2px solid var(--gold); background:transparent; color:var(--gold); cursor:pointer; transition:all .15s; text-transform:uppercase; letter-spacing:1px; }
+  .round-btn.active, .round-btn:hover { background:var(--gold); color:var(--red-dark); }
+  #teams { display:flex; gap:18px; }
+  .team-block { text-align:center; }
+  .team-block input { background:transparent; border:none; border-bottom:1px solid var(--gold-dark); color:var(--gold); font-family:'Barlow',sans-serif; font-size:16px; font-weight:600; text-align:center; width:100px; letter-spacing:1px; text-transform:uppercase; outline:none; }
+  .team-score { font-family:'Anton',sans-serif; font-size:26px; color:var(--white); margin-top:2px; }
+  .team-score button { background:none; border:none; color:rgba(255,255,255,.35); font-size:14px; cursor:pointer; padding:0 6px; }
+  #board { flex:1; display:grid; grid-template-columns:repeat(8,1fr); gap:6px; padding:10px 14px 4px; }
+  .cat-header { background:var(--red); border:2px solid var(--gold-dark); border-radius:4px; display:flex; align-items:center; justify-content:center; text-align:center; padding:8px 4px; font-family:'Anton',sans-serif; font-size:17px; letter-spacing:1px; color:var(--gold); text-transform:uppercase; line-height:1.15; }
+  .cell { background:var(--red); border:2px solid var(--gold-dark); border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'Anton',sans-serif; font-size:34px; color:var(--gold); cursor:pointer; transition:background .12s, transform .1s; user-select:none; }
+  .cell:hover { background:var(--red-hover); transform:scale(1.03); }
+  .cell.used { background:#2a0808; border-color:#4a1010; color:#4a1010; cursor:default; font-size:18px; }
+  .cell.used:hover { transform:none; background:#2a0808; }
+  .cell .img-dot { font-size:12px; margin-left:6px; color:var(--white); opacity:.55; }
+  #footer { text-align:center; padding:4px 0 8px; flex-shrink:0; }
+  .reset-btn { background:none; border:none; color:rgba(255,255,255,.35); font-size:12px; cursor:pointer; font-family:'Barlow',sans-serif; text-decoration:underline; }
+  #modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.88); z-index:200; align-items:center; justify-content:center; padding:40px; }
+  #modal { background:var(--red-dark); border:3px solid var(--gold); border-radius:8px; width:100%; max-width:900px; max-height:92vh; overflow-y:auto; padding:26px 44px; text-align:center; position:relative; }
+  #m-points { font-family:'Anton',sans-serif; font-size:18px; color:var(--gold); letter-spacing:2px; margin-bottom:14px; }
+  #m-clue { font-size:27px; font-weight:600; line-height:1.35; margin-bottom:18px; }
+  #m-fig { max-width:440px; max-height:320px; margin:0 auto 16px; display:none; border-radius:6px; background:#fff; }
+  #m-fignote { display:none; font-size:14px; color:rgba(255,255,255,.55); font-style:italic; margin-bottom:14px; }
+  #m-choices { display:none; flex-direction:column; gap:8px; max-width:560px; margin:0 auto 18px; }
+  .choice-item { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.15); border-radius:6px; padding:9px 16px; font-size:19px; font-weight:600; color:var(--white); text-align:left; }
+  #m-answer { display:none; background:rgba(232,208,128,.15); border:3px solid var(--gold); border-radius:8px; padding:16px 28px; font-size:25px; font-weight:600; color:var(--white); margin:18px auto 10px; max-width:700px; }
+  #m-explain { display:none; background:rgba(255,255,255,.06); border-radius:6px; padding:12px 20px; font-size:16px; color:rgba(255,255,255,.8); margin:10px auto 6px; max-width:700px; text-align:left; }
+  .mbtn { font-family:'Barlow',sans-serif; font-weight:700; font-size:14px; padding:10px 22px; border-radius:6px; border:none; color:#fff; cursor:pointer; margin:6px 5px 0; letter-spacing:1px; text-transform:uppercase; }
+  .mbtn-reveal { background:rgba(255,255,255,.2); }
+  .mbtn-close { background:rgba(255,255,255,.2); }
+  .award-row { margin-top:14px; display:none; flex-wrap:wrap; justify-content:center; gap:6px; }
+  .award-btn { font-family:'Barlow',sans-serif; font-weight:600; font-size:14px; padding:8px 18px; border-radius:4px; border:1px solid rgba(255,255,255,.3); background:var(--green); color:#fff; cursor:pointer; }
+  .award-btn.noone { background:rgba(255,255,255,.12); }
+  .award-btn:hover { filter:brightness(1.25); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Treme Quiz Bowl <span>2026</span></h1>
+  <div class="round-selector" id="round-selector"></div>
+  <div id="teams"></div>
+</div>
+
+<div id="board"></div>
+<div id="footer"><button class="reset-btn" onclick="resetRound()">Reset current round</button></div>
+
+<div id="modal-bg">
+  <div id="modal">
+    <div id="m-points"></div>
+    <div id="m-clue"></div>
+    <img id="m-fig" alt="figure">
+    <div id="m-fignote"></div>
+    <div id="m-choices"></div>
+    <div id="m-answer"></div>
+    <div id="m-explain"></div>
+    <div>
+      <button class="mbtn mbtn-reveal" onclick="revealAnswer()">Reveal Answer</button>
+      <button class="mbtn mbtn-close" onclick="closeModal()">Close</button>
+    </div>
+    <div class="award-row" id="award-row"></div>
+  </div>
+</div>
+
+<script>
+// ─── 2026 ROUND DATA ─────────────────────────────────────────────────────────
+// Figures live in media2026/ within this repo.
+const POINTS = [5,10,15,20,25];
+const MEDIA = "media2026/";
+
+const rounds2026 = {
+"Round 1": {
+  "Micro economics":[
+    {clue:"The action or system of exchanging goods or services without using money is known as _______.",answer:"Barter"},
+    {clue:"If consumers always spend 15% of their income on food, then what is the income elasticity of demand for food?",answer:"1.0"},
+    {clue:"What type of market is represented in this figure?",answer:"Natural monopoly",choices:["A. Perfect competition","B. Monopolistic competition","C. Monopoly","D. Natural monopoly"],img:"nat monopoly.jpg",explain:"The answer is (D) because ATC is still declining at the quantity that could satisfy the entire market."},
+    {clue:"What is the definition of opportunity cost?",answer:"The value of the next best alternative given up when making a choice."},
+    {clue:"What is a situation in which oligopolists interacting with one another each choose their best strategy given the strategies that all the other oligopolists have chosen?",answer:"Nash equilibrium"}
+  ],
+  "Macro economics":[
+    {clue:"What is the fundamental economic problem that all societies face?",answer:"Scarcity"},
+    {clue:"The Phillips Curve suggests a short-run trade-off exists between which two macroeconomic variables?",answer:"Inflation and unemployment"},
+    {clue:"Suppose Yellow Country chooses to produce at point A while Green Country chooses to produce at point B. Which country will experience more growth in the future and why?",answer:"Green Country, because capital is a factor of production and producing more of it now will increase future production.",img:"PPF growth.jpg"},
+    {clue:"Which of these countries would probably see the greatest benefit from an increase in capital investment?",answer:"Westcountry",img:"GDP countries.jpg"},
+    {clue:"Based on the quantity equation of money, if the money supply is $200, real output is 1,000 units, and the price per output is $1, what is the value of the velocity of money?",answer:"5 — (1,000 × $1) ÷ $200"}
+  ],
+  "Agribusiness/ Finance":[
+    {clue:"What is the financial statement that summarizes a firm's revenue and expenses over a period of time?",answer:"Income statement"},
+    {clue:"What ratio is given by this formula: (Cash + Marketable Securities + Accounts Receivable) / Current Liabilities?",answer:"Quick or acid-test ratio"},
+    {clue:"Which of the following is most likely to be a benefit of two very different companies merging?",answer:"Cash flow smoothing",choices:["A. Economies of scale","B. Market penetration","C. Cash flow smoothing","D. Increased purchasing power"]},
+    {clue:"A stock market is described as ________ if share prices respond rapidly and appropriately to new information.",answer:"Efficient"},
+    {clue:"What term refers to someone who has a legal and ethical duty to act in the best financial interests of another person or entity, such as a financial advisor or an executor of a will?",answer:"Fiduciary"}
+  ],
+  "Resource/ Policy":[
+    {clue:"What is the entry barrier that is the source of monopoly power for the drug Ozempic?",answer:"Government-created monopoly due to a patent",img:"ozempic.jpg"},
+    {clue:"Suppose the graph reflects a landlord's willingness to pay to repaint apartments. If the cost to repaint an apartment is $5,000, how many apartments will she paint and what will be the value of her consumer surplus?",answer:"1; $0",img:"stepwise WTP.jpg"},
+    {clue:"What is the optimal quantity of production in this market? Does the market over or under produce the optimal quantity?",answer:"400 units; the market over produces (500 units vs. 400 units)",img:"overprod.jpg"},
+    {clue:"Of the following, a tax on _______ would likely cause the greatest deadweight loss.",answer:"Cruise line tickets",choices:["A. Salt","B. Cigarettes","C. Gasoline","D. Cruise line tickets"]},
+    {clue:"How do externalities lead to market failure?",answer:"They result in over- or under-production."}
+  ],
+  "Quantitative":[
+    {clue:"In this figure, what is the slope of the line between points B and D?",answer:"+3",img:"slope.jpg"},
+    {clue:"What type of data are depicted in this figure?",answer:"Time-series",img:"time series.jpg"},
+    {clue:"In regression analysis, the variable that is being predicted is the _________ variable.",answer:"Dependent"},
+    {clue:"If Smith's disposable income increases from $1,200 to $1,700 and her level of saving increases from minus $100 to plus $100, what is her marginal propensity to consume?",answer:"0.6 (3/5)"},
+    {clue:"If the utility function (U) between food (F) and clothing (C) can be represented as U = √FC, what is the marginal utility of food?",answer:"½√(C ÷ F)"}
+  ],
+  "Marketing":[
+    {clue:"What is the marketing term for a relatively small, well-defined and very focused target market?",answer:"Niche market"},
+    {clue:"What is the term for the process of dividing a total market into subgroups so that each group consists of buyers and users who share similar characteristics, but who are different from those in the other groups?",answer:"Market segmentation"},
+    {clue:"Products that people always like to have and so purchase regularly (e.g., soap) are known as ________ products.",answer:"Staple"},
+    {clue:"In the Introduction stage of the product life cycle, what is the primary goal of promotion?",answer:"To create primary demand/awareness"},
+    {clue:"Coca-Cola has an easily identifiable logo and is usually packaged in a red can or its famously curvy bottle. What do these elements combine to form?",answer:"Brand identity",img:"coke logo.jpg"}
+  ],
+  "Management":[
+    {clue:"Which function of management involves monitoring activities and making corrections?",answer:"Controlling"},
+    {clue:"What is the general term given to any group or individual who can affect, or is affected by, an organization's activities?",answer:"Stakeholder"},
+    {clue:"The process of building and maintaining good working relationships with others who may someday help a manager to implement his or her work agendas is called _________.",answer:"Networking"},
+    {clue:"What term refers to the number of subordinates who directly report to a superior?",answer:"Span of control"},
+    {clue:"A(n) ________ is a clearly defined and measurable outcome to be achieved over a specified timeframe.",answer:"Objective"}
+  ],
+  "Potpourri":[
+    {clue:"Who is the only U.S. President born in Kentucky?",answer:"Abraham Lincoln"},
+    {clue:"_________ economics is an approach to economics that analyzes outcomes of economic behavior, evaluates them as good or bad, and may prescribe preferred courses of action.",answer:"Normative"},
+    {clue:"What economist is credited with the theory of comparative advantage?",answer:"David Ricardo"},
+    {clue:"What term describes a deceptive marketing practice where companies falsely portray their products, services, or overall operations as more environmentally friendly or sustainable than they actually are?",answer:"Greenwashing"},
+    {clue:"Can you use publicly available information to help you buy something cheap and quickly sell it at a higher price? Why or why not?",answer:"No. Usually the market immediately adjusts so that the price has already moved to its new equilibrium value before a typical speculator can make his or her purchase."}
+  ]
+},
+"Round 15": {
+  "Micro economics":[
+    {clue:"If a one-of-a-kind vase is offered for sale at an auction, which figure shows the correct supply curve?",answer:"A",img:"unique supply.jpg"},
+    {clue:"A(n) ________ is a group of firms acting together to raise price, decrease output, and increase economic profit.",answer:"Cartel"},
+    {clue:"Suppose the productivity of labor increases and at the same time the price of capital, which is complementary to labor, increases. As a result, the demand for labor:",answer:"May either increase or decrease",choices:["A. Will increase","B. Will decrease","C. May either increase or decrease","D. Will not change"]},
+    {clue:"In this figure, the difference between the monopoly output and the competitive output is:",answer:"Q3 − Q2",choices:["A. Q2 − Q1","B. Q3 − Q1","C. Q4 − Q2","D. Q3 − Q2"],img:"monop pc costs.jpg"},
+    {clue:"A monopolistically competitive industry combines elements of both competition and monopoly. What feature of monopolistic competition is derived from the monopoly element?",answer:"Product differentiation"}
+  ],
+  "Macro economics":[
+    {clue:"Who was one of the first economists to argue that the government should decrease taxes and/or increase government spending to get the economy out of a slump?",answer:"John Maynard Keynes"},
+    {clue:"In normal times the number of discouraged workers is approximately _____ of the labor force.",answer:"1%",choices:["A. 1%","B. 3%","C. 4%","D. 5%"]},
+    {clue:"What term refers to money that a government has required to be accepted in settlement of debts? (Hint: it appears on the front of a dollar bill)",answer:"Legal tender"},
+    {clue:"The data in this figure indicate that the economy will be in a long-run macroeconomic equilibrium at a price level of:",answer:"120",choices:["A. 100","B. 120","C. 130","D. 140"],img:"lr eq.jpg"},
+    {clue:"What does point C represent in this figure?",answer:"An inflationary gap",img:"gaps.jpg"}
+  ],
+  "Agribusiness/ Finance":[
+    {clue:"A firm has decided to pay out some of its earnings in the form of cash to its shareholders. What are these payments to shareholders called?",answer:"Dividends"},
+    {clue:"What financial statement answers the following questions: Has the company's liquidity improved? Is the company solvent? What is the company's financial position relative to the industry?",answer:"Balance sheet"},
+    {clue:"With regard to futures contracts, what does the word \"margin\" mean?",answer:"Margin is a good-faith deposit made at the time of the contract's purchase or sale."},
+    {clue:"The market portfolio has a beta of:",answer:"1",choices:["A. 0","B. 1","C. −1","D. 0.5"]},
+    {clue:"An analyst can judge a company's level of debt by comparing return-on-equity to:",answer:"Return-on-assets",choices:["A. Total debt-to-assets","B. Total asset turnover","C. Debt turnover","D. Return-on-assets"]}
+  ],
+  "Resource/ Policy":[
+    {clue:"What concept suggests that when firms maximize their profits, society's output will also be maximized?",answer:"Invisible hand"},
+    {clue:"What line in an Edgeworth box is the set of all Pareto efficient allocations, shown as points where the indifference curves of two consumers are tangent?",answer:"Contract curve",img:"edgeworth.jpg"},
+    {clue:"Government regulation of price and service is most likely to occur in:",answer:"Figure A only",choices:["A. Figure A only","B. Figure D only","C. Both figures A and C","D. Both figures A and D"],img:"reg action.jpg"},
+    {clue:"Without the market for pollution rights seen in this figure, what would be the quantity (tons) of pollution if demand is D2?",answer:"Q3",img:"pollution rights.jpg"},
+    {clue:"When __________ and __________ efficiency exist, the market produces the right goods in the correct amounts using the fewest resources possible.",answer:"Allocative; productive"}
+  ],
+  "Quantitative":[
+    {clue:"Forecasts that use subjective or judgmental techniques are known as ________ forecasts.",answer:"Qualitative"},
+    {clue:"If 11 workers can produce a total of 54 units of a product and another worker has a marginal product of 6, then what is the average product of 12 workers?",answer:"5"},
+    {clue:"Moving averages are best for data with:",answer:"No trend or seasonality",choices:["A. Strong trends","B. Multiplicative seasonality","C. Random fluctuations","D. No trend or seasonality"]},
+    {clue:"For the production function Q = min {K, 2L}, how much output is produced when 4 units of labor and 9 units of capital are employed?",answer:"8"},
+    {clue:"Which optimization technique is specifically designed to handle problems with uncertain parameters?",answer:"Stochastic programming",choices:["A. Stochastic programming","B. Integer programming","C. Dynamic programming","D. Quadratic programming"]}
+  ],
+  "Marketing":[
+    {clue:"Bodegas, mini-marts, and superettes are all other names for ________ ________.",answer:"Convenience stores"},
+    {clue:"What is considered to be the only promotional medium capable of \"closing\" a sale and directly generating revenue for the firm?",answer:"Personal selling"},
+    {clue:"The wide imitation and spread of an innovation is called ________.",answer:"Diffusion"},
+    {clue:"What is advertising by advocacy groups and governmental agencies that attempts to reduce demand for a product called?",answer:"De-marketing"},
+    {clue:"A furniture store chain once ran a contest in which they gave away a house to a lucky winner drawn at random. All participants had to do to qualify was to come into a store and lie on a waterbed for 60 seconds. This unconventional tactic was an example of __________ marketing.",answer:"Guerrilla"}
+  ],
+  "Management":[
+    {clue:"Giving an employee more tasks of the same type is an example of job __________.",answer:"Enlargement"},
+    {clue:"What is the process of identifying other organizations that are best at some facet of your operations and then modeling your organization after them?",answer:"Benchmarking"},
+    {clue:"\"Fitness for Purpose,\" \"Zero Defects,\" and \"Right the First Time\" are all definitions of ________.",answer:"Quality"},
+    {clue:"__________ decisions are routine, repetitive, and well-defined decisions that can be made using established rules, procedures, and policies.",answer:"Programmed"},
+    {clue:"What is the management approach where managers only get involved and focus their attention on situations where actual performance significantly deviates from planned or expected results?",answer:"Management by exception"}
+  ],
+  "Potpourri":[
+    {clue:"__________ is the cultivation of plants in a nutrient solution rather than in the soil.",answer:"Hydroponics",img:"hydroponic.jpg"},
+    {clue:"What type of economist believes that if the economy was left alone, it would rarely operate at full employment?",answer:"Keynesian"},
+    {clue:"How is a firm's market capitalization calculated?",answer:"Multiply its current stock price by the total number of outstanding shares."},
+    {clue:"The theory by which people optimally use all available information when forecasting the future is known as:",answer:"Rational expectations",choices:["A. Adaptive expectations","B. Rational expectations","C. Perfect expectations","D. Predictive expectations"]},
+    {clue:"What concept, popularized by Joseph Schumpeter, holds that innovative new technologies or products continuously displace and replace outdated, inefficient ones?",answer:"Creative destruction"}
+  ]
+}
+};
+
+// ─── ENGINE ──────────────────────────────────────────────────────────────────
+const roundNames = Object.keys(rounds2026);
+let currentRound = 0;
+let used = {};      // roundIdx -> Set of "cat|row"
+let scores = [0,0,0,0];
+const teamDefault = ["TEAM A","TEAM B","TEAM C","TEAM D"];
+let currentQ = null;
+
+function init(){
+  const sel = document.getElementById('round-selector');
+  sel.innerHTML = roundNames.map((n,i)=>`<button class="round-btn${i===0?' active':''}" onclick="switchRound(${i})">${n}</button>`).join('');
+  const teams = document.getElementById('teams');
+  teams.innerHTML = teamDefault.map((t,i)=>`
+    <div class="team-block">
+      <input value="${t}">
+      <div class="team-score"><button onclick="adj(${i},-5)">−</button><span id="score-${i}">0</span><button onclick="adj(${i},5)">+</button></div>
+    </div>`).join('');
+  buildBoard();
+}
+
+function adj(i,d){ scores[i]+=d; document.getElementById('score-'+i).textContent = scores[i]; }
+
+function switchRound(i){
+  currentRound = i;
+  document.querySelectorAll('.round-btn').forEach((b,j)=>b.classList.toggle('active', j===i));
+  buildBoard();
+}
+
+function buildBoard(){
+  const data = rounds2026[roundNames[currentRound]];
+  const cats = Object.keys(data);
+  const board = document.getElementById('board');
+  board.style.gridTemplateColumns = `repeat(${cats.length},1fr)`;
+  let html = cats.map(c=>`<div class="cat-header">${c}</div>`).join('');
+  for(let r=0;r<5;r++){
+    for(const c of cats){
+      const key = currentRound+'|'+c+'|'+r;
+      const isUsed = used[key];
+      html += `<div class="cell${isUsed?' used':''}" onclick="openClue('${c.replace(/'/g,"\\'")}',${r})">${isUsed?'&#10003;':POINTS[r]}</div>`;
+    }
+  }
+  board.innerHTML = html;
+}
+
+function openClue(cat,row){
+  const key = currentRound+'|'+cat+'|'+row;
+  if(used[key]) return;
+  const q = rounds2026[roundNames[currentRound]][cat][row];
+  currentQ = {q,cat,row,key};
+  document.getElementById('m-points').textContent = cat.toUpperCase()+' — '+POINTS[row]+' POINTS';
+  document.getElementById('m-clue').textContent = q.clue;
+  const fig = document.getElementById('m-fig'), fignote = document.getElementById('m-fignote');
+  fig.style.display='none'; fignote.style.display='none';
+  if(q.img){
+    fig.onerror = ()=>{ fig.style.display='none'; fignote.style.display='block'; fignote.textContent='[Figure: '+q.img+' — image not yet uploaded]'; };
+    fig.src = MEDIA + q.img;
+    fig.style.display='block';
+  }
+  const ch = document.getElementById('m-choices');
+  if(q.choices){ ch.style.display='flex'; ch.innerHTML = q.choices.map(c=>`<div class="choice-item">${c}</div>`).join(''); }
+  else { ch.style.display='none'; }
+  document.getElementById('m-answer').style.display='none';
+  document.getElementById('m-explain').style.display='none';
+  document.getElementById('award-row').style.display='none';
+  document.getElementById('modal-bg').style.display='flex';
+}
+
+function revealAnswer(){
+  if(!currentQ) return;
+  const q = currentQ.q;
+  const a = document.getElementById('m-answer');
+  a.textContent = q.answer; a.style.display='block';
+  if(q.explain){ const e = document.getElementById('m-explain'); e.textContent = q.explain; e.style.display='block'; }
+  const row = document.getElementById('award-row');
+  const names = [...document.querySelectorAll('.team-block input')].map(inp=>inp.value||'TEAM');
+  row.innerHTML = names.map((n,i)=>`<button class="award-btn" onclick="award(${i})">+${POINTS[currentQ.row]} ${n}</button>`).join('')
+    + `<button class="award-btn noone" onclick="award(-1)">No one</button>`;
+  row.style.display='flex';
+}
+
+function award(i){
+  if(i>=0) adj(i, POINTS[currentQ.row]);
+  used[currentQ.key] = true;
+  closeModal(); buildBoard();
+}
+
+function closeModal(){ document.getElementById('modal-bg').style.display='none'; currentQ=null; }
+
+function resetRound(){
+  if(!confirm('Reset all cells for this round?')) return;
+  Object.keys(used).forEach(k=>{ if(k.startsWith(currentRound+'|')) delete used[k]; });
+  buildBoard();
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
+init();
+</script>
+</body>
+</html>
