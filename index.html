@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light">
-<title>Dr.Tremendous — Solutions, made visible.</title>
+<title>Dr.Tremendous · Solutions, made visible.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..700,0..60;1,9..144,400..600,0..40&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -30,7 +30,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 56px; }
+  .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 56px; }
 
   nav {
     padding: 24px 0;
@@ -202,13 +202,13 @@
     color: var(--navy-mute); margin-bottom: 22px; flex: 1;
   }
   .tool-use {
-    font-size: 12.5px; font-weight: 600; color: var(--gold-deep);
+    font-size: 12.5px; font-weight: 600; color: #855f13;
     margin: -10px 0 20px; line-height: 1.4;
   }
   .tool-principle {
     font-family: 'Space Mono', 'IBM Plex Mono', ui-monospace, monospace;
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase;
-    color: #9b6a18; border-top: 1px solid var(--rule);
+    color: #855f13; border-top: 1px solid var(--rule);
     padding-top: 12px; margin-bottom: 14px;
   }
   .tool-foot {
@@ -440,9 +440,9 @@
   .quote { background:var(--cream-warm); border-left:3px solid var(--gold); border-radius:0 4px 4px 0; padding:22px 24px; }
   .quote blockquote { font-family:'Fraunces',serif; font-size:18px; line-height:1.45; color:var(--navy); font-style:italic; margin-bottom:14px; }
   .quote figcaption { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.03em; color:var(--navy-mute); }
-  .quote figcaption span { color:#8a6414; }
+  .quote figcaption span { color:#855f13; }
   /* contrast: darker gold for small labels on cream */
-  .section-head .eyebrow, .group-label, .tool-tag { color:#8a6414; }
+  .section-head .eyebrow, .group-label, .tool-tag { color:#855f13; }
   .opensource-band { text-align:center; font-size:15px; color:var(--navy-soft);
     max-width:680px; margin:8px auto 0; padding:0 24px; line-height:1.6; }
   .opensource-band strong { color:var(--navy); font-weight:600; }
@@ -460,10 +460,10 @@
     </div>
   </nav>
 
-  <section class="hero">
+  <section class="hero"><h1 class="visually-hidden">Dr. Tremendous: interactive economics teaching tools</h1>
     <div class="hero-lockup">
       <img src="trex.png" alt="Dr.Tremendous T-rex mascot" class="hero-trex">
-      <img src="wordmark.png" alt="Dr.Tremendous — Solutions, made visible." class="hero-wordmark-img">
+      <img src="wordmark.png" alt="Dr.Tremendous · Solutions, made visible." class="hero-wordmark-img">
     </div>
   </section>
 
@@ -485,7 +485,7 @@
         <h2>Care, built into the <em>structure.</em></h2>
       </div>
     </div>
-    <p class="collection-sub">In a small class, students are naturally visible. In large and online courses, visibility has to be designed — and these tools are part of that design.</p>
+    <p class="collection-sub">In a small class, students are naturally visible. In large and online courses, visibility has to be designed. These tools are one way I do that.</p>
 
     <div class="tool-group featured">
       <div class="group-label">Featured Teaching Tools <span class="lede">· Start Here</span></div>
@@ -511,26 +511,6 @@
           </div>
         </a>
 
-        <a href="abm-world.html" class="tool" data-cat="advising">
-          <div class="tool-preview">
-            <img class="tp-poster" src="previews/abm-world.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What students do</b>Say where they are, then map the experiences that build their ABM path.</div>
-          </div>
-          <div class="tool-top">
-            <div class="tool-tag">Advising · Live</div>
-          </div>
-          <div class="tool-title">ABM<br>World</div>
-          <div class="tool-desc">
-            A living map of the ABM major’s experiences: clubs, teams, competitions, internships, research, study abroad. Students see what they’ve already built, what they can do now, and what to explore next.
-          </div>
-          <div class="tool-use">The co-curricular companion to Paw Plan for ABM majors.</div>
-          <div class="tool-principle">Belonging by design</div>
-          <div class="tool-foot">
-            <div class="tool-course">ABM Advising</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
         <a href="https://jtreme.github.io/AREAdvising/" target="_blank" rel="noopener" class="tool" data-cat="advising">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/paw-plan.jpg" alt="" loading="lazy">
@@ -546,6 +526,26 @@
           </div>
           <div class="tool-use">The preferred four-year planner for ~580 ABM majors.</div>
           <div class="tool-principle">Learning by doing</div>
+          <div class="tool-foot">
+            <div class="tool-course">ABM Advising</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
+        <a href="abm-world.html" class="tool" data-cat="advising">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/abm-world.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Say where they are, then map the experiences that build their ABM path.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Advising · Live</div>
+          </div>
+          <div class="tool-title">ABM<br>World</div>
+          <div class="tool-desc">
+            A living map of the ABM major’s experiences: clubs, teams, competitions, internships, research, study abroad. Students see what they’ve already built, what they can do now, and what to explore next.
+          </div>
+          <div class="tool-use">The co-curricular companion to Paw Plan, open to every major in the department.</div>
+          <div class="tool-principle">Belonging by design</div>
           <div class="tool-foot">
             <div class="tool-course">ABM Advising</div>
             <div class="tool-launch">Launch</div>
@@ -593,21 +593,22 @@
           </div>
         </a>
 
-        <a href="every-tab-for-itself.html" class="tool" data-cat="markets">
+        <a href="https://jtreme.github.io/QBTrainer/" target="_blank" rel="noopener" class="tool" data-cat="quizbowl">
           <div class="tool-preview">
-            <img class="tp-poster" src="previews/every-tab-for-itself.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What students do</b>Open several tabs, fish one shared pond, watch it collapse, then vote a quota.</div>
+            <img class="tp-poster" src="previews/quizbowl-trainer.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Run timed rounds and spaced-repetition review.</div>
           </div>
           <div class="tool-top">
-            <div class="tool-tag">Simulation · Live</div>
+            <div class="tool-tag">Trainer · Live</div>
           </div>
-          <div class="tool-title">Every Tab<br>for Itself</div>
+          <div class="tool-title">Quiz Bowl<br>Trainer</div>
           <div class="tool-desc">
-            Open the game in two or more browser tabs: each tab is a fishing boat on one shared pond. Fish freely and the stock crashes for everyone; then a council votes a catch limit and you find out whether a rule on paper survives the temptation to break it. The tragedy of the commons, played across your own browser. <b>Best on a laptop with a few tabs open.</b>
+            A practice trainer for the AAEA Academic Quiz Bowl: timed rounds, spaced-repetition review, performance analytics, and a Fact Cards deck. Students drill at their own pace and watch which categories are getting stronger.
           </div>
-          <div class="tool-principle">The commons, made visible</div>
+          <div class="tool-use">Students have answered ~10,000 practice questions on it.</div>
+          <div class="tool-principle">Retrieval practice</div>
           <div class="tool-foot">
-            <div class="tool-course">ARE 201 · Common Resources</div>
+            <div class="tool-course">Quiz Bowl</div>
             <div class="tool-launch">Launch</div>
           </div>
         </a>
@@ -759,6 +760,25 @@
           </div>
         </a>
 
+        <a href="every-tab-for-itself.html" class="tool" data-cat="markets">
+          <div class="tool-preview">
+            <img class="tp-poster" src="previews/every-tab-for-itself.jpg" alt="" loading="lazy">
+            <div class="tp-what"><b>What students do</b>Open several tabs, fish one shared pond, watch it collapse, then vote a quota.</div>
+          </div>
+          <div class="tool-top">
+            <div class="tool-tag">Simulation · Live</div>
+          </div>
+          <div class="tool-title">Every Tab<br>for Itself</div>
+          <div class="tool-desc">
+            Open the game in two or more browser tabs: each tab is a fishing boat on one shared pond. Fish freely and the stock crashes for everyone; then a council votes a catch limit and you find out whether a rule on paper survives the temptation to break it. The tragedy of the commons, played across your own browser. <b>Best on a laptop with a few tabs open.</b>
+          </div>
+          <div class="tool-principle">The commons, made visible</div>
+          <div class="tool-foot">
+            <div class="tool-course">ARE 201 · Common Resources</div>
+            <div class="tool-launch">Launch</div>
+          </div>
+        </a>
+
         <a href="economic-profit-lab.html" class="tool" data-cat="markets">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/economic-profit-lab.jpg" alt="" loading="lazy">
@@ -875,25 +895,6 @@
           </div>
         </a>
 
-        <a href="https://jtreme.github.io/QBTrainer/" target="_blank" rel="noopener" class="tool" data-cat="quizbowl">
-          <div class="tool-preview">
-            <img class="tp-poster" src="previews/quizbowl-trainer.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What students do</b>Run timed rounds and spaced-repetition review.</div>
-          </div>
-          <div class="tool-top">
-            <div class="tool-tag">Trainer · Live</div>
-          </div>
-          <div class="tool-title">Quiz Bowl<br>Trainer</div>
-          <div class="tool-desc">
-            A practice trainer for the AAEA Academic Quiz Bowl: timed practice rounds, spaced-repetition review, performance analytics, and a Fact Cards deck. Built for the team headed to Kansas City.
-          </div>
-          <div class="tool-principle">Retrieval practice</div>
-          <div class="tool-foot">
-            <div class="tool-course">Quiz Bowl</div>
-            <div class="tool-launch">Launch</div>
-          </div>
-        </a>
-
         <a href="quizbowl-jeopardy.html" class="tool" data-cat="quizbowl">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/quizbowl-jeopardy.jpg" alt="" loading="lazy">
@@ -939,11 +940,11 @@
       <div class="quotes">
         <figure class="quote">
           <blockquote>Much easier than trying to do this on MyPack Portal’s planning options.</blockquote>
-          <figcaption>— ABM student <span>· Paw Plan</span></figcaption>
+          <figcaption>ABM student <span>· Paw Plan</span></figcaption>
         </figure>
         <figure class="quote">
           <blockquote>The platform is fantastic and will be a huge help for students and advisors.</blockquote>
-          <figcaption>— Academic advisor, CALS <span>· Paw Plan</span></figcaption>
+          <figcaption>Academic advisor, CALS <span>· Paw Plan</span></figcaption>
         </figure>
       </div>
     </div>
@@ -991,7 +992,7 @@
         <h2>Side <em>Quests</em>.</h2>
       </div>
     </div>
-    <p class="collection-sub">The main quest is the teaching tools. These are what happens when the same brain points itself at something purely for fun — the mechanism still ends up on the page.</p>
+    <p class="collection-sub">The main quest is the teaching tools. These are what happens when the same brain points itself at something purely for fun, and the mechanism still ends up on the page.</p>
 
     <div class="tool-group">
       <div class="tools-live">
@@ -1039,7 +1040,7 @@
     <blockquote>
       The whole project: turning ideas about teaching into things <span style="color: var(--gold); font-style: normal; font-weight: 700;">students can actually use</span>.
     </blockquote>
-    <div class="attr">— Dr. Tremendous</div>
+    <div class="attr">Dr. Tremendous</div>
   </section>
 
   <footer>
@@ -1081,7 +1082,7 @@
 (function(){
   var n=document.querySelectorAll('#collection a.tool').length;
   var el=document.getElementById('collCount');
-  if(el) el.textContent=n+' TOOLS · ~600 STUDENTS A YEAR';
+  if(el) el.textContent=n+' TOOLS · ~600 STUDENTS A YEAR · ~580 ABM MAJORS SUPPORTED';
   var grid=document.getElementById('grid');
   document.querySelectorAll('#pills .pill').forEach(function(btn){
     btn.addEventListener('click',function(){

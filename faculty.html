@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light">
-<title>Faculty &amp; Department — Dr.Tremendous</title>
+<title>Faculty &amp; Department · Dr.Tremendous</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,400..700,0..60;1,9..144,400..600,0..40&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -136,12 +136,13 @@
     letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--gold-deep); margin-bottom: 14px;
   }
+  .section-head h1,
   .section-head h2 {
     font-family: 'Fraunces', serif;
     font-weight: 700; font-size: 44px;
     color: var(--navy); letter-spacing: -0.015em; line-height: 1.05;
   }
-  .section-head h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
+  .section-head h1 em, .section-head h2 em { font-style: italic; color: var(--gold); font-weight: 400; }
 
   .tools-live { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
   .tool-group { margin-bottom: 8px; }
@@ -202,13 +203,13 @@
     color: var(--navy-mute); margin-bottom: 22px; flex: 1;
   }
   .tool-use {
-    font-size: 12.5px; font-weight: 600; color: var(--gold-deep);
+    font-size: 12.5px; font-weight: 600; color: #855f13;
     margin: -10px 0 20px; line-height: 1.4;
   }
   .tool-principle {
     font-family: 'Space Mono', 'IBM Plex Mono', ui-monospace, monospace;
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase;
-    color: #9b6a18; border-top: 1px solid var(--rule);
+    color: #855f13; border-top: 1px solid var(--rule);
     padding-top: 12px; margin-bottom: 14px;
   }
   .tool-foot {
@@ -396,7 +397,7 @@
     .tools-live { grid-template-columns: 1fr; }
     .tools-coming { grid-template-columns: 1fr; }
     .section-head { flex-direction: column; align-items: flex-start; gap: 16px; }
-    .section-head h2 { font-size: 32px; }
+    .section-head h1, .section-head h2 { font-size: 32px; }
     .pull-band { margin: 64px -28px 0; padding: 56px 28px; }
     .pull-band blockquote { font-size: 22px; }
     footer { grid-template-columns: 1fr; gap: 32px; }
@@ -406,7 +407,7 @@
 
   /* --- de-AI pass: display face wonk, mono labels, paper grain, card depth --- */
   body { font-optical-sizing: auto; }
-  .hero-lede, .section-head h2, .tool-title, .footer-logo, .pull-band blockquote,
+  .hero-lede, .section-head h1, .section-head h2, .tool-title, .footer-logo, .pull-band blockquote,
   .tool-num, .tool-soon .tool-title-sm { font-variation-settings: "SOFT" 28; }
   .eyebrow, .section-head .eyebrow, .group-label, .tool-tag, .tool-course,
   .tool-launch, .nav-links a, .footer-col h4, .footer-tag {
@@ -440,9 +441,9 @@
   .quote { background:var(--cream-warm); border-left:3px solid var(--gold); border-radius:0 4px 4px 0; padding:22px 24px; }
   .quote blockquote { font-family:'Fraunces',serif; font-size:18px; line-height:1.45; color:var(--navy); font-style:italic; margin-bottom:14px; }
   .quote figcaption { font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.03em; color:var(--navy-mute); }
-  .quote figcaption span { color:#8a6414; }
+  .quote figcaption span { color:#855f13; }
   /* contrast: darker gold for small labels on cream */
-  .section-head .eyebrow, .group-label, .tool-tag { color:#8a6414; }
+  .section-head .eyebrow, .group-label, .tool-tag { color:#855f13; }
   .opensource-band { text-align:center; font-size:15px; color:var(--navy-soft);
     max-width:680px; margin:8px auto 0; padding:0 24px; line-height:1.6; }
   .opensource-band strong { color:var(--navy); font-weight:600; }
@@ -464,24 +465,24 @@
     <div class="section-head">
       <div class="left">
         <div class="eyebrow">For colleagues, not students</div>
-        <h2>Faculty &amp; <em>Department</em>.</h2>
+        <h1>Faculty &amp; <em>Department</em>.</h1>
       </div>
     </div>
-    <p class="collection-sub">Tools built for the teaching side of the house — peer review, worksheet generation, and quick content edits. Not part of the student-facing collection, but here when a colleague needs them.</p>
+    <p class="collection-sub">Tools built for the teaching side of the house: peer review, worksheet generation, and quick content edits. Not part of the student-facing collection, but here when a colleague needs them.</p>
 
     <div class="tool-group">
       <div class="tools-live">
         <a href="peer-review-navigator.html" class="tool" data-cat="faculty">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/peer-review-navigator.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What students do</b>Follow the review workflow for your rank and role.</div>
+            <div class="tp-what"><b>What this helps you do</b>Follow the review workflow for your rank and role.</div>
           </div>
           <div class="tool-top">
             <div class="tool-tag">Navigator · Live</div>
           </div>
           <div class="tool-title">Peer Review<br>Navigator</div>
           <div class="tool-desc">
-            A step-by-step guide to the faculty teaching peer-review process — tailored to your rank and whether you're the reviewer or the one being reviewed. Walks the full workflow from initiation to the final report, with the rubrics and NC State Reg 3.3 rules at each stage.
+            A step-by-step guide to the faculty teaching peer-review process, tailored to your rank and whether you're the reviewer or the one being reviewed. Walks the full workflow from initiation to the final report, with the rubrics and NC State Reg 3.3 rules at each stage.
           </div>
           <div class="tool-foot">
             <div class="tool-course">Faculty · Teaching Review</div>
@@ -492,7 +493,7 @@
         <a href="supply-demand-generator.html" class="tool" data-cat="faculty">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/supply-demand-generator.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What students do</b>Generate a problem; print student + key versions.</div>
+            <div class="tp-what"><b>What this helps you do</b>Generate a problem; print student + key versions.</div>
           </div>
           <div class="tool-top">
             <div class="tool-tag">Generator · Live</div>
@@ -510,14 +511,14 @@
         <a href="content-editor.html" class="tool" data-cat="faculty">
           <div class="tool-preview">
             <img class="tp-poster" src="previews/content-editor.jpg" alt="" loading="lazy">
-            <div class="tp-what"><b>What students do</b>Click visible text, fix it, download a clean file.</div>
+            <div class="tp-what"><b>What this helps you do</b>Click visible text, fix it, download a clean file.</div>
           </div>
           <div class="tool-top">
             <div class="tool-tag">HTML Editor · Live</div>
           </div>
           <div class="tool-title">Edit the page,<br>not the code.</div>
           <div class="tool-desc">
-            Open an HTML file, click the visible text to fix it, and download a clean copy. Locked spots tell you why they need a code edit — and it strips browser-extension junk for you.
+            Open an HTML file, click the visible text to fix it, and download a clean copy. Locked spots tell you why they need a code edit, and it strips browser-extension junk for you.
           </div>
           <div class="tool-foot">
             <div class="tool-course">Local-first · No login</div>
