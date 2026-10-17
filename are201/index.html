@@ -4,61 +4,205 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ARE 201 Study Tools · Dr. Tremendous</title>
+<meta name="description" content="Socratic tutor, adaptive practice, flaw detection, and interactive graphs for ARE 201 Introduction to Agricultural and Resource Economics.">
+<link rel="icon" href="../trex.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<style>
-  :root { --cream:#f9f2e2; --card:#fffaf0; --navy:#141b34; --navy-soft:#3a4258; --gold:#d8a249; --gold-deep:#a8782c; --rule:#e5d9c1; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--cream); color:var(--navy); font-family:'Inter',system-ui,sans-serif; line-height:1.6; }
-  .wrap { max-width:880px; margin:0 auto; padding:28px 16px 64px; }
-  nav { display:flex; align-items:center; justify-content:space-between; padding-bottom:18px; border-bottom:1px solid var(--rule); }
-  nav a { color:var(--navy); text-decoration:none; }
-  .logo { display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-weight:700; font-size:20px; }
-  .logo img { height:34px; }
-  .logo .g { color:var(--gold); }
-  .back { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; }
-  .eyebrow { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); margin:48px 0 8px; }
-  h1 { font-family:'Fraunces',serif; font-weight:700; font-size:clamp(34px,6vw,52px); line-height:1.05; margin:0 0 14px; }
-  .lead { font-size:18px; color:var(--navy-soft); max-width:620px; margin:0 0 36px; }
-  .tools { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
-  .tool { display:block; background:var(--card); border:1px solid var(--rule); border-top:3px solid var(--gold); border-radius:6px; padding:24px; color:inherit; text-decoration:none; transition:transform .15s, box-shadow .15s; }
-  .tool:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(20,28,51,.08); }
-  .tag { font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-deep); }
-  .tool h2 { font-family:'Fraunces',serif; font-weight:700; font-size:26px; margin:6px 0 8px; }
-  .tool p { margin:0 0 16px; color:var(--navy-soft); font-size:15px; }
-  .go { font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.12em; text-transform:uppercase; font-weight:500; }
-  .how { margin-top:28px; padding:16px 18px; border-left:3px solid var(--navy); background:var(--card); font-size:15px; color:var(--navy-soft); }
-  @media (prefers-reduced-motion:reduce) { .tool { transition:none; } }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="wrap">
-  <nav>
-    <a href="../index.html" class="logo"><img src="../trex.png" alt=""><span>Dr.Treme<span class="g">ndous</span></span></a>
-    <a href="../index.html#collection" class="back">All tools</a>
+
+<header class="top">
+  <button class="menu-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
+    <span></span><span></span><span></span>
+  </button>
+  <a href="#home" class="brand">
+    <img src="../trex.png" alt="" class="brand-rex">
+    <span class="brand-text">
+      <span class="wordmark"><span class="navy">Dr.Treme</span><span class="gold">ndous</span></span>
+      <span class="tagline">Solutions, made visible</span>
+    </span>
+  </a>
+  <div class="top-title">ARE 201 Study Tools</div>
+  <a href="../index.html" class="back-home">← Back to home</a>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Sections">
+    <a href="#home" data-nav="home">Home</a>
+
+    <div class="nav-group">Get help</div>
+    <a href="#tutor" data-nav="tutor">Tutor chat</a>
+
+    <div class="nav-group">Practice</div>
+    <a href="#practice" data-nav="practice">Adaptive quiz</a>
+    <a href="#flaws" data-nav="flaws">Flaw detection</a>
+    <a href="#explain" data-nav="explain">Explain why</a>
+
+    <div class="nav-group">See it</div>
+    <a href="#see-sd" data-nav="see-sd">Supply &amp; demand</a>
+    <a href="#see-surplus" data-nav="see-surplus">Surplus &amp; price controls</a>
+    <a href="#see-elasticity" data-nav="see-elasticity">Elasticity &amp; revenue</a>
+    <a href="#see-externality" data-nav="see-externality">Externalities</a>
+
+    <div class="nav-group">More</div>
+    <a href="#tools" data-nav="tools">More ARE 201 tools</a>
+    <a href="#progress" data-nav="progress">My progress</a>
   </nav>
 
-  <div class="eyebrow">ARE 201 · Micro Principles</div>
-  <h1>ARE 201 Study Tools</h1>
-  <p class="lead">Two tools that work together. Practice serves questions at your level, and the tutor helps you reason through whatever you miss.</p>
+  <main id="main" tabindex="-1">
 
-  <div class="tools">
-    <a class="tool" href="are201-adaptive-practice.html">
-      <div class="tag">Start here</div>
-      <h2>Adaptive Practice</h2>
-      <p>Pick your units and answer questions that adjust as you go. Get one right and the next is harder. Miss one and it eases back. Stuck? Ask for a hint.</p>
-      <div class="go">Start practicing →</div>
-    </a>
-    <a class="tool" href="are201-socratic-tutor.html">
-      <div class="tag">Work it out</div>
-      <h2>Socratic Tutor</h2>
-      <p>Work through concepts, graphs, and problems one question at a time. It won't hand you the answer. That's the point.</p>
-      <div class="go">Open the tutor →</div>
-    </a>
-  </div>
+    <!-- ============ HOME ============ -->
+    <section class="view" id="view-home" data-view="home">
+      <div class="eyebrow">ARE 201 · Introduction to Agricultural &amp; Resource Economics</div>
+      <h1 class="display">What do you need help with right now?</h1>
+      <div class="entry-grid" id="entryGrid"></div>
+      <div class="home-progress card" id="homeProgress"></div>
+    </section>
 
-  <div class="how">A good loop: run a practice session, then take anything you missed to the tutor and use "Check my reasoning" or "Work through a graph."</div>
+    <!-- ============ TUTOR ============ -->
+    <section class="view tutor-view" id="view-tutor" data-view="tutor" hidden>
+      <div class="tutor-layout">
+        <aside class="unit-panel">
+          <div class="panel-label">Pick your unit</div>
+          <button class="router-btn" id="routerBtn" data-unit="router" aria-pressed="false">
+            <span class="u-tag">Not sure?</span>Not sure what my problem is about
+          </button>
+          <div class="unit-list" id="unitList"></div>
+        </aside>
+        <div class="chat-wrap">
+          <div class="chat-head">
+            <span class="chat-now" id="currentUnit">Choose a unit to begin</span>
+            <span class="chat-rule"><strong>House rule:</strong> I ask questions and give hints. I won't just tell you the answer.</span>
+          </div>
+          <div class="statusbar" id="statusBar" hidden><span id="statusLine"></span></div>
+          <div id="log" class="log" aria-live="polite"></div>
+          <div class="modebar">
+            <div class="modegroup" id="modeControls">
+              <span class="mlabel">Mode</span>
+              <div class="modes" id="modes"></div>
+            </div>
+            <span class="modenote" id="modeNote" hidden>First we'll figure out which model the problem uses. Then pick a unit and a mode.</span>
+            <div class="modebar-right">
+              <button class="ghost-btn" id="resetBtn">Start over</button>
+              <button class="navy-btn" id="figuredBtn" hidden>What I figured out</button>
+            </div>
+          </div>
+          <div class="composer">
+            <textarea id="chatInput" rows="1" placeholder="Type what you're thinking (Enter to send, Shift+Enter for a new line)"></textarea>
+            <button id="sendBtn" class="gold-btn">Send</button>
+          </div>
+          <div class="fineprint">Messages go to an AI service to generate replies. They aren't stored here. Don't type personal information. The tutor won't hand over answers to graded work.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRACTICE ============ -->
+    <section class="view" id="view-practice" data-view="practice" hidden>
+      <div class="eyebrow">Practice</div>
+      <h1 class="view-title">Adaptive quiz</h1>
+      <p class="view-lead">Questions adjust to you. Get one right and the next is harder. Miss one and it eases back.</p>
+
+      <div id="practiceSetup" class="card">
+        <div class="lbl">Units <button class="mini" id="selAll">Select all</button><button class="mini" id="selClear">Clear</button></div>
+        <div class="chips" id="unitChips"></div>
+        <div class="lbl">Session length</div>
+        <div class="chips" id="lenOpts"></div>
+        <div class="avail" id="avail">Select at least one unit to begin.</div>
+        <div class="row-end"><button class="gold-btn" id="startBtn" disabled>Start practice →</button></div>
+      </div>
+
+      <div id="practiceRun" hidden>
+        <div class="scorebar">
+          <span class="prog" id="prog">Question 1</span>
+          <span class="pill" id="scorePill">Score 0/0</span>
+          <span class="pill streak" id="streakPill">Streak 0</span>
+          <div class="level">
+            <div class="llabel"><span>Your level</span><b id="levelName">Warming up</b></div>
+            <div class="meter"><div class="fill" id="levelFill"></div></div>
+          </div>
+          <button class="link-btn" id="endBtn">End session</button>
+        </div>
+        <div class="card q-card">
+          <div class="dino-perch" id="dino" aria-hidden="true">
+            <img src="../trex.png" alt="">
+            <span class="flame f1">🔥</span><span class="flame f2">🔥</span><span class="flame f3">🔥</span>
+          </div>
+          <div class="qmeta"><span class="qtag" id="qUnit"></span><span class="diff" id="qDiff"></span></div>
+          <div class="qprompt" id="qPrompt"></div>
+          <div id="qAnswer"></div>
+          <div id="hintArea"></div>
+          <div id="feedbackArea"></div>
+          <div class="qactions" id="qActions"></div>
+        </div>
+      </div>
+
+      <div id="practiceSummary" class="card" hidden>
+        <h2 class="card-title">Session summary</h2>
+        <div class="stats">
+          <div class="stat"><div class="num" id="sAsked">0</div><div class="cap">Questions</div></div>
+          <div class="stat"><div class="num" id="sAcc">0%</div><div class="cap">Accuracy</div></div>
+          <div class="stat"><div class="num" id="sLevel">-</div><div class="cap">Ending level</div></div>
+        </div>
+        <table class="byunit"><thead><tr><th>Unit</th><th>Correct</th><th>Accuracy</th></tr></thead><tbody id="byUnitBody"></tbody></table>
+        <div class="review" id="reviewBox"></div>
+        <div class="row-end"><button class="gold-btn" id="againBtn">Practice again</button></div>
+      </div>
+    </section>
+
+    <!-- ============ FLAWS ============ -->
+    <section class="view" id="view-flaws" data-view="flaws" hidden>
+      <div class="eyebrow">Practice</div>
+      <h1 class="view-title">Flaw detection</h1>
+      <p class="view-lead">Each statement sounds reasonable and contains one mistake. Find it.</p>
+      <div class="filter-row">
+        <label for="flawUnit" class="lbl-inline">Unit</label>
+        <select id="flawUnit"></select>
+        <span class="pill" id="flawCount">Flaws reviewed: 0</span>
+      </div>
+      <div class="card" id="flawCard"></div>
+    </section>
+
+    <!-- ============ EXPLAIN ============ -->
+    <section class="view" id="view-explain" data-view="explain" hidden>
+      <div class="eyebrow">Practice</div>
+      <h1 class="view-title">Explain why</h1>
+      <p class="view-lead">Answer in your own words. The tutor tells you what's solid and what's missing, without writing it for you.</p>
+      <div class="filter-row">
+        <label for="explainUnit" class="lbl-inline">Unit</label>
+        <select id="explainUnit"></select>
+      </div>
+      <div class="card" id="explainCard"></div>
+    </section>
+
+    <!-- ============ SEE IT ============ -->
+    <section class="view" id="view-see-sd" data-view="see-sd" hidden></section>
+    <section class="view" id="view-see-surplus" data-view="see-surplus" hidden></section>
+    <section class="view" id="view-see-elasticity" data-view="see-elasticity" hidden></section>
+    <section class="view" id="view-see-externality" data-view="see-externality" hidden></section>
+
+    <!-- ============ TOOLS ============ -->
+    <section class="view" id="view-tools" data-view="tools" hidden>
+      <div class="eyebrow">More</div>
+      <h1 class="view-title">More ARE 201 tools</h1>
+      <p class="view-lead">Games and simulations from the Dr. Tremendous collection, sorted by unit.</p>
+      <div class="tool-grid" id="toolGrid"></div>
+    </section>
+
+    <!-- ============ PROGRESS ============ -->
+    <section class="view" id="view-progress" data-view="progress" hidden>
+      <div class="eyebrow">More</div>
+      <h1 class="view-title">My progress</h1>
+      <p class="view-lead">Saved on this device only. Nobody else can see it.</p>
+      <div class="card" id="progressCard"></div>
+    </section>
+
+  </main>
 </div>
+
+<script src="data.js"></script>
+<script src="graphs.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
