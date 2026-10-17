@@ -1417,6 +1417,7 @@ function gatewayCourseRecommendations(){
     const g=GATEWAY_COURSES[c];
     return {
       e:{
+        courseCode:c,
         name:g.name,
         region:g.region,
         category:g.category,
@@ -1953,7 +1954,7 @@ function card(r,cls,label){
   const e=r.e;
   const controls=r.i>=0
     ? `<div class="btns"><button class="primary" data-done="${r.i}">I've done this</button><button data-view="${r.i}">Explore</button><button data-save="${r.i}" class="${state.saved.has(e.name)?"saved":""}">${state.saved.has(e.name)?"Saved":"Add to My Goals"}</button><button data-dismiss="${r.i}">Not Interested</button></div>`
-    : `<div class="btns"><button data-derived-save-index="${DERIVED_PATHS.push(e.name)-1}">Add to My Goals</button><button data-dismiss-derived="${esc(e.name)}">Not Interested</button></div>`;
+    : `<div class="btns">${e.courseCode?`<button class="primary" data-took-course="${esc(e.courseCode)}">I&#39;ve taken this</button>`:""}<button data-derived-save-index="${DERIVED_PATHS.push(e.name)-1}">Add to My Goals</button><button data-dismiss-derived="${esc(e.name)}">Not Interested</button></div>`;
   return `<div class="card ${cls}"><div class="tier">${label} · ${esc(e.category)}${HIE_EXPERIENCES.has(e.name)?" · CONFIRMED HIGH-IMPACT EXPERIENCE":""}</div><h4>${esc(e.name)}</h4><div class="where">${esc(mapPlace(e))}</div><div class="why">${r.i>=0?esc(reason(e,r.status)):e.category==="Gateway Course"?"This course unlocks experiences you are not yet eligible for.":"Unlocked by something you completed."}</div><p><b>What this builds:</b> ${esc(e.transformation)}</p>${e.requiredCourses.length?`<div><span class="badge">Prerequisites: ${esc(e.requiredCourses.map(displayCourse).join(", "))}</span></div>`:""}${hieExplanationHTML(e)}<div class="note"><b>How to start:</b><br>${esc(e.howToStart)}</div>${opportunityContactHTML(e)}${controls}</div>`;
 }
 
@@ -2140,7 +2141,7 @@ if(state.selectedRegion){
       }else if(regular){
         controls=`<div class="btns" style="margin-top:7px"><button class="primary" data-region-done="${r.i}">I've done this</button><button data-region-view="${r.i}">Explore</button><button data-region-save="${r.i}">Add to My Goals</button></div>`;
       }else{
-        controls=`<div class="btns" style="margin-top:7px"><button data-region-save-derived="${esc(r.e.name)}">Add to My Goals</button></div>`;
+        controls=`<div class="btns" style="margin-top:7px">${r.e.courseCode?`<button class="primary" data-took-course="${esc(r.e.courseCode)}">I&#39;ve taken this</button>`:""}<button data-region-save-derived="${esc(r.e.name)}">Add to My Goals</button></div>`;
       }
 
       const conditionalNote=r.status==="conditional"
@@ -2319,6 +2320,16 @@ function renderTrail(){
   svg.innerHTML=`<defs><filter id="trailBlur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="4"/></filter></defs><path class="trail-glow" d="${d}"/><path class="trail-edge" d="${d}"/><path class="trail-line" d="${d}"/>`;
 }
 renderTrail();
+
+/* "I've taken this" on a gateway course card records the course and refreshes recommendations */
+panel.addEventListener("click",ev=>{
+  const b=ev.target.closest("[data-took-course]");if(!b)return;
+  const c=b.dataset.tookCourse;
+  state.courses.add(c);if(state.areCount<state.courses.size)state.areCount=state.courses.size;
+  if(GATEWAY_COURSES[c])state.saved.delete(GATEWAY_COURSES[c].name);
+  state.entered=true;const y=panel.scrollTop;renderAll();panel.scrollTop=y;
+  atlasToast(`${c} marked as taken. Experiences that need it are now open to you.`);
+});
 
 function renderAll(){renderHeader();renderLegend();renderRegionGlows();renderWorldActivity();renderHIELayer();renderFoundationMessage();renderRegionHotspots();renderMarkers();renderPanel();saveProgress()}
 function chips(items,selected,id){return `<div class="chips" id="${id}" role="group">${items.map(([k,v])=>`<button type="button" class="chip ${selected.includes(k)?"on":""}" aria-pressed="${selected.includes(k)}" data-v="${k}">${v}</button>`).join("")}</div>`}
