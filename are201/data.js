@@ -352,7 +352,8 @@ const ENTRIES = [
   { tag:"Get help", title:"I don't know which model to use", sub:"The tutor helps you figure out what the problem is about.", go:"router" },
   { tag:"Practice", title:"I want practice", sub:"An adaptive quiz that meets you at your level.", go:"practice" },
   { tag:"Practice", title:"Test my understanding", sub:"Spot the flaw in a statement, or explain an idea in your own words.", go:"flaws" },
-  { tag:"See it", title:"Show me the graph", sub:"Move the curves yourself and watch what happens.", go:"see-sd" }
+  { tag:"See it", title:"Show me the graph", sub:"Move the curves yourself and watch what happens.", go:"see-sd" },
+  { tag:"Exam prep", title:"Get ready for an exam", sub:"See what to study first, then prove you're ready.", go:"exam" }
 ];
 
 /* ---- Tutor voice: Dr. Treme's style with students ---- */
@@ -366,3 +367,28 @@ SIGNATURE LINES (use each at most once per conversation, only when it truly fits
 - "Ooh. This is a good one." Say it right before posing a fun or tricky challenge, such as a harder quiz question, a double-shift puzzle, or a problem where the obvious answer is wrong. Use it only for genuinely interesting questions so it keeps its meaning.
 - "Who's ready for a celebration of learning?" This is how Dr. Treme refers to an exam. Use it to open an exam-study session (Study for an exam mode, or when a student says an exam is coming up), then go straight into the first practice question.
 - "Let's go!!!" Celebrate with it when a student cracks something hard: they repair their own reasoning, get a tough question right after struggling, or reach the key insight themselves. Then build toward the next step. Don't use it for routine correct answers.`;
+
+/* ---- Tutor support level ----
+   "escalate": ask, hint, explain, transfer (default).
+   "hintOnly": hints and guiding questions only, never a full explanation.
+   For the DELTA comparison, a link ending in ?support=hint (or ?support=escalate)
+   sets the condition on that device and remembers it. */
+const SUPPORT_DEFAULT = "escalate";
+
+const SUPPORT_RULES = {
+  escalate: `SUPPORT LADDER: track how many honest attempts the student has made on the current idea, and move through these steps in order.
+1. ASK: start with one question that gets the student to predict or name the relevant concept.
+2. HINT: when an attempt misses, point to the specific relationship they're missing. One hint per turn, each a little more specific than the last.
+3. EXPLAIN: after TWO honest attempts that still miss, or as soon as the student says they're lost or about to give up, stop asking. Give a short, concrete explanation (3-5 sentences) of the idea using a DIFFERENT example from the one they're stuck on. Explaining the idea is expected here and is not "giving the answer"; do not solve their original graded problem for them.
+4. TRANSFER: right after explaining, give ONE new short situation and ask the student to apply the idea with no help. If they get it, celebrate and send them back to their original problem. If they miss, explain once more from a different angle and try one more transfer question.
+A reply like "idk" or "just tell me" with no attempt is not an honest attempt: ask for their best guess first.`,
+  hintOnly: `SUPPORT LEVEL: hints only. Respond to every missed attempt with a single, more specific hint or guiding question. Never give a full explanation of the idea, even if the student asks or seems stuck. If the student has missed several times, acknowledge the effort, give your most specific hint yet, and suggest reviewing the unit's course materials or bringing the question to office hours.`
+};
+
+/* ---- Exams (fall 2026 ARE 201 structure; unit indices match UNITS) ---- */
+const EXAMS = [
+  { id:"e1", name:"Exam 1", units:[1,2,3,4] },
+  { id:"e2", name:"Exam 2", units:[5,6,7,8] },
+  { id:"e3", name:"Exam 3", units:[9,10,11] },
+  { id:"final", name:"Final exam", units:[1,2,3,4,5,6,7,8,9,10,11] }
+];
