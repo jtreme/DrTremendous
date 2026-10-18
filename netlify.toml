@@ -1,3 +1,9 @@
 [build]
   publish = "."
   functions = "netlify/functions"
+
+# Drive-Thru Draft uses a Firebase web API key. Firebase web keys are public by
+# design (access is controlled by Firestore security rules), so tell Netlify's
+# secret scanner this one value is expected. All other scanning stays on.
+[build.environment]
+  SECRETS_SCAN_SMART_DETECTION_OMIT_VALUES = "AIzaSyBvnmtHxx9-cMf9q1qLiRG9nbjilZ3EoQY"
